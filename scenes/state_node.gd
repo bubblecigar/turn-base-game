@@ -1,6 +1,6 @@
 extends Node
 
-class_name StateNode
+class_name StateMachine
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
@@ -11,6 +11,7 @@ var _state: Dictionary = {}
 
 
 func _ready() -> void:
+	print('state machine ready')
 	reset()
 
 
@@ -27,7 +28,7 @@ func get_value(key: StringName, default_value: Variant = null) -> Variant:
 
 
 func set_value(key: StringName, value: Variant) -> void:
-	var previous_value := _state.get(key)
+	var previous_value: Variant = _state.get(key)
 	if previous_value == value:
 		return
 
@@ -42,7 +43,7 @@ func patch(values: Dictionary) -> void:
 	for key: Variant in values:
 		var state_key := StringName(str(key))
 		var next_value: Variant = values[key]
-		var previous_value := _state.get(state_key)
+		var previous_value: Variant = _state.get(state_key)
 
 		if previous_value == next_value:
 			continue

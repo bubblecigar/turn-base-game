@@ -1,6 +1,42 @@
 [gd_scene format=3 uid="uid://cp2a0hdjgho1v"]
 
 [ext_resource type="Script" uid="uid://bxtd0nm21ba5q" path="res://scenes/turn_base_scene.gd" id="1_u40qt"]
+[ext_resource type="Script" uid="uid://dr3b1hkifyati" path="res://scenes/event_bus.gd" id="2_b6k6q"]
+[ext_resource type="Script" uid="uid://85u7u0ypmg5i" path="res://scenes/state_node.gd" id="2_se3ji"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
+
+[node name="EventBus" type="Node" parent="." unique_id=1453637681]
+script = ExtResource("2_b6k6q")
+
+[node name="StateMachine" type="Node" parent="EventBus" unique_id=127998577]
+script = ExtResource("2_se3ji")
+
+[node name="View" type="Node2D" parent="EventBus" unique_id=1761761113]
+
+[node name="Debugger" type="Control" parent="EventBus" unique_id=1084566502]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ButtonB" type="Button" parent="EventBus/Debugger" unique_id=866148479]
+layout_mode = 0
+offset_left = 279.00003
+offset_top = 401.0
+offset_right = 356.00003
+offset_bottom = 432.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Button B"
+
+[node name="ButtonA" type="Button" parent="EventBus/Debugger" unique_id=996673651]
+layout_mode = 0
+offset_left = 57.000004
+offset_top = 401.99997
+offset_right = 134.0
+offset_bottom = 432.99997
+scale = Vector2(2.4857094, 3.2024686)
+text = "Button A"
