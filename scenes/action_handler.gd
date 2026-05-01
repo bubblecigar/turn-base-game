@@ -6,6 +6,8 @@ const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
 const MIN_CHARACTER_SIZE := 16
 const MAX_CHARACTER_SIZE := 64
+const MIN_HEAD_RADIUS := 6
+const MAX_HEAD_RADIUS := 14
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
@@ -55,11 +57,23 @@ func _handle_consumed_event(event: Dictionary) -> void:
 
 func _init_character(_payload: Dictionary) -> void:
 	var character_state := {
-		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
-		"height": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
+		"head": {
+			"radius": randi_range(MIN_HEAD_RADIUS, MAX_HEAD_RADIUS),
+		},
+		"neck": _random_part_size(),
+		"body": _random_part_size(),
+		"arms": _random_part_size(),
+		"legs": _random_part_size(),
 	}
 	state_store.init_character(character_state)
 	print('initialized character: ', character_state)
+
+
+func _random_part_size() -> Dictionary:
+	return {
+		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
+		"height": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
+	}
 
 
 func _consume_debugger_button_pressed(payload: Dictionary) -> void:
