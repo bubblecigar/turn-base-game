@@ -54,7 +54,7 @@ func _init_character(_payload: Dictionary) -> void:
 		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
 		"height": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
 	}
-	state_store.set_value(&"character", character_state)
+	state_store.init_character(character_state)
 	print('initialized character: ', character_state)
 
 

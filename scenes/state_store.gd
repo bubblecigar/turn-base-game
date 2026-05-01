@@ -4,6 +4,7 @@ class_name StateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
+signal character_initialized(character: Dictionary, previous_character: Variant)
 
 @export var initial_state: Dictionary = {}
 
@@ -35,6 +36,12 @@ func set_value(key: StringName, value: Variant) -> void:
 	_state[key] = value
 	value_changed.emit(key, value, previous_value)
 	state_changed.emit(get_state())
+
+
+func init_character(character: Dictionary) -> void:
+	var previous_character: Variant = _state.get(&"character")
+	set_value(&"character", character)
+	character_initialized.emit(character, previous_character)
 
 
 func patch(values: Dictionary) -> void:
