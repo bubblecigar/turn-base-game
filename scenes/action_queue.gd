@@ -1,8 +1,6 @@
 extends Node
 
 var _event_queue: Array[Dictionary] = []
-var _current_event: Dictionary = {}
-var _is_consuming := false
 
 @onready var action_handler: Node = $"../ActionHandler"
 
@@ -33,26 +31,11 @@ func _is_valid_event(event: Dictionary) -> bool:
 
 
 func consume_next() -> void:
-	if _is_consuming or _event_queue.is_empty():
+	if action_handler.is_consuming() or _event_queue.is_empty():
 		return
 
-	_current_event = _event_queue.pop_front()
-	_is_consuming = true
-	consume_current()
-
-
-func consume_current() -> void:
-	if not _is_consuming:
-		return
-
-	var consumed_event: Dictionary = _current_event
-	await action_handler.consume(consumed_event)
-
-	if not _is_consuming or _current_event != consumed_event:
-		return
-
-	_current_event = {}
-	_is_consuming = false
+	var event: Dictionary = _event_queue.pop_front()
+	await action_handler.consume(event)
 	consume_next()
 
 
