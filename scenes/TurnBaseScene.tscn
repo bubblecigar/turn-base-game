@@ -3,16 +3,20 @@
 [ext_resource type="Script" uid="uid://bxtd0nm21ba5q" path="res://scenes/turn_base_scene.gd" id="1_u40qt"]
 [ext_resource type="Script" uid="uid://dr3b1hkifyati" path="res://scenes/action_queue.gd" id="2_b6k6q"]
 [ext_resource type="Script" uid="uid://85u7u0ypmg5i" path="res://scenes/state_node.gd" id="2_se3ji"]
+[ext_resource type="Script" uid="uid://i2ifsipl7tai" path="res://scenes/action_handler.gd" id="3_d8o6u"]
 [ext_resource type="PackedScene" path="res://scenes/debugger/Debugger.tscn" id="4_g6g8p"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
 
-[node name="StateMachine" type="Node" parent="." unique_id=127998577]
-script = ExtResource("2_se3ji")
-
 [node name="ActionQueue" type="Node" parent="." unique_id=1453637681]
 script = ExtResource("2_b6k6q")
+
+[node name="ActionHandler" type="Node" parent="." unique_id=702798969]
+script = ExtResource("3_d8o6u")
+
+[node name="StateMachine" type="Node" parent="." unique_id=127998577]
+script = ExtResource("2_se3ji")
 
 [node name="View" type="Node2D" parent="." unique_id=1761761113]
 

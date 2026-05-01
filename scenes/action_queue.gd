@@ -1,16 +1,14 @@
 extends Node
 
-const MIN_CONSUME_SECONDS := 0.5
-const MAX_CONSUME_SECONDS := 3.0
-
 var _event_queue: Array[Dictionary] = []
 var _current_event: Dictionary = {}
 var _is_consuming := false
 
+@onready var action_handler: Node = $"../ActionHandler"
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	randomize()
 	print('action queue ready');
 	pass # Replace with function body.
 
@@ -40,7 +38,6 @@ func consume_next() -> void:
 
 	_current_event = _event_queue.pop_front()
 	_is_consuming = true
-	print('start consume: ', _current_event)
 	consume_current()
 
 
@@ -49,15 +46,13 @@ func consume_current() -> void:
 		return
 
 	var consumed_event: Dictionary = _current_event
-	var consume_seconds := randf_range(MIN_CONSUME_SECONDS, MAX_CONSUME_SECONDS)
-	await get_tree().create_timer(consume_seconds).timeout
+	await action_handler.consume(consumed_event)
 
 	if not _is_consuming or _current_event != consumed_event:
 		return
 
 	_current_event = {}
 	_is_consuming = false
-	print('consumed: ', consumed_event, ' in ', consume_seconds, 's')
 	consume_next()
 
 
