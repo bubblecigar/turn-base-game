@@ -9,8 +9,11 @@ func _ready() -> void:
 
 func _on_pressed() -> void:
 	action_queue.enQueue({
-		"source": name,
-		"text": text,
+		"eventName": "debugger_button_pressed",
+		"payload": {
+			"source": name,
+			"text": text,
+		},
 	})
 
 
