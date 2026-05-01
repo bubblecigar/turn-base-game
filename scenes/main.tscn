@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://dotturnmain"]
 
+[ext_resource type="Script" uid="uid://qp77q15dyk78" path="res://scenes/main.gd" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://cp2a0hdjgho1v" path="res://scenes/TurnBaseScene.tscn" id="1_o5qli"]
 
 [sub_resource type="Gradient" id="Gradient_bg"]
@@ -14,6 +15,7 @@ fill_from = Vector2(0.25, 0.2)
 fill_to = Vector2(1, 1)
 
 [node name="Main" type="Node2D" unique_id=1996900227]
+script = ExtResource("1_0wfyh")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1848449319]
 position = Vector2(480, 270)
