@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dotturnmain"]
+
+[ext_resource type="PackedScene" uid="uid://cp2a0hdjgho1v" path="res://scenes/TurnBaseScene.tscn" id="1_o5qli"]
+
+[sub_resource type="Gradient" id="Gradient_bg"]
+colors = PackedColorArray(0.055, 0.075, 0.105, 1, 0.02, 0.13, 0.17, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bg"]
+gradient = SubResource("Gradient_bg")
+width = 960
+height = 540
+fill = 1
+fill_from = Vector2(0.25, 0.2)
+fill_to = Vector2(1, 1)
+
+[node name="Main" type="Node2D" unique_id=1996900227]
+
+[node name="Background" type="Sprite2D" parent="." unique_id=1848449319]
+position = Vector2(480, 270)
+texture = SubResource("GradientTexture2D_bg")
+
+[node name="TurnBaseScene" parent="." unique_id=521488771 instance=ExtResource("1_o5qli")]
