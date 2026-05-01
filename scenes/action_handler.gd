@@ -55,8 +55,14 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			push_warning('Unhandled consumed event: %s' % event['eventName'])
 
 
-func _init_character(_payload: Dictionary) -> void:
-	var character_state := {
+func _init_character(payload: Dictionary) -> void:
+	var character_state := payload.duplicate(true) if _is_character_spec(payload) else _random_character_spec()
+	state_store.init_character(character_state)
+	print('initialized character: ', character_state)
+
+
+func _random_character_spec() -> Dictionary:
+	return {
 		"head": {
 			"radius": randi_range(MIN_HEAD_RADIUS, MAX_HEAD_RADIUS),
 		},
@@ -65,8 +71,6 @@ func _init_character(_payload: Dictionary) -> void:
 		"arms": _random_part_size(),
 		"legs": _random_part_size(),
 	}
-	state_store.init_character(character_state)
-	print('initialized character: ', character_state)
 
 
 func _random_part_size() -> Dictionary:
@@ -74,6 +78,24 @@ func _random_part_size() -> Dictionary:
 		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
 		"height": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
 	}
+
+
+func _is_character_spec(spec: Dictionary) -> bool:
+	return (
+		_is_head_spec(spec.get("head", {}))
+		and _is_part_spec(spec.get("neck", {}))
+		and _is_part_spec(spec.get("body", {}))
+		and _is_part_spec(spec.get("arms", {}))
+		and _is_part_spec(spec.get("legs", {}))
+	)
+
+
+func _is_head_spec(spec: Variant) -> bool:
+	return spec is Dictionary and spec.has("radius")
+
+
+func _is_part_spec(spec: Variant) -> bool:
+	return spec is Dictionary and spec.has("width") and spec.has("height")
 
 
 func _consume_debugger_button_pressed(payload: Dictionary) -> void:

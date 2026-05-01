@@ -9,12 +9,28 @@ func _ready() -> void:
 
 func _on_pressed() -> void:
 	action_queue.enQueue({
-		"eventName": "debugger_button_pressed",
-		"payload": {
-			"source": name,
-			"text": text,
-		},
+		"eventName": "spawn_character",
+		"payload": _get_character_spec(),
 	})
+
+
+func _get_character_spec() -> Dictionary:
+	return {
+		"head": {
+			"radius": int($"../HeadRadiusSpinBox".value),
+		},
+		"neck": _get_part_spec("Neck"),
+		"body": _get_part_spec("Body"),
+		"arms": _get_part_spec("Arms"),
+		"legs": _get_part_spec("Legs"),
+	}
+
+
+func _get_part_spec(part_name: String) -> Dictionary:
+	return {
+		"width": int(get_node("../%sWidthSpinBox" % part_name).value),
+		"height": int(get_node("../%sHeightSpinBox" % part_name).value),
+	}
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

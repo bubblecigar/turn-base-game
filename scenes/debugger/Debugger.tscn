@@ -1,8 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://bfnvjjtdujwjq"]
 
-[ext_resource type="Script" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
-[ext_resource type="Script" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
-[ext_resource type="Script" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
+[ext_resource type="Script" uid="uid://qt8pkgogr5cg" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
+[ext_resource type="Script" uid="uid://cuyivrqypr5mt" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
+[ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -41,3 +41,165 @@ offset_bottom = 359.0
 scale = Vector2(2.2266638, 1.7437714)
 text = "Idle"
 script = ExtResource("3_el5hy")
+
+[node name="HeadRadiusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 24.0
+offset_right = 130.0
+offset_bottom = 47.0
+text = "Head radius"
+
+[node name="HeadRadiusSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 20.0
+offset_right = 224.0
+offset_bottom = 51.0
+min_value = 1.0
+max_value = 128.0
+value = 10.0
+
+[node name="NeckWidthLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 64.0
+offset_right = 130.0
+offset_bottom = 87.0
+text = "Neck W"
+
+[node name="NeckWidthSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 60.0
+offset_right = 224.0
+offset_bottom = 91.0
+min_value = 1.0
+max_value = 128.0
+value = 12.0
+
+[node name="NeckHeightLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 64.0
+offset_right = 330.0
+offset_bottom = 87.0
+text = "Neck H"
+
+[node name="NeckHeightSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 344.0
+offset_top = 60.0
+offset_right = 424.0
+offset_bottom = 91.0
+min_value = 1.0
+max_value = 128.0
+value = 8.0
+
+[node name="BodyWidthLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 104.0
+offset_right = 130.0
+offset_bottom = 127.0
+text = "Body W"
+
+[node name="BodyWidthSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 100.0
+offset_right = 224.0
+offset_bottom = 131.0
+min_value = 1.0
+max_value = 128.0
+value = 28.0
+
+[node name="BodyHeightLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 104.0
+offset_right = 330.0
+offset_bottom = 127.0
+text = "Body H"
+
+[node name="BodyHeightSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 344.0
+offset_top = 100.0
+offset_right = 424.0
+offset_bottom = 131.0
+min_value = 1.0
+max_value = 128.0
+value = 36.0
+
+[node name="ArmsWidthLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 144.0
+offset_right = 130.0
+offset_bottom = 167.0
+text = "Arms W"
+
+[node name="ArmsWidthSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 140.0
+offset_right = 224.0
+offset_bottom = 171.0
+min_value = 1.0
+max_value = 128.0
+value = 12.0
+
+[node name="ArmsHeightLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 144.0
+offset_right = 330.0
+offset_bottom = 167.0
+text = "Arms H"
+
+[node name="ArmsHeightSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 344.0
+offset_top = 140.0
+offset_right = 424.0
+offset_bottom = 171.0
+min_value = 1.0
+max_value = 128.0
+value = 32.0
+
+[node name="LegsWidthLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 184.0
+offset_right = 130.0
+offset_bottom = 207.0
+text = "Legs W"
+
+[node name="LegsWidthSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 180.0
+offset_right = 224.0
+offset_bottom = 211.0
+min_value = 1.0
+max_value = 128.0
+value = 12.0
+
+[node name="LegsHeightLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 184.0
+offset_right = 330.0
+offset_bottom = 207.0
+text = "Legs H"
+
+[node name="LegsHeightSpinBox" type="SpinBox" parent="."]
+layout_mode = 0
+offset_left = 344.0
+offset_top = 180.0
+offset_right = 424.0
+offset_bottom = 211.0
+min_value = 1.0
+max_value = 128.0
+value = 36.0
