@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
+[ext_resource type="Script" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
+
+[node name="Debugger" type="Control" unique_id=1084566502]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ButtonB" type="Button" parent="." unique_id=866148479]
+layout_mode = 0
+offset_left = 279.00003
+offset_top = 401.0
+offset_right = 356.00003
+offset_bottom = 432.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Button B"
+script = ExtResource("1_x6j5k")
+
+[node name="ButtonA" type="Button" parent="." unique_id=996673651]
+layout_mode = 0
+offset_left = 57.000004
+offset_top = 401.99997
+offset_right = 134.0
+offset_bottom = 432.99997
+scale = Vector2(2.4857094, 3.2024686)
+text = "Button A"
+script = ExtResource("2_6cnuj")
