@@ -26,12 +26,25 @@ func consume(event: Dictionary) -> void:
 	await get_tree().create_timer(consume_seconds).timeout
 
 	print('consumed: ', _current_event, ' in ', consume_seconds, 's')
+	_handle_consumed_event(_current_event)
 	_current_event = {}
 	_is_consuming = false
 
 
 func is_consuming() -> bool:
 	return _is_consuming
+
+
+func _handle_consumed_event(event: Dictionary) -> void:
+	match event['eventName']:
+		'debugger_button_pressed':
+			_consume_debugger_button_pressed(event['payload'])
+		_:
+			push_warning('Unhandled consumed event: %s' % event['eventName'])
+
+
+func _consume_debugger_button_pressed(payload: Dictionary) -> void:
+	print('handled debugger button: ', payload)
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
