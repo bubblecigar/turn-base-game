@@ -1,6 +1,6 @@
 extends Button
 
-@onready var action_queue: Node = get_parent().get_parent()
+@onready var action_queue: Node = $"../../ActionQueue"
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
