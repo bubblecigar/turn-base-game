@@ -9,6 +9,9 @@ script = ExtResource("1_hk1h1")
 [node name="Head" type="Node2D" parent="." unique_id=78084500]
 script = ExtResource("2_2c04o")
 
+[node name="Neck" type="Node2D" parent="."]
+script = ExtResource("2_2c04o")
+
 [node name="Body" type="Node2D" parent="." unique_id=1178492399]
 script = ExtResource("2_2c04o")
 
