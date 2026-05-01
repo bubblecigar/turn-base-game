@@ -1,6 +1,6 @@
 extends Node
 
-class_name StateMachine
+class_name StateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
@@ -11,7 +11,7 @@ var _state: Dictionary = {}
 
 
 func _ready() -> void:
-	print('state machine ready')
+	print('state store ready')
 	reset()
 
 

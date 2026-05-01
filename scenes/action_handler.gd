@@ -6,6 +6,8 @@ const MAX_CONSUME_SECONDS := 3.0
 var _current_event: Dictionary = {}
 var _is_consuming := false
 
+@onready var state_store: Node = $"../StateStore"
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -37,10 +39,18 @@ func is_consuming() -> bool:
 
 func _handle_consumed_event(event: Dictionary) -> void:
 	match event['eventName']:
+		'spawn_character':
+			_init_character(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
 			push_warning('Unhandled consumed event: %s' % event['eventName'])
+
+
+func _init_character(payload: Dictionary) -> void:
+	var character_state := payload.duplicate(true)
+	state_store.set_value(&"character", character_state)
+	print('initialized character: ', character_state)
 
 
 func _consume_debugger_button_pressed(payload: Dictionary) -> void:

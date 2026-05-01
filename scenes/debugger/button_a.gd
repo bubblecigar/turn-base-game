@@ -9,7 +9,7 @@ func _ready() -> void:
 
 func _on_pressed() -> void:
 	action_queue.enQueue({
-		"eventName": "debugger_button_pressed",
+		"eventName": "spawn_character",
 		"payload": {
 			"source": name,
 			"text": text,
