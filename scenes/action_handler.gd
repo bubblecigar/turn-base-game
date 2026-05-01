@@ -2,6 +2,8 @@ extends Node
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
+const MIN_CHARACTER_SIZE := 16
+const MAX_CHARACTER_SIZE := 64
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
@@ -47,8 +49,11 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			push_warning('Unhandled consumed event: %s' % event['eventName'])
 
 
-func _init_character(payload: Dictionary) -> void:
-	var character_state := payload.duplicate(true)
+func _init_character(_payload: Dictionary) -> void:
+	var character_state := {
+		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
+		"height": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
+	}
 	state_store.set_value(&"character", character_state)
 	print('initialized character: ', character_state)
 
