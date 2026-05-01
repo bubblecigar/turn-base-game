@@ -8,4 +8,5 @@ export_presets.cfg
 *.log
 *.mono/
 data_*/
-
+!scenes/data_flow/
+!scenes/data_flow/**
