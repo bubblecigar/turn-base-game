@@ -16,11 +16,16 @@ var _character_spec: Dictionary = {}
 
 func _ready() -> void:
 	state_store.character_initialized.connect(_on_character_initialized)
+	state_store.character_moved.connect(_on_character_moved)
 
 
 func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -> void:
 	_character_spec = spec
 	_update_parts()
+
+
+func _on_character_moved(next_position: Vector2, _previous_position: Variant) -> void:
+	position = next_position
 
 
 func _update_parts() -> void:

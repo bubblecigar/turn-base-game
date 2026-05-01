@@ -49,6 +49,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 	match event['eventName']:
 		'spawn_character':
 			_init_character(event['payload'])
+		'move_character':
+			_move_character(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -96,6 +98,25 @@ func _is_head_spec(spec: Variant) -> bool:
 
 func _is_part_spec(spec: Variant) -> bool:
 	return spec is Dictionary and spec.has("width") and spec.has("height")
+
+
+func _move_character(payload: Dictionary) -> void:
+	if not _is_position_payload(payload):
+		push_warning('Invalid move_character payload. Expected { x: number, y: number }.')
+		return
+
+	var next_position := Vector2(float(payload["x"]), float(payload["y"]))
+	state_store.move_character_to(next_position)
+	print('moved character to: ', next_position)
+
+
+func _is_position_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("x")
+		and payload.has("y")
+		and (typeof(payload["x"]) == TYPE_INT or typeof(payload["x"]) == TYPE_FLOAT)
+		and (typeof(payload["y"]) == TYPE_INT or typeof(payload["y"]) == TYPE_FLOAT)
+	)
 
 
 func _consume_debugger_button_pressed(payload: Dictionary) -> void:
