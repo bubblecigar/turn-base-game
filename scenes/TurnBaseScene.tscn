@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://i2ifsipl7tai" path="res://scenes/action_handler.gd" id="3_d8o6u"]
 [ext_resource type="PackedScene" path="res://scenes/debugger/Debugger.tscn" id="4_g6g8p"]
 [ext_resource type="Script" path="res://visuals/character_view.gd" id="5_j4a3m"]
-[ext_resource type="Script" path="res://visuals/processing_label.gd" id="6_hb40u"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
@@ -25,14 +24,5 @@ script = ExtResource("2_se3ji")
 [node name="CharacterView" type="Node2D" parent="View" unique_id=36531722]
 position = Vector2(160, 120)
 script = ExtResource("5_j4a3m")
-
-[node name="ProcessingLabel" type="Label" parent="View" unique_id=2013759462]
-offset_left = 64.0
-offset_top = 336.0
-offset_right = 244.0
-offset_bottom = 359.0
-scale = Vector2(2.2266638, 1.7437714)
-text = "Idle"
-script = ExtResource("6_hb40u")
 
 [node name="Debugger" parent="." unique_id=1751775065 instance=ExtResource("4_g6g8p")]

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
 [ext_resource type="Script" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
+[ext_resource type="Script" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -30,3 +31,13 @@ offset_bottom = 432.99997
 scale = Vector2(2.4857094, 3.2024686)
 text = "Button A"
 script = ExtResource("2_6cnuj")
+
+[node name="ProcessingLabel" type="Label" parent="." unique_id=2013759462]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 336.0
+offset_right = 244.0
+offset_bottom = 359.0
+scale = Vector2(2.2266638, 1.7437714)
+text = "Idle"
+script = ExtResource("3_el5hy")
