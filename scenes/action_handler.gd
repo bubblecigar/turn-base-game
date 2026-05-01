@@ -31,10 +31,8 @@ func consume(event: Dictionary) -> void:
 	print('start consume: ', _current_event)
 	processing_status_changed.emit(true, _current_event)
 
-	var consume_seconds := randf_range(MIN_CONSUME_SECONDS, MAX_CONSUME_SECONDS)
-	await get_tree().create_timer(consume_seconds).timeout
 
-	print('consumed: ', _current_event, ' in ', consume_seconds, 's')
+	print('consumed: ', _current_event)
 	_handle_consumed_event(_current_event)
 	_current_event = {}
 	_is_consuming = false
