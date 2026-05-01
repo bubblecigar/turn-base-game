@@ -5,8 +5,8 @@
 [ext_resource type="Script" uid="uid://85u7u0ypmg5i" path="res://scenes/state_store.gd" id="2_se3ji"]
 [ext_resource type="Script" uid="uid://i2ifsipl7tai" path="res://scenes/action_handler.gd" id="3_d8o6u"]
 [ext_resource type="PackedScene" path="res://scenes/debugger/Debugger.tscn" id="4_g6g8p"]
-[ext_resource type="Script" uid="uid://sm4f3ybefwlw" path="res://scenes/character_view.gd" id="5_j4a3m"]
-[ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/processing_label.gd" id="6_hb40u"]
+[ext_resource type="Script" path="res://visuals/character_view.gd" id="5_j4a3m"]
+[ext_resource type="Script" path="res://visuals/processing_label.gd" id="6_hb40u"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
