@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://w51f3o3ssfcn"]
+
+[ext_resource type="Script" uid="uid://sm4f3ybefwlw" path="res://scenes/visuals/character_view.gd" id="1_hk1h1"]
+[ext_resource type="Script" uid="uid://crwsvtheqgu52" path="res://scenes/visuals/character_part_view.gd" id="2_2c04o"]
+
+[node name="CharacterView" type="Node2D" unique_id=2042754942]
+script = ExtResource("1_hk1h1")
+
+[node name="Head" type="Node2D" parent="." unique_id=78084500]
+script = ExtResource("2_2c04o")
+
+[node name="Body" type="Node2D" parent="." unique_id=1178492399]
+script = ExtResource("2_2c04o")
+
+[node name="LeftArm" type="Node2D" parent="." unique_id=873559880]
+script = ExtResource("2_2c04o")
+
+[node name="RightArm" type="Node2D" parent="."]
+script = ExtResource("2_2c04o")
+
+[node name="LeftLeg" type="Node2D" parent="." unique_id=275887176]
+script = ExtResource("2_2c04o")
+
+[node name="RightLeg" type="Node2D" parent="."]
+script = ExtResource("2_2c04o")
