@@ -9,7 +9,7 @@ signal character_moved(position: Vector2, previous_position: Variant)
 
 @export var initial_state: Dictionary = {}
 
-var _state: Dictionary = {}
+var _state: Dictionary = _get_default_state()
 
 
 func _ready() -> void:
@@ -81,9 +81,16 @@ func erase_value(key: StringName) -> void:
 
 
 func reset(next_initial_state: Dictionary = initial_state) -> void:
-	_state = {}
+	_state = _get_default_state()
 
 	for key: Variant in next_initial_state:
 		_state[StringName(str(key))] = next_initial_state[key]
 
 	state_changed.emit(get_state())
+
+
+func _get_default_state() -> Dictionary:
+	return {
+		&"character": {},
+		&"character_position": Vector2.ZERO,
+	}
