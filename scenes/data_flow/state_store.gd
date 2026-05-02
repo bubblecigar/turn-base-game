@@ -44,10 +44,10 @@ func set_value(key: StringName, value: Variant) -> void:
 
 
 func init_character(character: Dictionary) -> void:
-	var previous_character: Variant = _state.get(&"character")
+	var previous_character: Variant = _get_latest_character()
 	var next_character := character.duplicate(true)
 	next_character[&"id"] = _create_character_id()
-	set_value(&"character", next_character)
+	_set_entity(next_character)
 	_place_character_on_board(next_character, 0, 0)
 	character_initialized.emit(next_character, previous_character)
 
@@ -60,7 +60,7 @@ func init_board(cols: int, rows: int) -> void:
 
 
 func move_character_to(i: int, j: int) -> void:
-	var character: Dictionary = _state.get(&"character", {})
+	var character := _get_latest_character()
 	if character.is_empty():
 		push_warning("Cannot move character before character is spawned.")
 		return
@@ -119,7 +119,7 @@ func reset(next_initial_state: Dictionary = initial_state) -> void:
 func _get_default_state() -> Dictionary:
 	return {
 		&"board": {},
-		&"character": {},
+		&"entities": {},
 	}
 
 
@@ -149,6 +149,27 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 func _create_character_id() -> StringName:
 	_character_index += 1
 	return StringName("character_%d" % _character_index)
+
+
+func _set_entity(entity: Dictionary) -> void:
+	var entity_id: StringName = entity.get(&"id", &"")
+	if entity_id == &"":
+		push_error("Cannot set entity without an id.")
+		return
+
+	var previous_entities: Dictionary = _state.get(&"entities", {})
+	var next_entities := previous_entities.duplicate(true)
+	next_entities[entity_id] = entity
+	set_value(&"entities", next_entities)
+
+
+func _get_latest_character() -> Dictionary:
+	if _character_index <= 0:
+		return {}
+
+	var entities: Dictionary = _state.get(&"entities", {})
+	var character_id := StringName("character_%d" % _character_index)
+	return entities.get(character_id, {})
 
 
 func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
