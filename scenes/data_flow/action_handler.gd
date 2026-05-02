@@ -28,11 +28,11 @@ func consume(event: Dictionary) -> void:
 
 	_current_event = event
 	_is_consuming = true
-	print('start consume: ', _current_event)
+	print('start consume action : ', _current_event)
 	processing_status_changed.emit(true, _current_event)
 
 
-	print('consumed: ', _current_event)
+	print('action consumed: ', _current_event)
 	_handle_consumed_event(_current_event)
 	_current_event = {}
 	_is_consuming = false
