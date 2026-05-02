@@ -8,6 +8,8 @@ const MIN_CHARACTER_SIZE := 16
 const MAX_CHARACTER_SIZE := 64
 const MIN_HEAD_RADIUS := 6
 const MAX_HEAD_RADIUS := 14
+const MIN_BOARD_SIZE := 3
+const MAX_BOARD_SIZE := 5
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
@@ -45,6 +47,8 @@ func is_consuming() -> bool:
 
 func _handle_consumed_event(event: Dictionary) -> void:
 	match event['eventName']:
+		'spawn_board':
+			_init_board(event['payload'])
 		'spawn_character':
 			_init_character(event['payload'])
 		'move_character':
@@ -59,6 +63,23 @@ func _init_character(payload: Dictionary) -> void:
 	var character_state := payload.duplicate(true) if _is_character_spec(payload) else _random_character_spec()
 	state_store.init_character(character_state)
 	print('initialized character: ', character_state)
+
+
+func _init_board(payload: Dictionary) -> void:
+	var cols := int(payload.get("i", randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE)))
+	var rows := int(payload.get("j", randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE)))
+
+	if not _is_board_size(cols) or not _is_board_size(rows):
+		push_warning('Invalid spawn_board payload. Expected { i: int, j: int } between 3 and 5.')
+		cols = randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE)
+		rows = randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE)
+
+	state_store.init_board(cols, rows)
+	print('initialized board: ', cols, ' x ', rows)
+
+
+func _is_board_size(value: int) -> bool:
+	return value >= MIN_BOARD_SIZE and value <= MAX_BOARD_SIZE
 
 
 func _random_character_spec() -> Dictionary:

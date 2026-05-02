@@ -4,6 +4,7 @@ class_name StateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
+signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal character_moved(position: Vector2, previous_position: Variant)
 
@@ -43,6 +44,13 @@ func init_character(character: Dictionary) -> void:
 	var previous_character: Variant = _state.get(&"character")
 	set_value(&"character", character)
 	character_initialized.emit(character, previous_character)
+
+
+func init_board(cols: int, rows: int) -> void:
+	var previous_board: Variant = _state.get(&"board")
+	var board := _create_board(cols, rows)
+	set_value(&"board", board)
+	board_init.emit(board, previous_board)
 
 
 func move_character_to(position: Vector2) -> void:
@@ -91,6 +99,29 @@ func reset(next_initial_state: Dictionary = initial_state) -> void:
 
 func _get_default_state() -> Dictionary:
 	return {
+		&"board": {},
 		&"character": {},
 		&"character_position": Vector2.ZERO,
+	}
+
+
+func _create_board(cols: int, rows: int) -> Dictionary:
+	var cells: Array[Array] = []
+
+	for i in cols:
+		var col_cells: Array[Variant] = []
+
+		for j in rows:
+			col_cells.append({
+				&"i": i,
+				&"j": j,
+				&"entity": null,
+			})
+
+		cells.append(col_cells)
+
+	return {
+		&"cols": cols,
+		&"rows": rows,
+		&"cells": cells,
 	}

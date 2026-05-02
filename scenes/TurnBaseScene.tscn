@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scenes/data_flow/animation_tracker.gd" id="4_6wkyc"]
 [ext_resource type="PackedScene" path="res://scenes/debugger/Debugger.tscn" id="4_g6g8p"]
 [ext_resource type="PackedScene" path="res://scenes/visuals/CharacterScene.tscn" id="5_yl804"]
+[ext_resource type="Script" path="res://scenes/visuals/board_view.gd" id="6_50ciq"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
@@ -24,6 +25,10 @@ script = ExtResource("2_se3ji")
 script = ExtResource("4_6wkyc")
 
 [node name="View" type="Node2D" parent="." unique_id=1761761113]
+
+[node name="BoardView" type="Node2D" parent="View"]
+position = Vector2(160, 80)
+script = ExtResource("6_50ciq")
 
 [node name="CharacterView" parent="View" unique_id=2042754942 instance=ExtResource("5_yl804")]
 position = Vector2(160, 120)

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://qt8pkgogr5cg" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
 [ext_resource type="Script" uid="uid://cuyivrqypr5mt" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
 [ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
+[ext_resource type="Script" path="res://scenes/debugger/button_c.gd" id="4_r14ok"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -31,6 +32,16 @@ offset_bottom = 432.99997
 scale = Vector2(2.4857094, 3.2024686)
 text = "Button A"
 script = ExtResource("2_6cnuj")
+
+[node name="ButtonC" type="Button" parent="."]
+layout_mode = 0
+offset_left = 501.0
+offset_top = 401.0
+offset_right = 578.0
+offset_bottom = 432.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Button C"
+script = ExtResource("4_r14ok")
 
 [node name="ProcessingLabel" type="Label" parent="." unique_id=2013759462]
 layout_mode = 0
