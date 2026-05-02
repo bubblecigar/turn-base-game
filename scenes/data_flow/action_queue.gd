@@ -3,11 +3,13 @@ extends Node
 var _event_queue: Array[Dictionary] = []
 
 @onready var action_handler: Node = $"../ActionHandler"
+@onready var animation_tracker: Node = $"../AnimationTracker"
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	print('action queue ready');
+	animation_tracker.active_animations_changed.connect(_on_active_animations_changed)
 	pass # Replace with function body.
 
 
@@ -31,12 +33,17 @@ func _is_valid_event(event: Dictionary) -> bool:
 
 
 func consume_next() -> void:
-	if action_handler.is_consuming() or _event_queue.is_empty():
+	if action_handler.is_consuming() or animation_tracker.has_active_animations() or _event_queue.is_empty():
 		return
 
 	var event: Dictionary = _event_queue.pop_front()
 	await action_handler.consume(event)
 	consume_next()
+
+
+func _on_active_animations_changed(active_animation_ids: Array[StringName]) -> void:
+	if active_animation_ids.is_empty():
+		consume_next()
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

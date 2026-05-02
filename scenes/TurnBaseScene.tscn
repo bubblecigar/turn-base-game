@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scenes/data_flow/action_queue.gd" id="2_b6k6q"]
 [ext_resource type="Script" path="res://scenes/data_flow/state_store.gd" id="2_se3ji"]
 [ext_resource type="Script" path="res://scenes/data_flow/action_handler.gd" id="3_d8o6u"]
+[ext_resource type="Script" path="res://scenes/data_flow/animation_tracker.gd" id="4_6wkyc"]
 [ext_resource type="PackedScene" path="res://scenes/debugger/Debugger.tscn" id="4_g6g8p"]
 [ext_resource type="PackedScene" path="res://scenes/visuals/CharacterScene.tscn" id="5_yl804"]
 
@@ -18,6 +19,9 @@ script = ExtResource("3_d8o6u")
 
 [node name="StateStore" type="Node" parent="." unique_id=127998577]
 script = ExtResource("2_se3ji")
+
+[node name="AnimationTracker" type="Node" parent="." unique_id=608788233]
+script = ExtResource("4_6wkyc")
 
 [node name="View" type="Node2D" parent="." unique_id=1761761113]
 
