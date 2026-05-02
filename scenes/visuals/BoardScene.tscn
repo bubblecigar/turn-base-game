@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b0x40j6ngl3co"]
+
+[ext_resource type="Script" path="res://scenes/visuals/board_view.gd" id="1_5chx2"]
+
+[node name="BoardView" type="Node2D"]
+script = ExtResource("1_5chx2")
