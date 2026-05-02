@@ -27,7 +27,6 @@ var _walk_time := 0.0
 
 
 func _ready() -> void:
-	state_store.board_init.connect(_on_board_init)
 	state_store.character_initialized.connect(_on_character_initialized)
 	state_store.character_moved.connect(_on_character_moved)
 
@@ -46,11 +45,11 @@ func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -
 	_update_board_position()
 
 
-func _on_board_init(_board: Dictionary, _previous_board: Variant) -> void:
-	_update_board_position()
+func _on_character_moved(_next_position: Vector2, _previous_position: Variant) -> void:
+	var next_position := _get_board_position()
+	if next_position == Vector2.INF:
+		return
 
-
-func _on_character_moved(next_position: Vector2, _previous_position: Variant) -> void:
 	if _move_tween:
 		_move_tween.kill()
 		_consume_active_move_animation()
@@ -144,7 +143,16 @@ func _update_board_position() -> void:
 	if board_index == Vector2i(-1, -1):
 		return
 
-	position = board_view.position + board_view.index_to_position(board_index.x, board_index.y) - _character_size / 2.0
+	position = _get_board_position()
+
+
+func _get_board_position() -> Vector2:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var board_index := _get_character_board_index(board)
+	if board_index == Vector2i(-1, -1):
+		return Vector2.INF
+
+	return board_view.position + board_view.index_to_position(board_index.x, board_index.y) - _character_size / 2.0
 
 
 func _get_character_board_index(board: Dictionary) -> Vector2i:

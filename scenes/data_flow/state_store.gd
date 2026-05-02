@@ -8,6 +8,8 @@ signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal character_moved(position: Vector2, previous_position: Variant)
 
+const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
+
 @export var initial_state: Dictionary = {}
 
 var _state: Dictionary = _get_default_state()
@@ -54,9 +56,22 @@ func init_board(cols: int, rows: int) -> void:
 	board_init.emit(board, previous_board)
 
 
-func move_character_to(position: Vector2) -> void:
+func move_character_to(i: int, j: int) -> void:
+	var character: Dictionary = _state.get(&"character", {})
+	if character.is_empty():
+		push_warning("Cannot move character before character is spawned.")
+		return
+
+	var previous_board: Dictionary = _state.get(&"board", {})
+	var next_board := _move_character_on_board(character, i, j)
+	if next_board.is_empty():
+		return
+
 	var previous_position: Variant = _state.get(&"character_position")
+	var position := _board_index_to_position(i, j)
+	set_value(&"board", next_board)
 	set_value(&"character_position", position)
+	board_init.emit(next_board, previous_board)
 	character_moved.emit(position, previous_position)
 
 
@@ -146,6 +161,32 @@ func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
 	board_init.emit(next_board, previous_board)
 
 
+func _move_character_on_board(character: Dictionary, next_i: int, next_j: int) -> Dictionary:
+	var board: Dictionary = _state.get(&"board", {})
+	if board.is_empty():
+		push_warning("Cannot move character before board is spawned.")
+		return {}
+
+	if not _has_board_cell(board, next_i, next_j):
+		push_warning("Cannot move character outside board to (%d, %d)." % [next_i, next_j])
+		return {}
+
+	var next_board := board.duplicate(true)
+	var cells: Array = next_board[&"cells"]
+
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			if cell.get(&"entity") == character:
+				cell[&"entity"] = null
+
+	var next_cell: Dictionary = cells[next_i][next_j]
+	next_cell[&"entity"] = character
+	return next_board
+
+
 func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
 	return (
 		board.has(&"cells")
@@ -153,4 +194,11 @@ func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
 		and j >= 0
 		and i < int(board.get(&"cols", 0))
 		and j < int(board.get(&"rows", 0))
+	)
+
+
+func _board_index_to_position(i: int, j: int) -> Vector2:
+	return Vector2(
+		(float(i) + 0.5) * BOARD_CELL_SIZE.x,
+		(float(j) + 0.5) * BOARD_CELL_SIZE.y
 	)

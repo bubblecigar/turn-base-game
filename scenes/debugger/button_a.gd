@@ -1,11 +1,7 @@
 extends Button
 
-const MIN_CHARACTER_X := 0
-const MAX_CHARACTER_X := 800
-const MIN_CHARACTER_Y := 0
-const MAX_CHARACTER_Y := 360
-
 @onready var action_queue: Node = $"../../ActionQueue"
+@onready var state_store: Node = $"../../StateStore"
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -14,11 +10,16 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	if board.is_empty():
+		push_warning("Cannot move character before board is spawned.")
+		return
+
 	action_queue.enQueue({
 		"eventName": "move_character",
 		"payload": {
-			"x": randi_range(MIN_CHARACTER_X, MAX_CHARACTER_X),
-			"y": randi_range(MIN_CHARACTER_Y, MAX_CHARACTER_Y),
+			"i": randi_range(0, int(board.get(&"cols", 1)) - 1),
+			"j": randi_range(0, int(board.get(&"rows", 1)) - 1),
 		},
 	})
 

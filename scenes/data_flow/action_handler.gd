@@ -120,21 +120,22 @@ func _is_part_spec(spec: Variant) -> bool:
 
 
 func _move_character(payload: Dictionary) -> void:
-	if not _is_position_payload(payload):
-		push_warning('Invalid move_character payload. Expected { x: number, y: number }.')
+	if not _is_board_position_payload(payload):
+		push_warning('Invalid move_character payload. Expected { i: int, j: int }.')
 		return
 
-	var next_position := Vector2(float(payload["x"]), float(payload["y"]))
-	state_store.move_character_to(next_position)
-	print('moved character to: ', next_position)
+	var next_i := int(payload["i"])
+	var next_j := int(payload["j"])
+	state_store.move_character_to(next_i, next_j)
+	print('moved character to board cell: ', Vector2i(next_i, next_j))
 
 
-func _is_position_payload(payload: Dictionary) -> bool:
+func _is_board_position_payload(payload: Dictionary) -> bool:
 	return (
-		payload.has("x")
-		and payload.has("y")
-		and (typeof(payload["x"]) == TYPE_INT or typeof(payload["x"]) == TYPE_FLOAT)
-		and (typeof(payload["y"]) == TYPE_INT or typeof(payload["y"]) == TYPE_FLOAT)
+		payload.has("i")
+		and payload.has("j")
+		and typeof(payload["i"]) == TYPE_INT
+		and typeof(payload["j"]) == TYPE_INT
 	)
 
 
