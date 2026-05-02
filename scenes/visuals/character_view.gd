@@ -1,6 +1,6 @@
 extends Node2D
 
-const DRAW_SCALE := 5.0
+const DRAW_SCALE := 1.0
 const MOVE_ANIMATION_SECONDS := 1.75
 const MOVE_ANIMATION_NAME := &"character_move"
 const WALK_STEP_SECONDS := 0.35
