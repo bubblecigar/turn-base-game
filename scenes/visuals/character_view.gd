@@ -8,6 +8,7 @@ const WALK_ARM_SWING_DEGREES := 12.0
 const WALK_LEG_SWING_DEGREES := 10.0
 
 var _character_spec: Dictionary = {}
+var _character_size := Vector2.ZERO
 var _move_tween: Tween
 var _move_animation_id := &""
 var _is_walking := false
@@ -15,6 +16,7 @@ var _walk_time := 0.0
 
 @onready var state_store: Node = $"../../StateStore"
 @onready var animation_tracker: Node = $"../../AnimationTracker"
+@onready var board_view: Node = $"../BoardView"
 @onready var head: Node2D = $Head
 @onready var neck: Node2D = $Neck
 @onready var body: Node2D = $Body
@@ -25,6 +27,7 @@ var _walk_time := 0.0
 
 
 func _ready() -> void:
+	state_store.board_init.connect(_on_board_init)
 	state_store.character_initialized.connect(_on_character_initialized)
 	state_store.character_moved.connect(_on_character_moved)
 
@@ -40,6 +43,11 @@ func _process(delta: float) -> void:
 func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -> void:
 	_character_spec = spec
 	_update_parts()
+	_update_board_position()
+
+
+func _on_board_init(_board: Dictionary, _previous_board: Variant) -> void:
+	_update_board_position()
 
 
 func _on_character_moved(next_position: Vector2, _previous_position: Variant) -> void:
@@ -108,6 +116,7 @@ func _update_parts() -> void:
 		neck_size.x,
 		leg_size.x * 2.0
 	)
+	_character_size = Vector2(width, head_size.y + neck_size.y + body_size.y + leg_size.y)
 
 	head.position = Vector2((width - head_size.x) / 2.0, 0.0)
 	neck.position = Vector2((width - neck_size.x) / 2.0, head_size.y)
@@ -124,6 +133,34 @@ func _update_parts() -> void:
 	right_arm.set_part(arm_size, Color.GOLDENROD)
 	left_leg.set_part(leg_size, Color.INDIAN_RED)
 	right_leg.set_part(leg_size, Color.INDIAN_RED)
+
+
+func _update_board_position() -> void:
+	if _character_spec.is_empty():
+		return
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var board_index := _get_character_board_index(board)
+	if board_index == Vector2i(-1, -1):
+		return
+
+	position = board_view.position + board_view.index_to_position(board_index.x, board_index.y) - _character_size / 2.0
+
+
+func _get_character_board_index(board: Dictionary) -> Vector2i:
+	if board.is_empty() or not board.has(&"cells"):
+		return Vector2i(-1, -1)
+
+	var cells: Array = board[&"cells"]
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			if cell.get(&"entity") == _character_spec:
+				return Vector2i(i, j)
+
+	return Vector2i(-1, -1)
 
 
 func _get_head_size(spec: Dictionary) -> Vector2:

@@ -19,6 +19,13 @@ func _on_board_init(board: Dictionary, _previous_board: Variant) -> void:
 	queue_redraw()
 
 
+func index_to_position(i: int, j: int) -> Vector2:
+	return Vector2(
+		(float(i) + 0.5) * CELL_SIZE.x,
+		(float(j) + 0.5) * CELL_SIZE.y
+	)
+
+
 func _draw() -> void:
 	if _board.is_empty():
 		return

@@ -43,6 +43,7 @@ func set_value(key: StringName, value: Variant) -> void:
 func init_character(character: Dictionary) -> void:
 	var previous_character: Variant = _state.get(&"character")
 	set_value(&"character", character)
+	_place_character_on_board(character, 0, 0)
 	character_initialized.emit(character, previous_character)
 
 
@@ -125,3 +126,31 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 		&"rows": rows,
 		&"cells": cells,
 	}
+
+
+func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
+	var board: Dictionary = _state.get(&"board", {})
+	if board.is_empty():
+		return
+
+	if not _has_board_cell(board, i, j):
+		push_warning("Cannot place character outside board at (%d, %d)." % [i, j])
+		return
+
+	var previous_board: Dictionary = board
+	var next_board := board.duplicate(true)
+	var cells: Array = next_board[&"cells"]
+	var cell: Dictionary = cells[i][j]
+	cell[&"entity"] = character
+	set_value(&"board", next_board)
+	board_init.emit(next_board, previous_board)
+
+
+func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
+	return (
+		board.has(&"cells")
+		and i >= 0
+		and j >= 0
+		and i < int(board.get(&"cols", 0))
+		and j < int(board.get(&"rows", 0))
+	)
