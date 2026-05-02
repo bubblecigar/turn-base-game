@@ -13,6 +13,7 @@ const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 @export var initial_state: Dictionary = {}
 
 var _state: Dictionary = _get_default_state()
+var _character_index := 0
 
 
 func _ready() -> void:
@@ -44,9 +45,11 @@ func set_value(key: StringName, value: Variant) -> void:
 
 func init_character(character: Dictionary) -> void:
 	var previous_character: Variant = _state.get(&"character")
-	set_value(&"character", character)
-	_place_character_on_board(character, 0, 0)
-	character_initialized.emit(character, previous_character)
+	var next_character := character.duplicate(true)
+	next_character[&"id"] = _create_character_id()
+	set_value(&"character", next_character)
+	_place_character_on_board(next_character, 0, 0)
+	character_initialized.emit(next_character, previous_character)
 
 
 func init_board(cols: int, rows: int) -> void:
@@ -105,6 +108,7 @@ func erase_value(key: StringName) -> void:
 
 
 func reset(next_initial_state: Dictionary = initial_state) -> void:
+	_character_index = 0
 	_state = _get_default_state()
 
 	for key: Variant in next_initial_state:
@@ -144,6 +148,11 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 	}
 
 
+func _create_character_id() -> StringName:
+	_character_index += 1
+	return StringName("character_%d" % _character_index)
+
+
 func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
 	var board: Dictionary = _state.get(&"board", {})
 	if board.is_empty():
@@ -180,12 +189,19 @@ func _move_character_on_board(character: Dictionary, next_i: int, next_j: int) -
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if cell.get(&"entity") == character:
+			if _is_same_entity(cell.get(&"entity"), character):
 				cell[&"entity"] = null
 
 	var next_cell: Dictionary = cells[next_i][next_j]
 	next_cell[&"entity"] = character
 	return next_board
+
+
+func _is_same_entity(entity: Variant, character: Dictionary) -> bool:
+	return (
+		entity is Dictionary
+		and entity.get(&"id", &"") == character.get(&"id", &"")
+	)
 
 
 func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:

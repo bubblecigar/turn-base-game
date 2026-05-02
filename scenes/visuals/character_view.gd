@@ -18,6 +18,7 @@ var _walk_time := 0.0
 @onready var animation_tracker: Node = $"../../AnimationTracker"
 @onready var board_view: Node = $"../BoardView"
 @onready var head: Node2D = $Head
+@onready var head_label: Label = $Head/IdLabel
 @onready var neck: Node2D = $Neck
 @onready var body: Node2D = $Body
 @onready var left_arm: Node2D = $LeftArm
@@ -118,6 +119,9 @@ func _update_parts() -> void:
 	_character_size = Vector2(width, head_size.y + neck_size.y + body_size.y + leg_size.y)
 
 	head.position = Vector2((width - head_size.x) / 2.0, 0.0)
+	head_label.text = str(_character_spec.get(&"id", ""))
+	head_label.position = Vector2.ZERO
+	head_label.size = head_size
 	neck.position = Vector2((width - neck_size.x) / 2.0, head_size.y)
 	body.position = Vector2((width - body_size.x) / 2.0, head_size.y + neck_size.y)
 	left_arm.position = Vector2(0.0, body.position.y + body_size.y * 0.05)
@@ -165,10 +169,17 @@ func _get_character_board_index(board: Dictionary) -> Vector2i:
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if cell.get(&"entity") == _character_spec:
+			if _is_same_character_entity(cell.get(&"entity")):
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
+
+
+func _is_same_character_entity(entity: Variant) -> bool:
+	return (
+		entity is Dictionary
+		and entity.get(&"id", &"") == _character_spec.get(&"id", &"")
+	)
 
 
 func _get_head_size(spec: Dictionary) -> Vector2:
