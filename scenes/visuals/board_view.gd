@@ -1,6 +1,5 @@
 extends Node2D
 
-const CELL_SIZE := Vector2(72.0, 72.0)
 const GRID_COLOR := Color(0.2, 0.2, 0.2)
 const FILL_COLOR := Color(0.92, 0.94, 0.96)
 const LINE_WIDTH := 2.0
@@ -20,16 +19,20 @@ func _on_board_init(board: Dictionary, _previous_board: Variant) -> void:
 
 
 func index_to_position(i: int, j: int) -> Vector2:
+	var cell_size := _get_cell_size()
+
 	return Vector2(
-		(float(i) + 0.5) * CELL_SIZE.x,
-		(float(j) + 0.5) * CELL_SIZE.y
+		(float(i) + 0.5) * cell_size.x,
+		(float(j) + 0.5) * cell_size.y
 	)
 
 
 func index_to_bottom_position(i: int, j: int) -> Vector2:
+	var cell_size := _get_cell_size()
+
 	return Vector2(
-		(float(i) + 0.5) * CELL_SIZE.x,
-		(float(j) + 1.0) * CELL_SIZE.y
+		(float(i) + 0.5) * cell_size.x,
+		(float(j) + 1.0) * cell_size.y
 	)
 
 
@@ -43,13 +46,18 @@ func _draw() -> void:
 	if cols <= 0 or rows <= 0:
 		return
 
-	var board_size := Vector2(cols * CELL_SIZE.x, rows * CELL_SIZE.y)
+	var cell_size := _get_cell_size()
+	var board_size := Vector2(cols * cell_size.x, rows * cell_size.y)
 	draw_rect(Rect2(Vector2.ZERO, board_size), FILL_COLOR, true)
 
 	for i in cols + 1:
-		var x := i * CELL_SIZE.x
+		var x := i * cell_size.x
 		draw_line(Vector2(x, 0.0), Vector2(x, board_size.y), GRID_COLOR, LINE_WIDTH)
 
 	for j in rows + 1:
-		var y := j * CELL_SIZE.y
+		var y := j * cell_size.y
 		draw_line(Vector2(0.0, y), Vector2(board_size.x, y), GRID_COLOR, LINE_WIDTH)
+
+
+func _get_cell_size() -> Vector2:
+	return _board.get(&"cell_size", Vector2.ZERO)

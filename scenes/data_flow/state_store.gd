@@ -139,6 +139,7 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 	return {
 		&"cols": cols,
 		&"rows": rows,
+		&"cell_size": BOARD_CELL_SIZE,
 		&"cells": cells,
 	}
 
@@ -198,7 +199,10 @@ func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
 
 
 func _board_index_to_position(i: int, j: int) -> Vector2:
+	var board: Dictionary = _state.get(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", BOARD_CELL_SIZE)
+
 	return Vector2(
-		(float(i) + 0.5) * BOARD_CELL_SIZE.x,
-		(float(j) + 0.5) * BOARD_CELL_SIZE.y
+		(float(i) + 0.5) * cell_size.x,
+		(float(j) + 0.5) * cell_size.y
 	)
