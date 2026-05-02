@@ -66,14 +66,13 @@ func move_character_to(i: int, j: int) -> void:
 		return
 
 	var previous_board: Dictionary = _state.get(&"board", {})
+	var previous_position: Variant = _get_character_position(character)
 	var next_board := _move_character_on_board(character, i, j)
 	if next_board.is_empty():
 		return
 
-	var previous_position: Variant = _state.get(&"character_position")
 	var position := _board_index_to_position(i, j)
 	set_value(&"board", next_board)
-	set_value(&"character_position", position)
 	board_init.emit(next_board, previous_board)
 	character_moved.emit(position, previous_position)
 
@@ -121,7 +120,6 @@ func _get_default_state() -> Dictionary:
 	return {
 		&"board": {},
 		&"character": {},
-		&"character_position": Vector2.ZERO,
 	}
 
 
@@ -195,6 +193,31 @@ func _move_character_on_board(character: Dictionary, next_i: int, next_j: int) -
 	var next_cell: Dictionary = cells[next_i][next_j]
 	next_cell[&"entity"] = character
 	return next_board
+
+
+func _get_character_position(character: Dictionary) -> Variant:
+	var board: Dictionary = _state.get(&"board", {})
+	var board_index := _get_character_board_index(board, character)
+	if board_index == Vector2i(-1, -1):
+		return null
+
+	return _board_index_to_position(board_index.x, board_index.y)
+
+
+func _get_character_board_index(board: Dictionary, character: Dictionary) -> Vector2i:
+	if board.is_empty() or not board.has(&"cells"):
+		return Vector2i(-1, -1)
+
+	var cells: Array = board[&"cells"]
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			if _is_same_entity(cell.get(&"entity"), character):
+				return Vector2i(i, j)
+
+	return Vector2i(-1, -1)
 
 
 func _is_same_entity(entity: Variant, character: Dictionary) -> bool:
