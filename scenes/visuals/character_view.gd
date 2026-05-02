@@ -3,10 +3,15 @@ extends Node2D
 const DRAW_SCALE := 5.0
 const MOVE_ANIMATION_SECONDS := 1.75
 const MOVE_ANIMATION_NAME := &"character_move"
+const WALK_STEP_SECONDS := 0.35
+const WALK_ARM_SWING_DEGREES := 12.0
+const WALK_LEG_SWING_DEGREES := 10.0
 
 var _character_spec: Dictionary = {}
 var _move_tween: Tween
 var _move_animation_id := &""
+var _is_walking := false
+var _walk_time := 0.0
 
 @onready var state_store: Node = $"../../StateStore"
 @onready var animation_tracker: Node = $"../../AnimationTracker"
@@ -22,6 +27,14 @@ var _move_animation_id := &""
 func _ready() -> void:
 	state_store.character_initialized.connect(_on_character_initialized)
 	state_store.character_moved.connect(_on_character_moved)
+
+
+func _process(delta: float) -> void:
+	if not _is_walking:
+		return
+
+	_walk_time += delta
+	_set_walk_pose(sin(_walk_time * TAU / WALK_STEP_SECONDS))
 
 
 func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -> void:
@@ -41,6 +54,7 @@ func _on_character_moved(next_position: Vector2, _previous_position: Variant) ->
 	_move_tween.set_ease(Tween.EASE_IN_OUT)
 	_move_tween.tween_property(self, "position", next_position, MOVE_ANIMATION_SECONDS)
 	_move_tween.finished.connect(_on_move_tween_finished.bind(animation_id))
+	_start_walk_animation()
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:
@@ -49,6 +63,7 @@ func _on_move_tween_finished(animation_id: StringName) -> void:
 	if _move_animation_id == animation_id:
 		_move_animation_id = &""
 		_move_tween = null
+		_stop_walk_animation()
 
 
 func _consume_active_move_animation() -> void:
@@ -57,6 +72,25 @@ func _consume_active_move_animation() -> void:
 
 	animation_tracker.consume_animation(_move_animation_id)
 	_move_animation_id = &""
+	_stop_walk_animation()
+
+
+func _start_walk_animation() -> void:
+	_stop_walk_animation()
+	_is_walking = true
+
+
+func _stop_walk_animation() -> void:
+	_is_walking = false
+	_walk_time = 0.0
+	_set_walk_pose(0.0)
+
+
+func _set_walk_pose(direction: float) -> void:
+	left_arm.rotation_degrees = WALK_ARM_SWING_DEGREES * direction
+	right_arm.rotation_degrees = -WALK_ARM_SWING_DEGREES * direction
+	left_leg.rotation_degrees = -WALK_LEG_SWING_DEGREES * direction
+	right_leg.rotation_degrees = WALK_LEG_SWING_DEGREES * direction
 
 
 func _update_parts() -> void:
