@@ -152,7 +152,7 @@ func _get_board_position() -> Vector2:
 	if board_index == Vector2i(-1, -1):
 		return Vector2.INF
 
-	return board_view.position + board_view.index_to_position(board_index.x, board_index.y) - _character_size / 2.0
+	return board_view.position + board_view.index_to_bottom_position(board_index.x, board_index.y) - Vector2(_character_size.x / 2.0, _character_size.y)
 
 
 func _get_character_board_index(board: Dictionary) -> Vector2i:

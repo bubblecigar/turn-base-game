@@ -26,6 +26,13 @@ func index_to_position(i: int, j: int) -> Vector2:
 	)
 
 
+func index_to_bottom_position(i: int, j: int) -> Vector2:
+	return Vector2(
+		(float(i) + 0.5) * CELL_SIZE.x,
+		(float(j) + 1.0) * CELL_SIZE.y
+	)
+
+
 func _draw() -> void:
 	if _board.is_empty():
 		return
