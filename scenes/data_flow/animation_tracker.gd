@@ -7,16 +7,17 @@ signal animation_consumed(animation_id: StringName)
 signal active_animations_changed(animation_ids: Array[StringName])
 
 var _active_animation_ids: Dictionary = {}
+var _animation_index := 0
 
 
-func register_animation(animation_id: StringName) -> void:
-	if _active_animation_ids.has(animation_id):
-		return
+func register_animation(animation_name: StringName) -> StringName:
+	var animation_id := _create_animation_id(animation_name)
 
 	print("animation start: ", animation_id)
 	_active_animation_ids[animation_id] = true
 	animation_registered.emit(animation_id)
 	active_animations_changed.emit(get_active_animation_ids())
+	return animation_id
 
 
 func consume_animation(animation_id: StringName) -> void:
@@ -44,3 +45,8 @@ func get_active_animation_ids() -> Array[StringName]:
 		animation_ids.append(animation_id)
 
 	return animation_ids
+
+
+func _create_animation_id(animation_name: StringName) -> StringName:
+	_animation_index += 1
+	return StringName("%s_%d" % [animation_name, _animation_index])

@@ -2,12 +2,11 @@ extends Node2D
 
 const DRAW_SCALE := 5.0
 const MOVE_ANIMATION_SECONDS := 1.75
-const MOVE_ANIMATION_ID_PREFIX := "character_move"
+const MOVE_ANIMATION_NAME := &"character_move"
 
 var _character_spec: Dictionary = {}
 var _move_tween: Tween
 var _move_animation_id := &""
-var _move_animation_index := 0
 
 @onready var state_store: Node = $"../../StateStore"
 @onready var animation_tracker: Node = $"../../AnimationTracker"
@@ -35,9 +34,8 @@ func _on_character_moved(next_position: Vector2, _previous_position: Variant) ->
 		_move_tween.kill()
 		_consume_active_move_animation()
 
-	var animation_id := _create_move_animation_id()
+	var animation_id: StringName = animation_tracker.register_animation(MOVE_ANIMATION_NAME)
 	_move_animation_id = animation_id
-	animation_tracker.register_animation(animation_id)
 	_move_tween = create_tween()
 	_move_tween.set_trans(Tween.TRANS_SINE)
 	_move_tween.set_ease(Tween.EASE_IN_OUT)
@@ -51,11 +49,6 @@ func _on_move_tween_finished(animation_id: StringName) -> void:
 	if _move_animation_id == animation_id:
 		_move_animation_id = &""
 		_move_tween = null
-
-
-func _create_move_animation_id() -> StringName:
-	_move_animation_index += 1
-	return StringName("%s_%d" % [MOVE_ANIMATION_ID_PREFIX, _move_animation_index])
 
 
 func _consume_active_move_animation() -> void:
