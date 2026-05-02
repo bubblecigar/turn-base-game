@@ -1,8 +1,10 @@
 extends Node2D
 
 const DRAW_SCALE := 5.0
+const MOVE_ANIMATION_SECONDS := 0.35
 
 var _character_spec: Dictionary = {}
+var _move_tween: Tween
 
 @onready var state_store: Node = $"../../StateStore"
 @onready var head: Node2D = $Head
@@ -25,7 +27,13 @@ func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -
 
 
 func _on_character_moved(next_position: Vector2, _previous_position: Variant) -> void:
-	position = next_position
+	if _move_tween:
+		_move_tween.kill()
+
+	_move_tween = create_tween()
+	_move_tween.set_trans(Tween.TRANS_SINE)
+	_move_tween.set_ease(Tween.EASE_IN_OUT)
+	_move_tween.tween_property(self, "position", next_position, MOVE_ANIMATION_SECONDS)
 
 
 func _update_parts() -> void:
