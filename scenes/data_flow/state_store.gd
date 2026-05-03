@@ -46,16 +46,19 @@ func set_value(key: StringName, value: Variant) -> void:
 	state_changed.emit(get_state())
 
 
-func init_character(character: Dictionary) -> void:
+func init_entity(entity_type: StringName, spec: Dictionary) -> void:
 	var previous_character: Variant = {}
 	if _character_index > 0:
 		previous_character = _get_entity(StringName("character_%d" % _character_index))
 
-	var next_character := character.duplicate(true)
-	next_character[&"id"] = _create_character_id()
-	_set_entity(next_character)
-	_place_character_on_board(next_character, 0, 0)
-	character_initialized.emit(next_character, previous_character)
+	var next_entity := {
+		&"id": _create_entity_id(entity_type),
+		&"type": entity_type,
+		&"spec": spec.duplicate(true),
+	}
+	_set_entity(next_entity)
+	_place_entity_on_board(next_entity, 0, 0)
+	character_initialized.emit(next_entity, previous_character)
 
 
 func init_board(cols: int, rows: int) -> void:
@@ -154,9 +157,9 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 	}
 
 
-func _create_character_id() -> StringName:
+func _create_entity_id(entity_type: StringName) -> StringName:
 	_character_index += 1
-	return StringName("character_%d" % _character_index)
+	return StringName("%s_%d" % [entity_type, _character_index])
 
 
 func _set_entity(entity: Dictionary) -> void:
@@ -178,20 +181,20 @@ func _get_entity(entity_id: StringName) -> Dictionary:
 	return entities.get(entity_id, {})
 
 
-func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
+func _place_entity_on_board(entity: Dictionary, i: int, j: int) -> void:
 	var board: Dictionary = _state.get(&"board", {})
 	if board.is_empty():
 		return
 
 	if not _has_board_cell(board, i, j):
-		push_warning("Cannot place character outside board at (%d, %d)." % [i, j])
+		push_warning("Cannot place entity outside board at (%d, %d)." % [i, j])
 		return
 
 	var previous_board: Dictionary = board
 	var next_board := board.duplicate(true)
 	var cells: Array = next_board[&"cells"]
 	var cell: Dictionary = cells[i][j]
-	cell[&"entity"] = character
+	cell[&"entity"] = entity
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
 

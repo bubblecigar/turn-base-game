@@ -21,10 +21,18 @@ func sync_entities(entities: Dictionary) -> void:
 		if _entity_views.has(entity_id):
 			continue
 
-		var character_view: Node2D = CHARACTER_SCENE.instantiate()
-		character_view.set_entity_id(entity_id)
-		add_child(character_view)
-		_entity_views[entity_id] = character_view
+		var entity: Variant = entities[entity_id]
+		if not entity is Dictionary:
+			continue
+
+		var entity_scene: PackedScene = _get_entity_scene(entity)
+		if entity_scene == null:
+			continue
+
+		var entity_view: Node2D = entity_scene.instantiate()
+		entity_view.set_entity_id(entity_id)
+		add_child(entity_view)
+		_entity_views[entity_id] = entity_view
 
 	var removed_entity_ids: Array = []
 	for entity_id: Variant in _entity_views:
@@ -36,3 +44,12 @@ func sync_entities(entities: Dictionary) -> void:
 		_entity_views.erase(entity_id)
 		remove_child(character_view)
 		character_view.queue_free()
+
+
+func _get_entity_scene(entity: Dictionary) -> PackedScene:
+	match entity.get(&"type", &""):
+		&"character":
+			return CHARACTER_SCENE
+		_:
+			push_warning("Unsupported entity type: %s." % entity.get(&"type", &""))
+			return null

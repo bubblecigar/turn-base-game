@@ -49,8 +49,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 	match event['eventName']:
 		'spawn_board':
 			_init_board(event['payload'])
-		'spawn_character':
-			_init_character(event['payload'])
+		'spawn_entity':
+			_spawn_entity(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
 		'debugger_button_pressed':
@@ -59,10 +59,20 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			push_warning('Unhandled consumed event: %s' % event['eventName'])
 
 
-func _init_character(payload: Dictionary) -> void:
-	var character_state := payload.duplicate(true) if _is_character_spec(payload) else _random_character_spec()
-	state_store.init_character(character_state)
-	print('initialized character: ', character_state)
+func _spawn_entity(payload: Dictionary) -> void:
+	if not _is_spawn_entity_payload(payload):
+		push_warning('Invalid spawn_entity payload. Expected { type: String, spec: Dictionary }.')
+		return
+
+	var entity_type := StringName(str(payload["type"]))
+	var entity_spec: Dictionary = payload["spec"]
+
+	if entity_type == &"character" and not _is_character_spec(entity_spec):
+		push_warning('Invalid character entity spec.')
+		return
+
+	state_store.init_entity(entity_type, entity_spec)
+	print('spawned entity: ', entity_type, ' ', entity_spec)
 
 
 func _init_board(payload: Dictionary) -> void:
@@ -108,6 +118,15 @@ func _is_character_spec(spec: Dictionary) -> bool:
 		and _is_part_spec(spec.get("body", {}))
 		and _is_part_spec(spec.get("arms", {}))
 		and _is_part_spec(spec.get("legs", {}))
+	)
+
+
+func _is_spawn_entity_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("type")
+		and payload.has("spec")
+		and (typeof(payload["type"]) == TYPE_STRING or typeof(payload["type"]) == TYPE_STRING_NAME)
+		and payload["spec"] is Dictionary
 	)
 
 

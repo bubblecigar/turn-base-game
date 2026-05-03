@@ -9,8 +9,11 @@ func _ready() -> void:
 
 func _on_pressed() -> void:
 	action_queue.enQueue({
-		"eventName": "spawn_character",
-		"payload": _get_character_spec(),
+		"eventName": "spawn_entity",
+		"payload": {
+			"type": "character",
+			"spec": _get_character_spec(),
+		},
 	})
 
 

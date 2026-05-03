@@ -31,7 +31,8 @@ func _set_move_pose(direction: float) -> void:
 	right_leg.rotation_degrees = WALK_LEG_SWING_DEGREES * direction
 
 
-func _update_parts(character_spec: Dictionary) -> void:
+func _update_parts(entity_state: Dictionary) -> void:
+	var character_spec: Dictionary = entity_state.get(&"spec", {})
 	if character_spec.is_empty():
 		return
 
@@ -49,7 +50,7 @@ func _update_parts(character_spec: Dictionary) -> void:
 	_character_size = Vector2(width, head_size.y + neck_size.y + body_size.y + leg_size.y)
 
 	head.position = Vector2((width - head_size.x) / 2.0, 0.0)
-	head_label.text = str(character_spec.get(&"id", ""))
+	head_label.text = str(entity_state.get(&"id", ""))
 	head_label.position = Vector2.ZERO
 	head_label.size = head_size
 	neck.position = Vector2((width - neck_size.x) / 2.0, head_size.y)
