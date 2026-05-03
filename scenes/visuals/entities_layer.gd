@@ -1,6 +1,7 @@
 extends Node2D
 
 const CHARACTER_SCENE := preload("res://scenes/visuals/CharacterScene.tscn")
+const SLIME_SCENE := preload("res://scenes/visuals/SlimeScene.tscn")
 
 @onready var state_store: Node = $"../../StateStore"
 
@@ -50,6 +51,8 @@ func _get_entity_scene(entity: Dictionary) -> PackedScene:
 	match entity.get(&"type", &""):
 		&"character":
 			return CHARACTER_SCENE
+		&"slime":
+			return SLIME_SCENE
 		_:
 			push_warning("Unsupported entity type: %s." % entity.get(&"type", &""))
 			return null
