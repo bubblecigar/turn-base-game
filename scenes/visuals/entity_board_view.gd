@@ -61,10 +61,6 @@ func _set_move_pose(_direction: float) -> void:
 	pass
 
 
-func _should_handle_move_signal() -> bool:
-	return _is_latest_entity()
-
-
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
 	if _entity_id == &"" or not entities.has(_entity_id):
 		return
@@ -83,8 +79,8 @@ func _on_board_init(board: Dictionary, previous_board: Variant) -> void:
 	_update_board_position()
 
 
-func _on_entity_moved(_next_position: Vector2, _previous_position: Variant) -> void:
-	if animation_tracker == null or _entity_id == &"" or not _should_handle_move_signal():
+func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_position: Variant) -> void:
+	if animation_tracker == null or _entity_id == &"" or entity_id != _entity_id:
 		return
 
 	var next_position := _get_board_position()
@@ -194,16 +190,6 @@ func _is_same_entity(entity_state: Variant) -> bool:
 		entity_state is Dictionary
 		and entity_state.get(&"id", &"") == _entity_id
 	)
-
-
-func _is_latest_entity() -> bool:
-	var entities: Dictionary = state_store.get_value(&"entities", {})
-	var latest_entity_id := &""
-
-	for entity_id: Variant in entities:
-		latest_entity_id = entity_id
-
-	return latest_entity_id == _entity_id
 
 
 func _find_node_in_ancestors(node_name: StringName) -> Node:

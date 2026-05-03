@@ -7,7 +7,7 @@ signal value_changed(key: StringName, value: Variant, previous_value: Variant)
 signal entities_updated(entities: Dictionary, previous_entities: Variant)
 signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
-signal character_moved(position: Vector2, previous_position: Variant)
+signal character_moved(character_id: StringName, position: Vector2, previous_position: Variant)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -47,7 +47,10 @@ func set_value(key: StringName, value: Variant) -> void:
 
 
 func init_character(character: Dictionary) -> void:
-	var previous_character: Variant = _get_latest_character()
+	var previous_character: Variant = {}
+	if _character_index > 0:
+		previous_character = _get_entity(StringName("character_%d" % _character_index))
+
 	var next_character := character.duplicate(true)
 	next_character[&"id"] = _create_character_id()
 	_set_entity(next_character)
@@ -62,10 +65,10 @@ func init_board(cols: int, rows: int) -> void:
 	board_init.emit(board, previous_board)
 
 
-func move_character_to(i: int, j: int) -> void:
-	var character := _get_latest_character()
+func move_character_to(character_id: StringName, i: int, j: int) -> void:
+	var character := _get_entity(character_id)
 	if character.is_empty():
-		push_warning("Cannot move character before character is spawned.")
+		push_warning("Cannot move missing character: %s." % character_id)
 		return
 
 	var previous_board: Dictionary = _state.get(&"board", {})
@@ -77,7 +80,7 @@ func move_character_to(i: int, j: int) -> void:
 	var position := _board_index_to_position(i, j)
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
-	character_moved.emit(position, previous_position)
+	character_moved.emit(character.get(&"id", &""), position, previous_position)
 
 
 func patch(values: Dictionary) -> void:
@@ -170,13 +173,9 @@ func _set_entity(entity: Dictionary) -> void:
 	print('entities: ', _state.get(&"entities", {}))
 
 
-func _get_latest_character() -> Dictionary:
-	if _character_index <= 0:
-		return {}
-
+func _get_entity(entity_id: StringName) -> Dictionary:
 	var entities: Dictionary = _state.get(&"entities", {})
-	var character_id := StringName("character_%d" % _character_index)
-	return entities.get(character_id, {})
+	return entities.get(entity_id, {})
 
 
 func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:

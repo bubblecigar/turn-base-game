@@ -15,13 +15,29 @@ func _on_pressed() -> void:
 		push_warning("Cannot move character before board is spawned.")
 		return
 
+	var character_id := _get_latest_entity_id()
+	if character_id == &"":
+		push_warning("Cannot move character before character is spawned.")
+		return
+
 	action_queue.enQueue({
 		"eventName": "move_character",
 		"payload": {
+			"id": character_id,
 			"i": randi_range(0, int(board.get(&"cols", 1)) - 1),
 			"j": randi_range(0, int(board.get(&"rows", 1)) - 1),
 		},
 	})
+
+
+func _get_latest_entity_id() -> StringName:
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	var latest_entity_id := &""
+
+	for entity_id: Variant in entities:
+		latest_entity_id = entity_id
+
+	return latest_entity_id
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
