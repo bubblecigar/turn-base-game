@@ -1,4 +1,4 @@
-extends "res://scenes/visuals/entity_board_view.gd"
+extends "res://scenes/visuals/entity_base.gd"
 
 const DRAW_SCALE := 1.0
 const WALK_ARM_SWING_DEGREES := 12.0
