@@ -7,6 +7,7 @@ const WALK_STEP_SECONDS := 0.35
 const WALK_ARM_SWING_DEGREES := 12.0
 const WALK_LEG_SWING_DEGREES := 10.0
 
+var _entity_id := &""
 var _character_spec: Dictionary = {}
 var _character_size := Vector2.ZERO
 var _move_tween: Tween
@@ -14,9 +15,9 @@ var _move_animation_id := &""
 var _is_walking := false
 var _walk_time := 0.0
 
-@onready var state_store: Node = get_node_or_null("../../StateStore")
-@onready var animation_tracker: Node = get_node_or_null("../../AnimationTracker")
-@onready var board_view: Node = get_node_or_null("../BoardView")
+@onready var state_store: Node = _find_node_in_ancestors(&"StateStore")
+@onready var animation_tracker: Node = _find_node_in_ancestors(&"AnimationTracker")
+@onready var board_view: Node = _find_node_in_ancestors(&"BoardView")
 @onready var head: Node2D = $Head
 @onready var head_label: Label = $Head/IdLabel
 @onready var neck: Node2D = $Neck
@@ -31,8 +32,11 @@ func _ready() -> void:
 	if state_store == null:
 		return
 
+	state_store.entities_updated.connect(_on_entities_updated)
+	state_store.board_init.connect(_on_board_init)
 	state_store.character_initialized.connect(_on_character_initialized)
 	state_store.character_moved.connect(_on_character_moved)
+	_refresh_from_state()
 
 
 func _process(delta: float) -> void:
@@ -44,21 +48,38 @@ func _process(delta: float) -> void:
 
 
 func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -> void:
-	set_character_spec(spec)
+	if _entity_id != &"" and spec.get(&"id", &"") != _entity_id:
+		return
+
+	_set_character_spec(spec)
 	_update_board_position()
 
 
-func set_character_spec(spec: Dictionary) -> void:
-	_character_spec = spec
-	_update_parts()
+func set_entity_id(entity_id: Variant) -> void:
+	_entity_id = StringName(str(entity_id))
+	_refresh_from_state()
 
 
-func get_character_size() -> Vector2:
-	return _character_size
+func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
+	if _entity_id == &"" or not entities.has(_entity_id):
+		return
+
+	_set_character_spec(entities[_entity_id])
+	_update_board_position()
+
+
+func _on_board_init(board: Dictionary, previous_board: Variant) -> void:
+	if previous_board is Dictionary:
+		var previous_index := _get_character_board_index(previous_board)
+		var next_index := _get_character_board_index(board)
+		if previous_index != Vector2i(-1, -1) and next_index != Vector2i(-1, -1) and previous_index != next_index:
+			return
+
+	_update_board_position()
 
 
 func _on_character_moved(_next_position: Vector2, _previous_position: Variant) -> void:
-	if animation_tracker == null:
+	if animation_tracker == null or _entity_id == &"" or not _is_latest_character():
 		return
 
 	var next_position := _get_board_position()
@@ -195,8 +216,46 @@ func _get_character_board_index(board: Dictionary) -> Vector2i:
 func _is_same_character_entity(entity: Variant) -> bool:
 	return (
 		entity is Dictionary
-		and entity.get(&"id", &"") == _character_spec.get(&"id", &"")
+		and entity.get(&"id", &"") == _entity_id
 	)
+
+
+func _refresh_from_state() -> void:
+	if state_store == null or _entity_id == &"":
+		return
+
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	if not entities.has(_entity_id):
+		return
+
+	_set_character_spec(entities[_entity_id])
+	_update_board_position()
+
+
+func _set_character_spec(spec: Dictionary) -> void:
+	_character_spec = spec
+	_update_parts()
+
+
+func _is_latest_character() -> bool:
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	var latest_entity_id := &""
+
+	for entity_id: Variant in entities:
+		latest_entity_id = entity_id
+
+	return latest_entity_id == _entity_id
+
+
+func _find_node_in_ancestors(node_name: StringName) -> Node:
+	var current_node: Node = self
+	while current_node != null:
+		if current_node.has_node(NodePath(node_name)):
+			return current_node.get_node(NodePath(node_name))
+
+		current_node = current_node.get_parent()
+
+	return null
 
 
 func _get_head_size(spec: Dictionary) -> Vector2:
