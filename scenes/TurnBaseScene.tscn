@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://w51f3o3ssfcn" path="res://scenes/visuals/CharacterScene.tscn" id="5_yl804"]
 [ext_resource type="PackedScene" uid="uid://b0x40j6ngl3co" path="res://scenes/visuals/BoardScene.tscn" id="6_vcus8"]
 [ext_resource type="Script" path="res://scenes/visuals/entities_layer.gd" id="7_l81iu"]
+[ext_resource type="Script" path="res://scenes/stage_control/stage_controller.gd" id="8_stctl"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
@@ -32,5 +33,8 @@ position = Vector2(160, 80)
 
 [node name="EntitiesLayer" type="Node2D" parent="View" unique_id=301278140]
 script = ExtResource("7_l81iu")
+
+[node name="StageController" type="Node" parent="."]
+script = ExtResource("8_stctl")
 
 [node name="Debugger" parent="." unique_id=1751775065 instance=ExtResource("4_g6g8p")]
