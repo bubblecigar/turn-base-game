@@ -4,9 +4,10 @@ class_name StateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
+signal entities_updated(entities: Dictionary, previous_entities: Variant)
 signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
-signal character_moved(position: Vector2, previous_position: Variant)
+signal entity_moved(entity_id: StringName, position: Vector2, previous_position: Variant)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -40,11 +41,16 @@ func set_value(key: StringName, value: Variant) -> void:
 
 	_state[key] = value
 	value_changed.emit(key, value, previous_value)
+	if key == &"entities" and value is Dictionary:
+		entities_updated.emit(value, previous_value)
 	state_changed.emit(get_state())
 
 
 func init_character(character: Dictionary) -> void:
-	var previous_character: Variant = _get_latest_character()
+	var previous_character: Variant = {}
+	if _character_index > 0:
+		previous_character = _get_entity(StringName("character_%d" % _character_index))
+
 	var next_character := character.duplicate(true)
 	next_character[&"id"] = _create_character_id()
 	_set_entity(next_character)
@@ -59,22 +65,22 @@ func init_board(cols: int, rows: int) -> void:
 	board_init.emit(board, previous_board)
 
 
-func move_character_to(i: int, j: int) -> void:
-	var character := _get_latest_character()
-	if character.is_empty():
-		push_warning("Cannot move character before character is spawned.")
+func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot move missing entity: %s." % entity_id)
 		return
 
 	var previous_board: Dictionary = _state.get(&"board", {})
-	var previous_position: Variant = _get_character_position(character)
-	var next_board := _move_character_on_board(character, i, j)
+	var previous_position: Variant = _get_entity_position(entity)
+	var next_board := _move_entity_on_board(entity, i, j)
 	if next_board.is_empty():
 		return
 
 	var position := _board_index_to_position(i, j)
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
-	character_moved.emit(position, previous_position)
+	entity_moved.emit(entity.get(&"id", &""), position, previous_position)
 
 
 func patch(values: Dictionary) -> void:
@@ -90,6 +96,8 @@ func patch(values: Dictionary) -> void:
 
 		_state[state_key] = next_value
 		value_changed.emit(state_key, next_value, previous_value)
+		if state_key == &"entities" and next_value is Dictionary:
+			entities_updated.emit(next_value, previous_value)
 		changed = true
 
 	if changed:
@@ -162,14 +170,12 @@ func _set_entity(entity: Dictionary) -> void:
 	next_entities[entity_id] = entity
 	set_value(&"entities", next_entities)
 
+	print('entities: ', _state.get(&"entities", {}))
 
-func _get_latest_character() -> Dictionary:
-	if _character_index <= 0:
-		return {}
 
+func _get_entity(entity_id: StringName) -> Dictionary:
 	var entities: Dictionary = _state.get(&"entities", {})
-	var character_id := StringName("character_%d" % _character_index)
-	return entities.get(character_id, {})
+	return entities.get(entity_id, {})
 
 
 func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
@@ -190,14 +196,14 @@ func _place_character_on_board(character: Dictionary, i: int, j: int) -> void:
 	board_init.emit(next_board, previous_board)
 
 
-func _move_character_on_board(character: Dictionary, next_i: int, next_j: int) -> Dictionary:
+func _move_entity_on_board(entity: Dictionary, next_i: int, next_j: int) -> Dictionary:
 	var board: Dictionary = _state.get(&"board", {})
 	if board.is_empty():
-		push_warning("Cannot move character before board is spawned.")
+		push_warning("Cannot move entity before board is spawned.")
 		return {}
 
 	if not _has_board_cell(board, next_i, next_j):
-		push_warning("Cannot move character outside board to (%d, %d)." % [next_i, next_j])
+		push_warning("Cannot move entity outside board to (%d, %d)." % [next_i, next_j])
 		return {}
 
 	var next_board := board.duplicate(true)
@@ -208,24 +214,24 @@ func _move_character_on_board(character: Dictionary, next_i: int, next_j: int) -
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _is_same_entity(cell.get(&"entity"), character):
+			if _is_same_entity(cell.get(&"entity"), entity):
 				cell[&"entity"] = null
 
 	var next_cell: Dictionary = cells[next_i][next_j]
-	next_cell[&"entity"] = character
+	next_cell[&"entity"] = entity
 	return next_board
 
 
-func _get_character_position(character: Dictionary) -> Variant:
+func _get_entity_position(entity: Dictionary) -> Variant:
 	var board: Dictionary = _state.get(&"board", {})
-	var board_index := _get_character_board_index(board, character)
+	var board_index := _get_entity_board_index(board, entity)
 	if board_index == Vector2i(-1, -1):
 		return null
 
 	return _board_index_to_position(board_index.x, board_index.y)
 
 
-func _get_character_board_index(board: Dictionary, character: Dictionary) -> Vector2i:
+func _get_entity_board_index(board: Dictionary, entity: Dictionary) -> Vector2i:
 	if board.is_empty() or not board.has(&"cells"):
 		return Vector2i(-1, -1)
 
@@ -235,7 +241,7 @@ func _get_character_board_index(board: Dictionary, character: Dictionary) -> Vec
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _is_same_entity(cell.get(&"entity"), character):
+			if _is_same_entity(cell.get(&"entity"), entity):
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
