@@ -4,6 +4,7 @@ class_name StateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
+signal entities_updated(entities: Dictionary, previous_entities: Variant)
 signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal character_moved(position: Vector2, previous_position: Variant)
@@ -40,6 +41,8 @@ func set_value(key: StringName, value: Variant) -> void:
 
 	_state[key] = value
 	value_changed.emit(key, value, previous_value)
+	if key == &"entities" and value is Dictionary:
+		entities_updated.emit(value, previous_value)
 	state_changed.emit(get_state())
 
 
@@ -90,6 +93,8 @@ func patch(values: Dictionary) -> void:
 
 		_state[state_key] = next_value
 		value_changed.emit(state_key, next_value, previous_value)
+		if state_key == &"entities" and next_value is Dictionary:
+			entities_updated.emit(next_value, previous_value)
 		changed = true
 
 	if changed:
@@ -161,6 +166,8 @@ func _set_entity(entity: Dictionary) -> void:
 	var next_entities := previous_entities.duplicate(true)
 	next_entities[entity_id] = entity
 	set_value(&"entities", next_entities)
+
+	print('entities: ', _state.get(&"entities", {}))
 
 
 func _get_latest_character() -> Dictionary:

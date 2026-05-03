@@ -14,9 +14,9 @@ var _move_animation_id := &""
 var _is_walking := false
 var _walk_time := 0.0
 
-@onready var state_store: Node = $"../../StateStore"
-@onready var animation_tracker: Node = $"../../AnimationTracker"
-@onready var board_view: Node = $"../BoardView"
+@onready var state_store: Node = get_node_or_null("../../StateStore")
+@onready var animation_tracker: Node = get_node_or_null("../../AnimationTracker")
+@onready var board_view: Node = get_node_or_null("../BoardView")
 @onready var head: Node2D = $Head
 @onready var head_label: Label = $Head/IdLabel
 @onready var neck: Node2D = $Neck
@@ -28,6 +28,9 @@ var _walk_time := 0.0
 
 
 func _ready() -> void:
+	if state_store == null:
+		return
+
 	state_store.character_initialized.connect(_on_character_initialized)
 	state_store.character_moved.connect(_on_character_moved)
 
@@ -41,12 +44,23 @@ func _process(delta: float) -> void:
 
 
 func _on_character_initialized(spec: Dictionary, _previous_character: Variant) -> void:
-	_character_spec = spec
-	_update_parts()
+	set_character_spec(spec)
 	_update_board_position()
 
 
+func set_character_spec(spec: Dictionary) -> void:
+	_character_spec = spec
+	_update_parts()
+
+
+func get_character_size() -> Vector2:
+	return _character_size
+
+
 func _on_character_moved(_next_position: Vector2, _previous_position: Variant) -> void:
+	if animation_tracker == null:
+		return
+
 	var next_position := _get_board_position()
 	if next_position == Vector2.INF:
 		return
@@ -139,7 +153,7 @@ func _update_parts() -> void:
 
 
 func _update_board_position() -> void:
-	if _character_spec.is_empty():
+	if _character_spec.is_empty() or board_view == null:
 		return
 
 	var board: Dictionary = state_store.get_value(&"board", {})
@@ -151,6 +165,9 @@ func _update_board_position() -> void:
 
 
 func _get_board_position() -> Vector2:
+	if board_view == null:
+		return Vector2.INF
+
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var board_index := _get_character_board_index(board)
 	if board_index == Vector2i(-1, -1):
