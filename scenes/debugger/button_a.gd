@@ -12,18 +12,18 @@ func _ready() -> void:
 func _on_pressed() -> void:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	if board.is_empty():
-		push_warning("Cannot move character before board is spawned.")
+		push_warning("Cannot move entity before board is spawned.")
 		return
 
-	var character_id := _get_latest_entity_id()
-	if character_id == &"":
-		push_warning("Cannot move character before character is spawned.")
+	var entity_id := _get_latest_entity_id()
+	if entity_id == &"":
+		push_warning("Cannot move entity before entity is spawned.")
 		return
 
 	action_queue.enQueue({
-		"eventName": "move_character",
+		"eventName": "move_entity",
 		"payload": {
-			"id": character_id,
+			"id": entity_id,
 			"i": randi_range(0, int(board.get(&"cols", 1)) - 1),
 			"j": randi_range(0, int(board.get(&"rows", 1)) - 1),
 		},

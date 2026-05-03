@@ -51,8 +51,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_init_board(event['payload'])
 		'spawn_character':
 			_init_character(event['payload'])
-		'move_character':
-			_move_character(event['payload'])
+		'move_entity':
+			_move_entity(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -119,16 +119,16 @@ func _is_part_spec(spec: Variant) -> bool:
 	return spec is Dictionary and spec.has("width") and spec.has("height")
 
 
-func _move_character(payload: Dictionary) -> void:
+func _move_entity(payload: Dictionary) -> void:
 	if not _is_board_position_payload(payload):
-		push_warning('Invalid move_character payload. Expected { id: String, i: int, j: int }.')
+		push_warning('Invalid move_entity payload. Expected { id: String, i: int, j: int }.')
 		return
 
-	var character_id := StringName(str(payload["id"]))
+	var entity_id := StringName(str(payload["id"]))
 	var next_i := int(payload["i"])
 	var next_j := int(payload["j"])
-	state_store.move_character_to(character_id, next_i, next_j)
-	print('moved character to board cell: ', character_id, ' ', Vector2i(next_i, next_j))
+	state_store.move_entity_to(entity_id, next_i, next_j)
+	print('moved entity to board cell: ', entity_id, ' ', Vector2i(next_i, next_j))
 
 
 func _is_board_position_payload(payload: Dictionary) -> bool:

@@ -24,7 +24,7 @@ func _ready() -> void:
 
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
-	state_store.character_moved.connect(_on_entity_moved)
+	state_store.entity_moved.connect(_on_entity_moved)
 	_refresh_from_state()
 
 
