@@ -46,7 +46,7 @@ func set_value(key: StringName, value: Variant) -> void:
 	state_changed.emit(get_state())
 
 
-func init_entity(entity_type: StringName, spec: Dictionary) -> void:
+func init_entity(entity_type: StringName, spec: Dictionary, i: int = 0, j: int = 0) -> void:
 	var previous_character: Variant = {}
 	if _character_index > 0:
 		previous_character = _get_entity(StringName("character_%d" % _character_index))
@@ -57,7 +57,7 @@ func init_entity(entity_type: StringName, spec: Dictionary) -> void:
 		&"spec": spec.duplicate(true),
 	}
 	_set_entity(next_entity)
-	_place_entity_on_board(next_entity, 0, 0)
+	_place_entity_on_board(next_entity, i, j)
 	character_initialized.emit(next_entity, previous_character)
 
 
@@ -144,7 +144,7 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 			col_cells.append({
 				&"i": i,
 				&"j": j,
-				&"entity": null,
+				&"entity_id": &"",
 			})
 
 		cells.append(col_cells)
@@ -194,7 +194,7 @@ func _place_entity_on_board(entity: Dictionary, i: int, j: int) -> void:
 	var next_board := board.duplicate(true)
 	var cells: Array = next_board[&"cells"]
 	var cell: Dictionary = cells[i][j]
-	cell[&"entity"] = entity
+	cell[&"entity_id"] = entity.get(&"id", &"")
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
 
@@ -217,11 +217,11 @@ func _move_entity_on_board(entity: Dictionary, next_i: int, next_j: int) -> Dict
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _is_same_entity(cell.get(&"entity"), entity):
-				cell[&"entity"] = null
+			if cell.get(&"entity_id", &"") == entity.get(&"id", &""):
+				cell[&"entity_id"] = &""
 
 	var next_cell: Dictionary = cells[next_i][next_j]
-	next_cell[&"entity"] = entity
+	next_cell[&"entity_id"] = entity.get(&"id", &"")
 	return next_board
 
 
@@ -244,17 +244,13 @@ func _get_entity_board_index(board: Dictionary, entity: Dictionary) -> Vector2i:
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _is_same_entity(cell.get(&"entity"), entity):
+			if cell.get(&"entity_id", &"") == entity.get(&"id", &""):
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
 
 
-func _is_same_entity(entity: Variant, character: Dictionary) -> bool:
-	return (
-		entity is Dictionary
-		and entity.get(&"id", &"") == character.get(&"id", &"")
-	)
+
 
 
 func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:

@@ -56,10 +56,12 @@ func _init_from_template(t: Dictionary) -> void:
 	var entities: Array = t.get("entities", [])
 	for entity in entities:
 		if entity is Dictionary and entity.has("type") and entity.has("spec"):
+			var position: Dictionary = entity.get("position", {})
 			action_queue.enQueue({
 				"eventName": "spawn_entity",
 				"payload": {
 					"type": entity["type"],
 					"spec": entity["spec"],
+					"position": position,
 				},
 			})

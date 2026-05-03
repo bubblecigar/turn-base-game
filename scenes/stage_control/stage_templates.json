@@ -4,6 +4,7 @@
 		"entities": [
 			{
 				"type": "character",
+				"position": { "i": 0, "j": 0 },
 				"spec": {
 					"head": { "radius": 10 },
 					"neck": { "width": 8, "height": 6 },
@@ -19,6 +20,7 @@
 		"entities": [
 			{
 				"type": "character",
+				"position": { "i": 0, "j": 0 },
 				"spec": {
 					"head": { "radius": 12 },
 					"neck": { "width": 10, "height": 8 },
@@ -29,6 +31,7 @@
 			},
 			{
 				"type": "slime",
+				"position": { "i": 2, "j": 2 },
 				"spec": { "radius": 20 }
 			}
 		]

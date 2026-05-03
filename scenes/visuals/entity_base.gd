@@ -179,17 +179,12 @@ func _get_entity_board_index(board: Dictionary) -> Vector2i:
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _is_same_entity(cell.get(&"entity")):
+			if cell.get(&"entity_id", &"") == _entity_id:
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
 
 
-func _is_same_entity(entity_state: Variant) -> bool:
-	return (
-		entity_state is Dictionary
-		and entity_state.get(&"id", &"") == _entity_id
-	)
 
 
 func _find_node_in_ancestors(node_name: StringName) -> Node:

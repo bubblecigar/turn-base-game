@@ -71,8 +71,11 @@ func _spawn_entity(payload: Dictionary) -> void:
 		push_warning('Invalid character entity spec.')
 		return
 
-	state_store.init_entity(entity_type, entity_spec)
-	print('spawned entity: ', entity_type, ' ', entity_spec)
+	var position: Dictionary = payload.get("position", {})
+	var i := int(position.get("i", 0))
+	var j := int(position.get("j", 0))
+	state_store.init_entity(entity_type, entity_spec, i, j)
+	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 
 func _init_board(payload: Dictionary) -> void:
