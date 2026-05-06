@@ -159,7 +159,7 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 			col_cells.append({
 				&"i": i,
 				&"j": j,
-				&"entity_id": &"",
+				&"entity_ids": [],
 			})
 
 		cells.append(col_cells)
@@ -209,7 +209,7 @@ func _place_entity_on_board(entity: Dictionary, i: int, j: int) -> void:
 	var next_board := board.duplicate(true)
 	var cells: Array = next_board[&"cells"]
 	var cell: Dictionary = cells[i][j]
-	cell[&"entity_id"] = entity.get(&"id", &"")
+	_add_entity_id_to_cell(cell, entity.get(&"id", &""))
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
 
@@ -232,11 +232,10 @@ func _move_entity_on_board(entity: Dictionary, next_i: int, next_j: int) -> Dict
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if cell.get(&"entity_id", &"") == entity.get(&"id", &""):
-				cell[&"entity_id"] = &""
+			_remove_entity_id_from_cell(cell, entity.get(&"id", &""))
 
 	var next_cell: Dictionary = cells[next_i][next_j]
-	next_cell[&"entity_id"] = entity.get(&"id", &"")
+	_add_entity_id_to_cell(next_cell, entity.get(&"id", &""))
 	return next_board
 
 
@@ -259,10 +258,39 @@ func _get_entity_board_index(board: Dictionary, entity: Dictionary) -> Vector2i:
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if cell.get(&"entity_id", &"") == entity.get(&"id", &""):
+			if _cell_has_entity_id(cell, entity.get(&"id", &"")):
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
+
+
+func _add_entity_id_to_cell(cell: Dictionary, entity_id: StringName) -> void:
+	var entity_ids: Array = _get_cell_entity_ids(cell)
+	if not entity_ids.has(entity_id):
+		entity_ids.append(entity_id)
+
+	cell[&"entity_ids"] = entity_ids
+	cell.erase(&"entity_id")
+
+
+func _remove_entity_id_from_cell(cell: Dictionary, entity_id: StringName) -> void:
+	var entity_ids: Array = _get_cell_entity_ids(cell)
+	entity_ids.erase(entity_id)
+	cell[&"entity_ids"] = entity_ids
+	cell.erase(&"entity_id")
+
+
+func _cell_has_entity_id(cell: Dictionary, entity_id: StringName) -> bool:
+	return _get_cell_entity_ids(cell).has(entity_id)
+
+
+func _get_cell_entity_ids(cell: Dictionary) -> Array:
+	var entity_ids: Array = cell.get(&"entity_ids", [])
+	var legacy_entity_id: StringName = cell.get(&"entity_id", &"")
+	if legacy_entity_id != &"" and not entity_ids.has(legacy_entity_id):
+		entity_ids.append(legacy_entity_id)
+
+	return entity_ids
 
 
 

@@ -310,7 +310,12 @@ func _get_entity_board_index(board: Dictionary, entity_id: StringName) -> Vector
 
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if cell.get(&"entity_id", &"") == entity_id:
+			if _cell_has_entity_id(cell, entity_id):
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
+
+
+func _cell_has_entity_id(cell: Dictionary, entity_id: StringName) -> bool:
+	var entity_ids: Array = cell.get(&"entity_ids", [])
+	return entity_ids.has(entity_id) or cell.get(&"entity_id", &"") == entity_id
