@@ -7,7 +7,6 @@ const WALK_LEG_SWING_DEGREES := 10.0
 var _character_size := Vector2.ZERO
 
 @onready var head: Node2D = $Head
-@onready var head_label: Label = $Head/IdLabel
 @onready var neck: Node2D = $Neck
 @onready var body: Node2D = $Body
 @onready var left_arm: Node2D = $LeftArm
@@ -50,9 +49,6 @@ func _update_parts(entity_state: Dictionary) -> void:
 	_character_size = Vector2(width, head_size.y + neck_size.y + body_size.y + leg_size.y)
 
 	head.position = Vector2((width - head_size.x) / 2.0, 0.0)
-	head_label.text = str(entity_state.get(&"id", ""))
-	head_label.position = Vector2.ZERO
-	head_label.size = head_size
 	neck.position = Vector2((width - neck_size.x) / 2.0, head_size.y)
 	body.position = Vector2((width - body_size.x) / 2.0, head_size.y + neck_size.y)
 	left_arm.position = Vector2(0.0, body.position.y + body_size.y * 0.05)

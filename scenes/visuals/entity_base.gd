@@ -11,9 +11,12 @@ const ATTACK_LUNGE_PIXELS := 28.0
 const HIT_ANIMATION_SECONDS := 0.32
 const HIT_ANIMATION_NAME := &"entity_hit"
 const HIT_SHAKE_PIXELS := 8.0
+const ID_LABEL_FONT_SIZE := 8.0
+const ID_LABEL_HEIGHT := 16.0
 
 var _entity_id := &""
 var _entity: Dictionary = {}
+var _id_label: Label
 var _move_tween: Tween
 var _attack_tween: Tween
 var _hit_tween: Tween
@@ -36,6 +39,7 @@ func _ready() -> void:
 	if state_store == null:
 		return
 
+	_create_id_label()
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
@@ -264,6 +268,7 @@ func _refresh_from_state() -> void:
 func _set_entity(entity_state: Dictionary) -> void:
 	_entity = entity_state
 	_on_entity_updated(_entity)
+	_update_id_label()
 
 
 func _update_board_position() -> void:
@@ -273,6 +278,25 @@ func _update_board_position() -> void:
 	var next_position := _get_board_position()
 	if next_position != Vector2.INF:
 		position = next_position
+
+
+func _create_id_label() -> void:
+	_id_label = Label.new()
+	_id_label.layout_mode = 0
+	_id_label.add_theme_font_size_override("font_size", ID_LABEL_FONT_SIZE)
+	_id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_id_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	add_child(_id_label)
+
+
+func _update_id_label() -> void:
+	if _id_label == null:
+		return
+
+	var visual_size := get_visual_size()
+	_id_label.text = str(_entity.get(&"id", ""))
+	_id_label.position = Vector2.ZERO
+	_id_label.size = Vector2(max(visual_size.x, 1.0), ID_LABEL_HEIGHT)
 
 
 func _get_board_position() -> Vector2:

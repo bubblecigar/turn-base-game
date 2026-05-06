@@ -9,12 +9,6 @@ script = ExtResource("1_hk1h1")
 [node name="Head" type="Node2D" parent="." unique_id=78084500]
 script = ExtResource("2_2c04o")
 
-[node name="IdLabel" type="Label" parent="Head"]
-layout_mode = 0
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="Neck" type="Node2D" parent="."]
 script = ExtResource("2_2c04o")
 
