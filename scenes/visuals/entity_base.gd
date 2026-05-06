@@ -13,9 +13,13 @@ var _move_animation_id := &""
 var _is_moving := false
 var _move_time := 0.0
 
-@onready var state_store: Node = _find_node_in_ancestors(&"StateStore")
-@onready var animation_tracker: Node = _find_node_in_ancestors(&"AnimationTracker")
-@onready var board_view: Node = _find_node_in_ancestors(&"BoardView")
+@export var state_store_path: NodePath
+@export var animation_tracker_path: NodePath
+@export var board_view_path: NodePath
+
+@onready var state_store: Node = get_node(state_store_path)
+@onready var animation_tracker: Node = get_node(animation_tracker_path)
+@onready var board_view: Node = get_node(board_view_path)
 
 
 func _ready() -> void:
@@ -183,16 +187,3 @@ func _get_entity_board_index(board: Dictionary) -> Vector2i:
 				return Vector2i(i, j)
 
 	return Vector2i(-1, -1)
-
-
-
-
-func _find_node_in_ancestors(node_name: StringName) -> Node:
-	var current_node: Node = self
-	while current_node != null:
-		if current_node.has_node(NodePath(node_name)):
-			return current_node.get_node(NodePath(node_name))
-
-		current_node = current_node.get_parent()
-
-	return null

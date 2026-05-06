@@ -3,6 +3,10 @@ extends Node2D
 const CHARACTER_SCENE := preload("res://scenes/visuals/CharacterScene.tscn")
 const SLIME_SCENE := preload("res://scenes/visuals/SlimeScene.tscn")
 
+const STATE_STORE_PATH := NodePath("../../../StateStore")
+const ANIMATION_TRACKER_PATH := NodePath("../../../AnimationTracker")
+const BOARD_VIEW_PATH := NodePath("../../BoardView")
+
 @onready var state_store: Node = $"../../StateStore"
 
 var _entity_views: Dictionary = {}
@@ -30,7 +34,10 @@ func sync_entities(entities: Dictionary) -> void:
 		if entity_scene == null:
 			continue
 
-		var entity_view: Node2D = entity_scene.instantiate()
+		var entity_view: EntityBoardView = entity_scene.instantiate() as EntityBoardView
+		entity_view.state_store_path = STATE_STORE_PATH
+		entity_view.animation_tracker_path = ANIMATION_TRACKER_PATH
+		entity_view.board_view_path = BOARD_VIEW_PATH
 		entity_view.set_entity_id(entity_id)
 		add_child(entity_view)
 		_entity_views[entity_id] = entity_view
