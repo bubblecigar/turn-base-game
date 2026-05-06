@@ -53,6 +53,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_spawn_entity(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
+		'attack_entity':
+			_attack_entity(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -161,6 +163,25 @@ func _is_board_position_payload(payload: Dictionary) -> bool:
 		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
 		and typeof(payload["i"]) == TYPE_INT
 		and typeof(payload["j"]) == TYPE_INT
+	)
+
+
+func _attack_entity(payload: Dictionary) -> void:
+	if not _is_attack_payload(payload):
+		push_warning('Invalid attack_entity payload. Expected { attacker_id: String, target_id: String }.')
+		return
+
+	var attacker_id := StringName(str(payload["attacker_id"]))
+	var target_id := StringName(str(payload["target_id"]))
+	state_store.attack_entity(attacker_id, target_id)
+
+
+func _is_attack_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("attacker_id")
+		and payload.has("target_id")
+		and (typeof(payload["attacker_id"]) == TYPE_STRING or typeof(payload["attacker_id"]) == TYPE_STRING_NAME)
+		and (typeof(payload["target_id"]) == TYPE_STRING or typeof(payload["target_id"]) == TYPE_STRING_NAME)
 	)
 
 

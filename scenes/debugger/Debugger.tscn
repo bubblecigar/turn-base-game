@@ -3,8 +3,9 @@
 [ext_resource type="Script" uid="uid://qt8pkgogr5cg" path="res://scenes/debugger/button_b.gd" id="1_x6j5k"]
 [ext_resource type="Script" uid="uid://cuyivrqypr5mt" path="res://scenes/debugger/button_a.gd" id="2_6cnuj"]
 [ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
-[ext_resource type="Script" path="res://scenes/debugger/button_c.gd" id="4_r14ok"]
-[ext_resource type="Script" path="res://scenes/debugger/button_d.gd" id="5_butnd"]
+[ext_resource type="Script" uid="uid://d143k6kh3jci5" path="res://scenes/debugger/button_c.gd" id="4_r14ok"]
+[ext_resource type="Script" uid="uid://kx05fb0s35bf" path="res://scenes/debugger/button_d.gd" id="5_butnd"]
+[ext_resource type="Script" path="res://scenes/debugger/button_attack.gd" id="6_attack"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -34,7 +35,7 @@ scale = Vector2(2.4857094, 3.2024686)
 text = "Button A"
 script = ExtResource("2_6cnuj")
 
-[node name="ButtonC" type="Button" parent="."]
+[node name="ButtonC" type="Button" parent="." unique_id=716825601]
 layout_mode = 0
 offset_left = 501.0
 offset_top = 401.0
@@ -44,7 +45,7 @@ scale = Vector2(2.4857094, 3.2024686)
 text = "Button C"
 script = ExtResource("4_r14ok")
 
-[node name="ButtonD" type="Button" parent="."]
+[node name="ButtonD" type="Button" parent="." unique_id=590386705]
 layout_mode = 0
 offset_left = 723.0
 offset_top = 401.0
@@ -53,6 +54,16 @@ offset_bottom = 432.0
 scale = Vector2(2.4857094, 3.2024686)
 text = "Spawn Slime"
 script = ExtResource("5_butnd")
+
+[node name="ButtonAttack" type="Button" parent="." unique_id=768274259]
+layout_mode = 0
+offset_left = 769.0
+offset_top = 283.0
+offset_right = 846.0
+offset_bottom = 314.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Attack"
+script = ExtResource("6_attack")
 
 [node name="ProcessingLabel" type="Label" parent="." unique_id=2013759462]
 layout_mode = 0
@@ -64,7 +75,7 @@ scale = Vector2(2.2266638, 1.7437714)
 text = "Idle"
 script = ExtResource("3_el5hy")
 
-[node name="HeadRadiusLabel" type="Label" parent="."]
+[node name="HeadRadiusLabel" type="Label" parent="." unique_id=899199176]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 24.0
@@ -72,7 +83,7 @@ offset_right = 130.0
 offset_bottom = 47.0
 text = "Head radius"
 
-[node name="HeadRadiusSpinBox" type="SpinBox" parent="."]
+[node name="HeadRadiusSpinBox" type="SpinBox" parent="." unique_id=1200042056]
 layout_mode = 0
 offset_left = 144.0
 offset_top = 20.0
@@ -82,7 +93,7 @@ min_value = 1.0
 max_value = 128.0
 value = 10.0
 
-[node name="NeckWidthLabel" type="Label" parent="."]
+[node name="NeckWidthLabel" type="Label" parent="." unique_id=389313126]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 64.0
@@ -90,7 +101,7 @@ offset_right = 130.0
 offset_bottom = 87.0
 text = "Neck W"
 
-[node name="NeckWidthSpinBox" type="SpinBox" parent="."]
+[node name="NeckWidthSpinBox" type="SpinBox" parent="." unique_id=171826808]
 layout_mode = 0
 offset_left = 144.0
 offset_top = 60.0
@@ -100,7 +111,7 @@ min_value = 1.0
 max_value = 128.0
 value = 12.0
 
-[node name="NeckHeightLabel" type="Label" parent="."]
+[node name="NeckHeightLabel" type="Label" parent="." unique_id=1037639218]
 layout_mode = 0
 offset_left = 240.0
 offset_top = 64.0
@@ -108,7 +119,7 @@ offset_right = 330.0
 offset_bottom = 87.0
 text = "Neck H"
 
-[node name="NeckHeightSpinBox" type="SpinBox" parent="."]
+[node name="NeckHeightSpinBox" type="SpinBox" parent="." unique_id=1368999510]
 layout_mode = 0
 offset_left = 344.0
 offset_top = 60.0
@@ -118,7 +129,7 @@ min_value = 1.0
 max_value = 128.0
 value = 8.0
 
-[node name="BodyWidthLabel" type="Label" parent="."]
+[node name="BodyWidthLabel" type="Label" parent="." unique_id=345751832]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 104.0
@@ -126,7 +137,7 @@ offset_right = 130.0
 offset_bottom = 127.0
 text = "Body W"
 
-[node name="BodyWidthSpinBox" type="SpinBox" parent="."]
+[node name="BodyWidthSpinBox" type="SpinBox" parent="." unique_id=410199687]
 layout_mode = 0
 offset_left = 144.0
 offset_top = 100.0
@@ -136,7 +147,7 @@ min_value = 1.0
 max_value = 128.0
 value = 28.0
 
-[node name="BodyHeightLabel" type="Label" parent="."]
+[node name="BodyHeightLabel" type="Label" parent="." unique_id=1955005567]
 layout_mode = 0
 offset_left = 240.0
 offset_top = 104.0
@@ -144,7 +155,7 @@ offset_right = 330.0
 offset_bottom = 127.0
 text = "Body H"
 
-[node name="BodyHeightSpinBox" type="SpinBox" parent="."]
+[node name="BodyHeightSpinBox" type="SpinBox" parent="." unique_id=687884346]
 layout_mode = 0
 offset_left = 344.0
 offset_top = 100.0
@@ -154,7 +165,7 @@ min_value = 1.0
 max_value = 128.0
 value = 36.0
 
-[node name="ArmsWidthLabel" type="Label" parent="."]
+[node name="ArmsWidthLabel" type="Label" parent="." unique_id=1268840652]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 144.0
@@ -162,7 +173,7 @@ offset_right = 130.0
 offset_bottom = 167.0
 text = "Arms W"
 
-[node name="ArmsWidthSpinBox" type="SpinBox" parent="."]
+[node name="ArmsWidthSpinBox" type="SpinBox" parent="." unique_id=1838458891]
 layout_mode = 0
 offset_left = 144.0
 offset_top = 140.0
@@ -172,7 +183,7 @@ min_value = 1.0
 max_value = 128.0
 value = 12.0
 
-[node name="ArmsHeightLabel" type="Label" parent="."]
+[node name="ArmsHeightLabel" type="Label" parent="." unique_id=264314778]
 layout_mode = 0
 offset_left = 240.0
 offset_top = 144.0
@@ -180,7 +191,7 @@ offset_right = 330.0
 offset_bottom = 167.0
 text = "Arms H"
 
-[node name="ArmsHeightSpinBox" type="SpinBox" parent="."]
+[node name="ArmsHeightSpinBox" type="SpinBox" parent="." unique_id=1817620516]
 layout_mode = 0
 offset_left = 344.0
 offset_top = 140.0
@@ -190,7 +201,7 @@ min_value = 1.0
 max_value = 128.0
 value = 32.0
 
-[node name="LegsWidthLabel" type="Label" parent="."]
+[node name="LegsWidthLabel" type="Label" parent="." unique_id=1530937169]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 184.0
@@ -198,7 +209,7 @@ offset_right = 130.0
 offset_bottom = 207.0
 text = "Legs W"
 
-[node name="LegsWidthSpinBox" type="SpinBox" parent="."]
+[node name="LegsWidthSpinBox" type="SpinBox" parent="." unique_id=1899177280]
 layout_mode = 0
 offset_left = 144.0
 offset_top = 180.0
@@ -208,7 +219,7 @@ min_value = 1.0
 max_value = 128.0
 value = 12.0
 
-[node name="LegsHeightLabel" type="Label" parent="."]
+[node name="LegsHeightLabel" type="Label" parent="." unique_id=2103910087]
 layout_mode = 0
 offset_left = 240.0
 offset_top = 184.0
@@ -216,7 +227,7 @@ offset_right = 330.0
 offset_bottom = 207.0
 text = "Legs H"
 
-[node name="LegsHeightSpinBox" type="SpinBox" parent="."]
+[node name="LegsHeightSpinBox" type="SpinBox" parent="." unique_id=783842936]
 layout_mode = 0
 offset_left = 344.0
 offset_top = 180.0

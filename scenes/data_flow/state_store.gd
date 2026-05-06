@@ -8,6 +8,7 @@ signal entities_updated(entities: Dictionary, previous_entities: Variant)
 signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal entity_moved(entity_id: StringName, position: Vector2, previous_position: Variant)
+signal entity_attacked(attacker_id: StringName, target_id: StringName)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -84,6 +85,20 @@ func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
 	set_value(&"board", next_board)
 	board_init.emit(next_board, previous_board)
 	entity_moved.emit(entity.get(&"id", &""), position, previous_position)
+
+
+func attack_entity(attacker_id: StringName, target_id: StringName) -> void:
+	var attacker := _get_entity(attacker_id)
+	if attacker.is_empty():
+		push_warning("Cannot attack with missing entity: %s." % attacker_id)
+		return
+
+	var target := _get_entity(target_id)
+	if target.is_empty():
+		push_warning("Cannot attack missing target: %s." % target_id)
+		return
+
+	entity_attacked.emit(attacker_id, target_id)
 
 
 func patch(values: Dictionary) -> void:

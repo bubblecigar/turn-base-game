@@ -29,6 +29,7 @@ func _ready() -> void:
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
+	state_store.entity_attacked.connect(_on_entity_attacked)
 	_refresh_from_state()
 
 
@@ -103,6 +104,13 @@ func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_
 	_move_tween.tween_property(self, "position", next_position, MOVE_ANIMATION_SECONDS)
 	_move_tween.finished.connect(_on_move_tween_finished.bind(animation_id))
 	_start_move_animation()
+
+
+func _on_entity_attacked(attacker_id: StringName, target_id: StringName) -> void:
+	if _entity_id == attacker_id:
+		print("attacker visual received attack signal: ", attacker_id, " -> ", target_id)
+	elif _entity_id == target_id:
+		print("receiver visual received attack signal: ", attacker_id, " -> ", target_id)
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:
