@@ -29,7 +29,7 @@ func _ready() -> void:
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
-	state_store.entity_attacked.connect(_on_entity_attacked)
+	state_store.entity_attack_pair_triggered.connect(_on_entity_attack_pair_triggered)
 	_refresh_from_state()
 
 
@@ -106,7 +106,7 @@ func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_
 	_start_move_animation()
 
 
-func _on_entity_attacked(attacker_id: StringName, target_id: StringName) -> void:
+func _on_entity_attack_pair_triggered(attacker_id: StringName, target_id: StringName) -> void:
 	if _entity_id == attacker_id:
 		print("attacker visual received attack signal: ", attacker_id, " -> ", target_id)
 	elif _entity_id == target_id:
