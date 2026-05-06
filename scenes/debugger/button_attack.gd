@@ -5,6 +5,7 @@ extends Button
 
 
 func _ready() -> void:
+	randomize()
 	pressed.connect(_on_pressed)
 
 
@@ -25,13 +26,11 @@ func _get_attack_pair() -> Dictionary:
 	if entities.size() < 2:
 		return {}
 
-	var attacker_id := _get_first_entity_id_by_type(entities, &"character")
-	if attacker_id == &"":
-		attacker_id = _get_first_entity_id(entities)
-
-	var target_id := _get_first_other_entity_id(entities, attacker_id)
-	if target_id == &"":
-		return {}
+	var entity_ids := _get_entity_ids(entities)
+	var attacker_index := randi_range(0, entity_ids.size() - 1)
+	var attacker_id: StringName = entity_ids[attacker_index]
+	entity_ids.remove_at(attacker_index)
+	var target_id: StringName = entity_ids[randi_range(0, entity_ids.size() - 1)]
 
 	return {
 		"attacker_id": attacker_id,
@@ -39,26 +38,10 @@ func _get_attack_pair() -> Dictionary:
 	}
 
 
-func _get_first_entity_id_by_type(entities: Dictionary, entity_type: StringName) -> StringName:
+func _get_entity_ids(entities: Dictionary) -> Array[StringName]:
+	var entity_ids: Array[StringName] = []
+
 	for entity_id: Variant in entities:
-		var entity: Dictionary = entities[entity_id]
-		if entity.get(&"type", &"") == entity_type:
-			return StringName(str(entity_id))
+		entity_ids.append(StringName(str(entity_id)))
 
-	return &""
-
-
-func _get_first_entity_id(entities: Dictionary) -> StringName:
-	for entity_id: Variant in entities:
-		return StringName(str(entity_id))
-
-	return &""
-
-
-func _get_first_other_entity_id(entities: Dictionary, attacker_id: StringName) -> StringName:
-	for entity_id: Variant in entities:
-		var next_entity_id := StringName(str(entity_id))
-		if next_entity_id != attacker_id:
-			return next_entity_id
-
-	return &""
+	return entity_ids
