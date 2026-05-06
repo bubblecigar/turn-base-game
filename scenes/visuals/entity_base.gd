@@ -13,6 +13,9 @@ const HIT_ANIMATION_NAME := &"entity_hit"
 const HIT_SHAKE_PIXELS := 8.0
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
+const ATTACK_BALL_RADIUS := 8.0
+const ATTACK_BALL_LIFETIME_SECONDS := 4.0
+const ATTACK_BALL_COLOR := Color.GOLD
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -123,6 +126,7 @@ func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_
 func _on_entity_attack_pair_triggered(attacker_id: StringName, target_id: StringName) -> void:
 	if _entity_id == attacker_id:
 		print("attacker visual received attack signal: ", attacker_id, " -> ", target_id)
+		_spawn_attack_ball()
 		_play_attack_animation(target_id)
 	elif _entity_id == target_id:
 		print("receiver visual received attack signal: ", attacker_id, " -> ", target_id)
@@ -297,6 +301,47 @@ func _update_id_label() -> void:
 	_id_label.text = str(_entity.get(&"id", ""))
 	_id_label.position = Vector2.ZERO
 	_id_label.size = Vector2(max(visual_size.x, 1.0), ID_LABEL_HEIGHT)
+
+
+func _spawn_attack_ball() -> void:
+	var ball_parent := get_parent()
+	if ball_parent == null:
+		return
+
+	var visual_size := get_visual_size()
+	var ball := RigidBody2D.new()
+	ball.name = "AttackBall"
+	ball.global_position = global_position + Vector2(visual_size.x / 2.0, -ATTACK_BALL_RADIUS * 2.0)
+	ball.continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
+
+	var collision_shape := CollisionShape2D.new()
+	var circle_shape := CircleShape2D.new()
+	circle_shape.radius = ATTACK_BALL_RADIUS
+	collision_shape.shape = circle_shape
+	ball.add_child(collision_shape)
+
+	var visual := Polygon2D.new()
+	visual.color = ATTACK_BALL_COLOR
+	visual.polygon = _create_circle_polygon(ATTACK_BALL_RADIUS)
+	ball.add_child(visual)
+
+	var cleanup_timer := Timer.new()
+	cleanup_timer.one_shot = true
+	cleanup_timer.wait_time = ATTACK_BALL_LIFETIME_SECONDS
+	cleanup_timer.timeout.connect(ball.queue_free)
+	ball.add_child(cleanup_timer)
+
+	ball_parent.add_child(ball)
+	cleanup_timer.start()
+
+
+func _create_circle_polygon(radius: float, point_count: int = 24) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in point_count:
+		var angle := TAU * float(i) / float(point_count)
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+
+	return points
 
 
 func _get_board_position() -> Vector2:
