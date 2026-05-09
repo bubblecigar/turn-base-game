@@ -100,14 +100,8 @@ func _move_selected_entity(delta_i: int) -> void:
 
 
 func _attack_selected_cell(delta_i: int) -> void:
-	var selected_cell := _get_selected_entity_cell()
-	if selected_cell.is_empty():
-		push_warning("Select an entity on the board before attacking.")
-		return
-
-	var target_cell := _get_offset_cell(selected_cell, delta_i)
-	if target_cell.is_empty():
-		push_warning("Cannot attack outside the board with %s." % _selected_entity_id)
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before attacking.")
 		return
 
 	action_queue.enQueue([{
@@ -117,7 +111,7 @@ func _attack_selected_cell(delta_i: int) -> void:
 			"args": {
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "debugger",
-				"target_cell": target_cell,
+				"vector": Vector2i(delta_i, 0),
 			},
 		},
 	}])
@@ -141,43 +135,3 @@ func _get_board_entity_ids() -> Array[StringName]:
 
 	return entity_ids
 
-
-func _get_selected_entity_cell() -> Dictionary:
-	if _selected_entity_id == &"":
-		return {}
-
-	var board: Dictionary = state_store.get_value(&"board", {})
-	var cells: Array = board.get(&"cells", [])
-	for i in cells.size():
-		var col_cells: Array = cells[i]
-
-		for j in col_cells.size():
-			var cell: Dictionary = col_cells[j]
-			if _cell_has_entity_id(cell, _selected_entity_id):
-				return {
-					"i": i,
-					"j": j,
-				}
-
-	return {}
-
-
-func _get_offset_cell(cell: Dictionary, delta_i: int) -> Dictionary:
-	var board: Dictionary = state_store.get_value(&"board", {})
-	var target_i := int(cell["i"]) + delta_i
-	var target_j := int(cell["j"])
-	if target_i < 0 or target_i >= int(board.get(&"cols", 0)):
-		return {}
-
-	if target_j < 0 or target_j >= int(board.get(&"rows", 0)):
-		return {}
-
-	return {
-		"i": target_i,
-		"j": target_j,
-	}
-
-
-func _cell_has_entity_id(cell: Dictionary, entity_id: StringName) -> bool:
-	var entity_ids: Array = cell.get(&"entity_ids", [])
-	return entity_ids.has(entity_id) or cell.get(&"entity_id", &"") == entity_id
