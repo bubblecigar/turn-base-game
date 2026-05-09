@@ -120,7 +120,7 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	if _entity_id != attacker_id:
 		return
 
-	print("attack performed by %s" % attacker_id)
+	print("attack performed by %s with args %s" % [attacker_id, _args])
 	_play_attack_performed_visual(_args)
 
 
@@ -203,6 +203,28 @@ func _get_board_position() -> Vector2:
 	return _get_entity_board_position(_entity_id)
 
 
+func _get_attack_target_position(args: Dictionary) -> Vector2:
+	if board_view == null:
+		return Vector2.INF
+
+	var target_cell: Variant = args.get("target_cell", {})
+	if not target_cell is Dictionary:
+		return Vector2.INF
+
+	if not target_cell.has("i") or not target_cell.has("j"):
+		return Vector2.INF
+
+	var i := int(target_cell["i"])
+	var j := int(target_cell["j"])
+	var board: Dictionary = state_store.get_value(&"board", {})
+	if not _has_board_cell(board, i, j):
+		return Vector2.INF
+
+	var visual_size := get_visual_size()
+	var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
+	return bottom_position - Vector2(visual_size.x / 2.0, visual_size.y)
+
+
 func _get_entity_board_position(entity_id: StringName) -> Vector2:
 	var bottom_position := _get_entity_board_bottom_position(entity_id)
 	if bottom_position == Vector2.INF:
@@ -243,3 +265,13 @@ func _get_entity_board_index(board: Dictionary, entity_id: StringName) -> Vector
 func _cell_has_entity_id(cell: Dictionary, entity_id: StringName) -> bool:
 	var entity_ids: Array = cell.get(&"entity_ids", [])
 	return entity_ids.has(entity_id) or cell.get(&"entity_id", &"") == entity_id
+
+
+func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
+	return (
+		board.has(&"cells")
+		and i >= 0
+		and j >= 0
+		and i < int(board.get(&"cols", 0))
+		and j < int(board.get(&"rows", 0))
+	)

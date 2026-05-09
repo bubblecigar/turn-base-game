@@ -36,24 +36,31 @@ func _set_move_pose(direction: float) -> void:
 	right_leg.rotation_degrees = WALK_LEG_SWING_DEGREES * direction
 
 
-func _play_attack_performed_visual(_args: Dictionary) -> void:
+func _play_attack_performed_visual(args: Dictionary) -> void:
 	if animation_tracker == null:
+		return
+
+	var target_position := _get_attack_target_position(args)
+	if target_position == Vector2.INF:
 		return
 
 	if _attack_tween:
 		_attack_tween.kill()
 		_consume_active_attack_animation()
 
+	var start_position := position
 	var animation_id: StringName = animation_tracker.register_animation(ATTACK_ANIMATION_NAME)
 	_attack_animation_id = animation_id
 	_attack_tween = create_tween()
 	_attack_tween.set_trans(Tween.TRANS_QUAD)
 	_attack_tween.set_ease(Tween.EASE_OUT)
 	_attack_tween.set_parallel(true)
+	_attack_tween.tween_property(self, "position", target_position, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_property(body, "rotation_degrees", -ATTACK_BODY_LEAN_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_property(left_arm, "rotation_degrees", ATTACK_ARM_SWING_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_property(right_arm, "rotation_degrees", -ATTACK_ARM_SWING_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
-	_attack_tween.chain().tween_property(body, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
+	_attack_tween.chain().tween_property(self, "position", start_position, ATTACK_ANIMATION_SECONDS * 0.65)
+	_attack_tween.parallel().tween_property(body, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_property(left_arm, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_property(right_arm, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.finished.connect(_on_attack_tween_finished.bind(animation_id))
@@ -67,6 +74,7 @@ func _on_attack_tween_finished(animation_id: StringName) -> void:
 		_attack_tween = null
 		body.rotation_degrees = 0.0
 		_set_move_pose(0.0)
+		_update_board_position()
 
 
 func _consume_active_attack_animation() -> void:
