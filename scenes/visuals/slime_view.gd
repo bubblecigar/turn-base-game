@@ -42,6 +42,7 @@ func _play_attack_performed_visual(args: Dictionary) -> void:
 		_consume_active_attack_animation()
 
 	var start_position := position
+	_begin_attack_collision(args)
 	var animation_id: StringName = animation_tracker.register_animation(ATTACK_ANIMATION_NAME)
 	_attack_animation_id = animation_id
 	_attack_tween = create_tween()
@@ -50,7 +51,6 @@ func _play_attack_performed_visual(args: Dictionary) -> void:
 	_attack_tween.set_parallel(true)
 	_attack_tween.tween_property(self, "position", target_position, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_method(_set_attack_squeeze, 0.0, ATTACK_SQUEEZE_AMOUNT, ATTACK_ANIMATION_SECONDS * 0.35)
-	_attack_tween.chain().tween_callback(_emit_attack_target_cell_reached.bind(args))
 	_attack_tween.chain().tween_property(self, "position", start_position, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_method(_set_attack_squeeze, ATTACK_SQUEEZE_AMOUNT, 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.finished.connect(_on_attack_tween_finished.bind(animation_id))
@@ -68,6 +68,7 @@ func _on_attack_tween_finished(animation_id: StringName) -> void:
 		_attack_animation_id = &""
 		_attack_tween = null
 		_set_attack_squeeze(0.0)
+		_finish_attack_collision()
 		_update_board_position()
 
 
@@ -77,6 +78,7 @@ func _consume_active_attack_animation() -> void:
 
 	animation_tracker.consume_animation(_attack_animation_id)
 	_attack_animation_id = &""
+	_finish_attack_collision()
 	_set_attack_squeeze(0.0)
 
 

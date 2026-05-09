@@ -2,7 +2,7 @@ extends Node2D
 
 class_name EntityBoardView
 
-signal attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary, args: Dictionary)
+signal entities_collided(entity_id: StringName, collided_entity_ids: Array[StringName], payload: Dictionary)
 
 const MOVE_ANIMATION_SECONDS := 1.75
 const MOVE_ANIMATION_NAME := &"entity_move"
@@ -23,6 +23,7 @@ const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
 const ENTITY_COLLISION_NAME := "EntityCollision"
 const ENTITY_COLLISION_CELL_SCALE := 0.8
+const COLLISION_PAYLOAD_ATTACK := &"attack"
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -39,6 +40,8 @@ var _hit_tween: Tween
 var _damage_tween: Tween
 var _move_animation_id := &""
 var _hit_animation_id := &""
+var _active_collision_payload: Dictionary = {}
+var _active_collision_entity_ids: Dictionary = {}
 var _is_moving := false
 var _move_time := 0.0
 
@@ -141,14 +144,6 @@ func _set_move_pose(_direction: float) -> void:
 
 func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
-
-
-func _emit_attack_target_cell_reached(args: Dictionary) -> void:
-	var target_cell: Variant = args.get("target_cell", {})
-	if not target_cell is Dictionary:
-		return
-
-	attack_target_cell_reached.emit(_entity_id, target_cell, args)
 
 
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
@@ -350,6 +345,18 @@ func _on_entity_area_entered(area: Area2D) -> void:
 	if other_entity_view.get_entity_id() == _entity_id:
 		return
 
+	var collided_entity_ids := _get_collided_entity_ids()
+	if collided_entity_ids.is_empty():
+		return
+
+	print("entity collision list for %s: %s" % [_entity_id, collided_entity_ids])
+	_emit_active_collisions(collided_entity_ids)
+
+	if other_entity_view._has_active_collision():
+		other_entity_view._emit_active_collisions(other_entity_view._get_collided_entity_ids())
+
+
+func _get_collided_entity_ids() -> Array[StringName]:
 	var collided_entity_ids: Array[StringName] = []
 	for overlapping_area: Area2D in _entity_area.get_overlapping_areas():
 		var overlapping_entity_view := overlapping_area.get_parent() as EntityBoardView
@@ -362,10 +369,50 @@ func _on_entity_area_entered(area: Area2D) -> void:
 
 		collided_entity_ids.append(overlapping_entity_id)
 
-	if collided_entity_ids.is_empty():
+	return collided_entity_ids
+
+
+func _has_active_collision() -> bool:
+	return not _active_collision_payload.is_empty()
+
+
+func _emit_active_collisions(collided_entity_ids: Array[StringName]) -> void:
+	if _active_collision_payload.is_empty():
 		return
 
-	print("entity collision list for %s: %s" % [_entity_id, collided_entity_ids])
+	var newly_collided_entity_ids: Array[StringName] = []
+	for collided_entity_id: StringName in collided_entity_ids:
+		if _active_collision_entity_ids.has(collided_entity_id):
+			continue
+
+		_active_collision_entity_ids[collided_entity_id] = true
+		newly_collided_entity_ids.append(collided_entity_id)
+
+	if newly_collided_entity_ids.is_empty():
+		return
+
+	entities_collided.emit(_entity_id, newly_collided_entity_ids, _active_collision_payload)
+
+
+func _begin_collision(payload: Dictionary) -> void:
+	_active_collision_payload = payload
+	_active_collision_entity_ids.clear()
+
+
+func _finish_collision() -> void:
+	_active_collision_payload = {}
+	_active_collision_entity_ids.clear()
+
+
+func _begin_attack_collision(args: Dictionary) -> void:
+	_begin_collision({
+		&"type": COLLISION_PAYLOAD_ATTACK,
+		&"args": args,
+	})
+
+
+func _finish_attack_collision() -> void:
+	_finish_collision()
 
 
 func _create_id_label() -> void:

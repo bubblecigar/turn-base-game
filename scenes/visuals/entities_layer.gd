@@ -7,6 +7,7 @@ const STATE_STORE_PATH := NodePath("../../../StateStore")
 const ACTION_HANDLER_PATH := NodePath("../../../ActionHandler")
 const ANIMATION_TRACKER_PATH := NodePath("../../../AnimationTracker")
 const BOARD_VIEW_PATH := NodePath("../../BoardView")
+const COLLISION_PAYLOAD_ATTACK := &"attack"
 
 @onready var state_store: Node = $"../../StateStore"
 
@@ -41,7 +42,7 @@ func sync_entities(entities: Dictionary) -> void:
 		entity_view.animation_tracker_path = ANIMATION_TRACKER_PATH
 		entity_view.board_view_path = BOARD_VIEW_PATH
 		entity_view.set_entity_id(entity_id)
-		entity_view.attack_target_cell_reached.connect(_on_attack_target_cell_reached)
+		entity_view.entities_collided.connect(_on_entities_collided)
 		add_child(entity_view)
 		_entity_views[entity_id] = entity_view
 
@@ -57,17 +58,25 @@ func sync_entities(entities: Dictionary) -> void:
 		character_view.queue_free()
 
 
-func _on_attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary, args: Dictionary) -> void:
+func _on_entities_collided(entity_id: StringName, collided_entity_ids: Array[StringName], payload: Dictionary) -> void:
+	match payload.get(&"type", &""):
+		COLLISION_PAYLOAD_ATTACK:
+			_apply_attack_collision(entity_id, collided_entity_ids, payload.get(&"args", {}))
+
+
+func _apply_attack_collision(attacker_id: StringName, target_entity_ids: Array[StringName], args: Dictionary) -> void:
 	var damage := int(args.get("damage", 0))
 
-	for entity_id: Variant in _entity_views:
-		if StringName(str(entity_id)) == attacker_id:
+	for target_entity_id: StringName in target_entity_ids:
+		if target_entity_id == attacker_id:
 			continue
 
-		var entity_view: EntityBoardView = _entity_views[entity_id]
-		if entity_view.is_in_board_cell(target_cell):
-			state_store.damage_entity(StringName(str(entity_id)), damage)
-			entity_view.play_hit_visual(attacker_id, args)
+		if not _entity_views.has(target_entity_id):
+			continue
+
+		var entity_view: EntityBoardView = _entity_views[target_entity_id]
+		state_store.damage_entity(target_entity_id, damage)
+		entity_view.play_hit_visual(attacker_id, args)
 
 
 func _get_entity_scene(entity: Dictionary) -> PackedScene:
