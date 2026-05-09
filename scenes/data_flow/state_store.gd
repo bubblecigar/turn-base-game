@@ -46,7 +46,7 @@ func set_value(key: StringName, value: Variant) -> void:
 	state_changed.emit(get_state())
 
 
-func init_entity(entity_type: StringName, spec: Dictionary, i: int = 0, j: int = 0) -> void:
+func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> void:
 	var previous_character: Variant = {}
 	if _character_index > 0:
 		previous_character = _get_entity(StringName("character_%d" % _character_index))
@@ -54,6 +54,8 @@ func init_entity(entity_type: StringName, spec: Dictionary, i: int = 0, j: int =
 	var next_entity := {
 		&"id": _create_entity_id(entity_type),
 		&"type": entity_type,
+		&"max_hp": max_hp,
+		&"current_hp": max_hp,
 		&"spec": spec.duplicate(true),
 	}
 	_set_entity(next_entity)

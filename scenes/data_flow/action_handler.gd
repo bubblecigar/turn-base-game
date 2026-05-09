@@ -74,10 +74,11 @@ func _spawn_entity(payload: Dictionary) -> void:
 		push_warning('Invalid character entity spec.')
 		return
 
+	var max_hp := int(payload.get("max_hp", payload.get("hp", _get_default_entity_max_hp(entity_type))))
 	var position: Dictionary = payload.get("position", {})
 	var i := int(position.get("i", 0))
 	var j := int(position.get("j", 0))
-	state_store.init_entity(entity_type, entity_spec, i, j)
+	state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 
@@ -110,6 +111,16 @@ func _random_character_spec() -> Dictionary:
 	}
 
 
+func _get_default_entity_max_hp(entity_type: StringName) -> int:
+	match entity_type:
+		&"character":
+			return 20
+		&"slime":
+			return 12
+		_:
+			return 1
+
+
 func _random_part_size() -> Dictionary:
 	return {
 		"width": randi_range(MIN_CHARACTER_SIZE, MAX_CHARACTER_SIZE),
@@ -133,6 +144,8 @@ func _is_spawn_entity_payload(payload: Dictionary) -> bool:
 		and payload.has("spec")
 		and (typeof(payload["type"]) == TYPE_STRING or typeof(payload["type"]) == TYPE_STRING_NAME)
 		and payload["spec"] is Dictionary
+		and (not payload.has("max_hp") or typeof(payload["max_hp"]) == TYPE_INT or typeof(payload["max_hp"]) == TYPE_FLOAT)
+		and (not payload.has("hp") or typeof(payload["hp"]) == TYPE_INT or typeof(payload["hp"]) == TYPE_FLOAT)
 	)
 
 

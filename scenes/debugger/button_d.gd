@@ -16,6 +16,7 @@ func _on_pressed() -> void:
 		"eventName": "spawn_entity",
 		"payload": {
 			"type": "slime",
+			"max_hp": 12,
 			"spec": {
 				"radius": randi_range(MIN_RADIUS, MAX_RADIUS),
 			},

@@ -13,11 +13,19 @@ const HIT_SHAKE_PIXELS := 7.0
 const DAMAGE_LABEL_FONT_SIZE := 14.0
 const DAMAGE_LABEL_HEIGHT := 18.0
 const DAMAGE_LABEL_RISE_PIXELS := 20.0
+const HP_BAR_HEIGHT := 5.0
+const HP_BAR_MIN_WIDTH := 28.0
+const HP_BAR_TOP_OFFSET := 12.0
+const HP_TEXT_FONT_SIZE := 8.0
+const HP_TEXT_HEIGHT := 12.0
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 
 var _entity_id := &""
 var _entity: Dictionary = {}
+var _hp_bar_background: ColorRect
+var _hp_bar_fill: ColorRect
+var _hp_label: Label
 var _id_label: Label
 var _damage_label: Label
 var _move_tween: Tween
@@ -44,6 +52,7 @@ func _ready() -> void:
 		return
 
 	_create_id_label()
+	_create_hp_bar()
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
@@ -280,6 +289,7 @@ func _set_entity(entity_state: Dictionary) -> void:
 	_entity = entity_state
 	_on_entity_updated(_entity)
 	_update_id_label()
+	_update_hp_bar()
 
 
 func _update_board_position() -> void:
@@ -300,6 +310,23 @@ func _create_id_label() -> void:
 	add_child(_id_label)
 
 
+func _create_hp_bar() -> void:
+	_hp_bar_background = ColorRect.new()
+	_hp_bar_background.color = Color(0.12, 0.12, 0.12, 0.9)
+	add_child(_hp_bar_background)
+
+	_hp_bar_fill = ColorRect.new()
+	_hp_bar_fill.color = Color(0.25, 0.9, 0.25, 1.0)
+	add_child(_hp_bar_fill)
+
+	_hp_label = Label.new()
+	_hp_label.layout_mode = 0
+	_hp_label.add_theme_font_size_override("font_size", HP_TEXT_FONT_SIZE)
+	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	add_child(_hp_label)
+
+
 func _update_id_label() -> void:
 	if _id_label == null:
 		return
@@ -308,6 +335,39 @@ func _update_id_label() -> void:
 	_id_label.text = str(_entity.get(&"id", ""))
 	_id_label.position = Vector2.ZERO
 	_id_label.size = Vector2(max(visual_size.x, 1.0), ID_LABEL_HEIGHT)
+
+
+func _update_hp_bar() -> void:
+	if _hp_bar_background == null or _hp_bar_fill == null or _hp_label == null:
+		return
+
+	var max_hp: int = max(int(_entity.get(&"max_hp", 0)), 0)
+	var current_hp: int = clamp(int(_entity.get(&"current_hp", max_hp)), 0, max_hp)
+	var visual_size := get_visual_size()
+	var bar_width: float = max(visual_size.x, HP_BAR_MIN_WIDTH)
+	var bar_position := Vector2((visual_size.x - bar_width) / 2.0, -HP_BAR_TOP_OFFSET - HP_BAR_HEIGHT)
+	var hp_ratio := 0.0
+	if max_hp > 0:
+		hp_ratio = float(current_hp) / float(max_hp)
+
+	_hp_bar_background.position = bar_position
+	_hp_bar_background.size = Vector2(bar_width, HP_BAR_HEIGHT)
+	_hp_bar_fill.position = bar_position
+	_hp_bar_fill.size = Vector2(bar_width * hp_ratio, HP_BAR_HEIGHT)
+	_hp_bar_fill.color = _get_hp_bar_color(hp_ratio)
+	_hp_label.text = "%d/%d" % [current_hp, max_hp]
+	_hp_label.position = bar_position - Vector2(0.0, HP_TEXT_HEIGHT)
+	_hp_label.size = Vector2(bar_width, HP_TEXT_HEIGHT)
+
+
+func _get_hp_bar_color(hp_ratio: float) -> Color:
+	if hp_ratio <= 0.25:
+		return Color(0.9, 0.15, 0.12, 1.0)
+
+	if hp_ratio <= 0.5:
+		return Color(0.95, 0.72, 0.15, 1.0)
+
+	return Color(0.25, 0.9, 0.25, 1.0)
 
 
 func _get_board_position() -> Vector2:

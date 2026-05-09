@@ -76,6 +76,8 @@ Entities are stored separately by id:
 	&"character_1": {
 		&"id": &"character_1",
 		&"type": &"character",
+		&"max_hp": 20,
+		&"current_hp": 20,
 		&"spec": {...},
 	},
 }

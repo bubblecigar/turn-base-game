@@ -62,6 +62,7 @@ func _init_from_template(t: Dictionary) -> void:
 				"payload": {
 					"type": entity["type"],
 					"spec": entity["spec"],
+					"max_hp": int(entity.get("max_hp", entity.get("hp", 1))),
 					"position": position,
 				},
 			})

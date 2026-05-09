@@ -12,6 +12,7 @@ func _on_pressed() -> void:
 		"eventName": "spawn_entity",
 		"payload": {
 			"type": "character",
+			"max_hp": 20,
 			"spec": _get_character_spec(),
 		},
 	})
