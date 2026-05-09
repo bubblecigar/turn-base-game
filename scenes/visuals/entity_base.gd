@@ -22,6 +22,7 @@ const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
 const ENTITY_COLLISION_NAME := "EntityCollision"
+const ENTITY_COLLISION_CELL_SCALE := 0.8
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -336,7 +337,7 @@ func _update_entity_area() -> void:
 		return
 
 	_entity_collision.disabled = false
-	_entity_collision_shape.size = cell_size
+	_entity_collision_shape.size = cell_size * ENTITY_COLLISION_CELL_SCALE
 	var visual_size := get_visual_size()
 	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
 
