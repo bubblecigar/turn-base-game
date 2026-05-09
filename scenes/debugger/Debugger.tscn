@@ -5,9 +5,10 @@
 [ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
 [ext_resource type="Script" uid="uid://d143k6kh3jci5" path="res://scenes/debugger/button_c.gd" id="4_r14ok"]
 [ext_resource type="Script" uid="uid://kx05fb0s35bf" path="res://scenes/debugger/button_d.gd" id="5_butnd"]
-[ext_resource type="Script" path="res://scenes/debugger/button_perform_attack.gd" id="6_attack"]
+[ext_resource type="Script" uid="uid://tykc4qp46svd" path="res://scenes/debugger/button_perform_attack.gd" id="6_attack"]
 [ext_resource type="Script" uid="uid://djq6b16xo7xp" path="res://scenes/debugger/button_print_state.gd" id="7_print_state"]
-[ext_resource type="Script" path="res://scenes/debugger/entity_action_controls.gd" id="8_entity_controls"]
+[ext_resource type="Script" uid="uid://byqhpg1st61go" path="res://scenes/debugger/entity_action_controls.gd" id="8_entity_controls"]
+[ext_resource type="Script" uid="uid://bi6dtt065awmx" path="res://scenes/debugger/button_perform_cast.gd" id="9_cast"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -71,6 +72,16 @@ offset_bottom = 314.0
 scale = Vector2(2.4857094, 3.2024686)
 text = "Attack"
 script = ExtResource("6_attack")
+
+[node name="ButtonPerformCast" type="Button" parent="." unique_id=891234567]
+layout_mode = 0
+offset_left = 769.0
+offset_top = 200.0
+offset_right = 846.0
+offset_bottom = 231.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Cast"
+script = ExtResource("9_cast")
 
 [node name="ButtonPrintState" type="Button" parent="." unique_id=1224587122]
 visible = false
@@ -273,46 +284,41 @@ min_value = 1.0
 max_value = 128.0
 value = 36.0
 
-[node name="EntityActionControls" type="Control" parent="."]
-layout_mode = 0
+[node name="EntityActionControls" type="Control" parent="." unique_id=196569711]
+anchors_preset = 0
 offset_left = 40.0
 offset_top = 252.0
 offset_right = 520.0
 offset_bottom = 432.0
 script = ExtResource("8_entity_controls")
 
-[node name="EntitySelect" type="OptionButton" parent="EntityActionControls"]
+[node name="EntitySelect" type="OptionButton" parent="EntityActionControls" unique_id=347466564]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 220.0
 offset_bottom = 31.0
 
-[node name="MoveRightButton" type="Button" parent="EntityActionControls"]
+[node name="MoveRightButton" type="Button" parent="EntityActionControls" unique_id=686194300]
 layout_mode = 0
 offset_left = 232.0
-offset_top = 0.0
 offset_right = 304.0
 offset_bottom = 31.0
 text = "=>"
 
-[node name="MoveLeftButton" type="Button" parent="EntityActionControls"]
+[node name="MoveLeftButton" type="Button" parent="EntityActionControls" unique_id=168157372]
 layout_mode = 0
 offset_left = 316.0
-offset_top = 0.0
 offset_right = 388.0
 offset_bottom = 31.0
 text = "<="
 
-[node name="AttackLeftButton" type="Button" parent="EntityActionControls"]
+[node name="AttackLeftButton" type="Button" parent="EntityActionControls" unique_id=1530027094]
 layout_mode = 0
-offset_left = 0.0
 offset_top = 44.0
 offset_right = 116.0
 offset_bottom = 75.0
 text = "attack <="
 
-[node name="AttackRightButton" type="Button" parent="EntityActionControls"]
+[node name="AttackRightButton" type="Button" parent="EntityActionControls" unique_id=334374020]
 layout_mode = 0
 offset_left = 128.0
 offset_top = 44.0
@@ -320,23 +326,21 @@ offset_right = 244.0
 offset_bottom = 75.0
 text = "attack =>"
 
-[node name="BatchRandomMoveButton" type="Button" parent="EntityActionControls"]
+[node name="BatchRandomMoveButton" type="Button" parent="EntityActionControls" unique_id=2043601682]
 layout_mode = 0
-offset_left = 0.0
 offset_top = 88.0
 offset_right = 196.0
 offset_bottom = 119.0
 text = "batch random moves"
 
-[node name="SendBatchButton" type="Button" parent="EntityActionControls"]
+[node name="SendBatchButton" type="Button" parent="EntityActionControls" unique_id=1400637785]
 layout_mode = 0
-offset_left = 0.0
 offset_top = 132.0
 offset_right = 120.0
 offset_bottom = 163.0
 text = "send batch"
 
-[node name="ActionStackLabel" type="Label" parent="EntityActionControls"]
+[node name="ActionStackLabel" type="Label" parent="EntityActionControls" unique_id=1872298261]
 layout_mode = 0
 offset_left = 136.0
 offset_top = 136.0
