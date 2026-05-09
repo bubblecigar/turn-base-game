@@ -24,8 +24,10 @@ func _on_pressed() -> void:
 		"eventName": "move_entity",
 		"payload": {
 			"id": entity_id,
-			"i": randi_range(0, int(board.get(&"cols", 1)) - 1),
-			"j": randi_range(0, int(board.get(&"rows", 1)) - 1),
+			"vector": Vector2i(
+				randi_range(-int(board.get(&"cols", 1)) + 1, int(board.get(&"cols", 1)) - 1),
+				randi_range(-int(board.get(&"rows", 1)) + 1, int(board.get(&"rows", 1)) - 1)
+			),
 		},
 	})
 

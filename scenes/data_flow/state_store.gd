@@ -88,6 +88,21 @@ func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
 	entity_moved.emit(entity.get(&"id", &""), position, previous_position)
 
 
+func move_entity_by(entity_id: StringName, vector: Vector2i) -> void:
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot move missing entity: %s." % entity_id)
+		return
+
+	var board: Dictionary = _state.get(&"board", {})
+	var board_index := _get_entity_board_index(board, entity)
+	if board_index == Vector2i(-1, -1):
+		push_warning("Cannot move entity outside board: %s." % entity_id)
+		return
+
+	move_entity_to(entity_id, board_index.x + vector.x, board_index.y + vector.y)
+
+
 func has_entity(entity_id: StringName) -> bool:
 	return not _get_entity(entity_id).is_empty()
 

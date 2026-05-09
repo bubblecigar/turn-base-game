@@ -158,26 +158,35 @@ func _is_part_spec(spec: Variant) -> bool:
 
 
 func _move_entity(payload: Dictionary) -> void:
-	if not _is_board_position_payload(payload):
-		push_warning('Invalid move_entity payload. Expected { id: String, i: int, j: int }.')
+	if not _is_move_entity_payload(payload):
+		push_warning('Invalid move_entity payload. Expected { id: String, vector: Vector2i }.')
 		return
 
 	var entity_id := StringName(str(payload["id"]))
-	var next_i := int(payload["i"])
-	var next_j := int(payload["j"])
-	state_store.move_entity_to(entity_id, next_i, next_j)
-	print('moved entity to board cell: ', entity_id, ' ', Vector2i(next_i, next_j))
+	var vector := _get_move_entity_vector(payload["vector"])
+	state_store.move_entity_by(entity_id, vector)
+	print('moved entity by vector: ', entity_id, ' ', vector)
 
 
-func _is_board_position_payload(payload: Dictionary) -> bool:
+func _is_move_entity_payload(payload: Dictionary) -> bool:
 	return (
 		payload.has("id")
-		and payload.has("i")
-		and payload.has("j")
+		and payload.has("vector")
 		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
-		and typeof(payload["i"]) == TYPE_INT
-		and typeof(payload["j"]) == TYPE_INT
+		and _is_move_vector(payload["vector"])
 	)
+
+
+func _is_move_vector(value: Variant) -> bool:
+	return value is Vector2i or value is Vector2
+
+
+func _get_move_entity_vector(value: Variant) -> Vector2i:
+	if value is Vector2i:
+		return value
+
+	var vector: Vector2 = value
+	return Vector2i(int(vector.x), int(vector.y))
 
 
 func _perform_attack(payload: Dictionary) -> void:

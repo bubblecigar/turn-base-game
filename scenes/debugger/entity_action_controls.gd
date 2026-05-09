@@ -86,22 +86,15 @@ func _refresh_entity_options() -> void:
 
 
 func _move_selected_entity(delta_i: int) -> void:
-	var selected_cell := _get_selected_entity_cell()
-	if selected_cell.is_empty():
-		push_warning("Select an entity on the board before moving.")
-		return
-
-	var target_cell := _get_offset_cell(selected_cell, delta_i)
-	if target_cell.is_empty():
-		push_warning("Cannot move %s outside the board." % _selected_entity_id)
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before moving.")
 		return
 
 	action_queue.enQueue({
 		"eventName": "move_entity",
 		"payload": {
 			"id": _selected_entity_id,
-			"i": target_cell["i"],
-			"j": target_cell["j"],
+			"vector": Vector2i(delta_i, 0),
 		},
 	})
 

@@ -32,8 +32,7 @@ Game changes are requested as action dictionaries:
 	"eventName": "move_entity",
 	"payload": {
 		"id": &"character_1",
-		"i": 2,
-		"j": 1,
+		"vector": Vector2i(1, 0),
 	},
 }
 ```
