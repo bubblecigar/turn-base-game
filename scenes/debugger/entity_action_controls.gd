@@ -17,8 +17,11 @@ const RANDOM_MOVE_VECTORS := [
 @onready var attack_left_button: Button = $AttackLeftButton
 @onready var attack_right_button: Button = $AttackRightButton
 @onready var batch_random_move_button: Button = $BatchRandomMoveButton
+@onready var send_batch_button: Button = $SendBatchButton
+@onready var action_stack_label: Label = $ActionStackLabel
 
 var _selected_entity_id := &""
+var _action_stack: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -31,7 +34,9 @@ func _ready() -> void:
 	attack_left_button.pressed.connect(_on_attack_left_pressed)
 	attack_right_button.pressed.connect(_on_attack_right_pressed)
 	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
+	send_batch_button.pressed.connect(_on_send_batch_pressed)
 	_refresh_entity_options()
+	_update_action_stack_status()
 
 
 func _on_entities_updated(_entities: Dictionary, _previous_entities: Variant) -> void:
@@ -73,10 +78,18 @@ func _on_batch_random_move_pressed() -> void:
 		push_warning("Cannot batch random moves with distinct target cells.")
 		return
 
-	action_queue.enQueue([
-		_create_move_action(selected_options[0]["entity_id"], selected_options[0]["vector"]),
-		_create_move_action(selected_options[1]["entity_id"], selected_options[1]["vector"]),
-	])
+	_stack_action(_create_move_action(selected_options[0]["entity_id"], selected_options[0]["vector"]))
+	_stack_action(_create_move_action(selected_options[1]["entity_id"], selected_options[1]["vector"]))
+
+
+func _on_send_batch_pressed() -> void:
+	if _action_stack.is_empty():
+		push_warning("Cannot send an empty debugger action batch.")
+		return
+
+	action_queue.enQueue(_action_stack.duplicate(true))
+	_action_stack.clear()
+	_update_action_stack_status()
 
 
 func _refresh_entity_options() -> void:
@@ -116,7 +129,7 @@ func _move_selected_entity(delta_i: int) -> void:
 		push_warning("Select an entity before moving.")
 		return
 
-	action_queue.enQueue([_create_move_action(_selected_entity_id, Vector2i(delta_i, 0))])
+	_stack_action(_create_move_action(_selected_entity_id, Vector2i(delta_i, 0)))
 
 
 func _create_move_action(entity_id: StringName, vector: Vector2i) -> Dictionary:
@@ -134,7 +147,7 @@ func _attack_selected_cell(delta_i: int) -> void:
 		push_warning("Select an entity before attacking.")
 		return
 
-	action_queue.enQueue([{
+	_stack_action({
 		"eventName": "perform_attack",
 		"payload": {
 			"id": _selected_entity_id,
@@ -144,7 +157,20 @@ func _attack_selected_cell(delta_i: int) -> void:
 				"vector": Vector2i(delta_i, 0),
 			},
 		},
-	}])
+	})
+
+
+func _stack_action(action: Dictionary) -> void:
+	_action_stack.append(action)
+	_update_action_stack_status()
+
+
+func _update_action_stack_status() -> void:
+	if action_stack_label != null:
+		action_stack_label.text = "Stack: %d" % _action_stack.size()
+
+	if send_batch_button != null:
+		send_batch_button.disabled = _action_stack.is_empty()
 
 
 func _get_board_entity_ids() -> Array[StringName]:

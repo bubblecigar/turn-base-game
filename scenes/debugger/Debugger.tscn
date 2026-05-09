@@ -278,7 +278,7 @@ layout_mode = 0
 offset_left = 40.0
 offset_top = 252.0
 offset_right = 520.0
-offset_bottom = 388.0
+offset_bottom = 432.0
 script = ExtResource("8_entity_controls")
 
 [node name="EntitySelect" type="OptionButton" parent="EntityActionControls"]
@@ -327,3 +327,19 @@ offset_top = 88.0
 offset_right = 196.0
 offset_bottom = 119.0
 text = "batch random moves"
+
+[node name="SendBatchButton" type="Button" parent="EntityActionControls"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 132.0
+offset_right = 120.0
+offset_bottom = 163.0
+text = "send batch"
+
+[node name="ActionStackLabel" type="Label" parent="EntityActionControls"]
+layout_mode = 0
+offset_left = 136.0
+offset_top = 136.0
+offset_right = 212.0
+offset_bottom = 159.0
+text = "Stack: 0"
