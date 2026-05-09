@@ -9,8 +9,8 @@ const MIN_CHARACTER_SIZE := 16
 const MAX_CHARACTER_SIZE := 64
 const MIN_HEAD_RADIUS := 6
 const MAX_HEAD_RADIUS := 14
-const MIN_BOARD_SIZE := 3
-const MAX_BOARD_SIZE := 5
+const MIN_BOARD_SIZE := 1
+const MAX_BOARD_SIZE := 99
 
 var _current_event: Dictionary = {}
 var _is_consuming := false

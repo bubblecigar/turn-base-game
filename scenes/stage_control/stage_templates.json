@@ -1,11 +1,11 @@
 {
 	"a": {
-		"board": { "cols": 5, "rows": 5 },
+		"board": { "cols": 5, "rows": 1 },
 		"entities": [
 			{
 				"type": "character",
 				"max_hp": 20,
-				"position": { "i": 0, "j": 4 },
+				"position": { "i": 1, "j": 0 },
 				"spec": {
 					"head": { "radius": 12 },
 					"neck": { "width": 10, "height": 8 },
@@ -17,7 +17,7 @@
 			{
 				"type": "slime",
 				"max_hp": 12,
-				"position": { "i": 4, "j": 4 },
+				"position": { "i": 3, "j": 0 },
 				"spec": { "radius": 20 }
 			}
 		]
