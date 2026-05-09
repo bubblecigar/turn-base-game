@@ -84,7 +84,7 @@ func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
 
 	var position := _board_index_to_position(i, j)
 	set_value(&"board", next_board)
-	board_init.emit(next_board, previous_board)
+
 	entity_moved.emit(entity.get(&"id", &""), position, previous_position)
 
 

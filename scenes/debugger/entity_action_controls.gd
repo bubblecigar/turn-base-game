@@ -2,6 +2,12 @@ extends Control
 
 const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
+const RANDOM_MOVE_VECTORS := [
+	Vector2i.LEFT,
+	Vector2i.RIGHT,
+	Vector2i.UP,
+	Vector2i.DOWN,
+]
 
 @onready var action_queue: Node = $"../../ActionQueue"
 @onready var state_store: Node = $"../../StateStore"
@@ -10,6 +16,7 @@ const DAMAGE_MAX := 9
 @onready var move_right_button: Button = $MoveRightButton
 @onready var attack_left_button: Button = $AttackLeftButton
 @onready var attack_right_button: Button = $AttackRightButton
+@onready var batch_random_move_button: Button = $BatchRandomMoveButton
 
 var _selected_entity_id := &""
 
@@ -23,6 +30,7 @@ func _ready() -> void:
 	move_right_button.pressed.connect(_on_move_right_pressed)
 	attack_left_button.pressed.connect(_on_attack_left_pressed)
 	attack_right_button.pressed.connect(_on_attack_right_pressed)
+	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
 	_refresh_entity_options()
 
 
@@ -54,6 +62,23 @@ func _on_attack_right_pressed() -> void:
 	_attack_selected_cell(1)
 
 
+func _on_batch_random_move_pressed() -> void:
+	var move_options := _get_random_move_options()
+	if move_options.size() < 2:
+		push_warning("Cannot batch random moves before at least two entities are on the board.")
+		return
+
+	var selected_options := _get_distinct_target_move_options(move_options)
+	if selected_options.is_empty():
+		push_warning("Cannot batch random moves with distinct target cells.")
+		return
+
+	action_queue.enQueue([
+		_create_move_action(selected_options[0]["entity_id"], selected_options[0]["vector"]),
+		_create_move_action(selected_options[1]["entity_id"], selected_options[1]["vector"]),
+	])
+
+
 func _refresh_entity_options() -> void:
 	var previous_selected_id := _selected_entity_id
 	var entity_ids := _get_board_entity_ids()
@@ -83,6 +108,7 @@ func _refresh_entity_options() -> void:
 	move_right_button.disabled = not has_entity
 	attack_left_button.disabled = not has_entity
 	attack_right_button.disabled = not has_entity
+	batch_random_move_button.disabled = entity_ids.size() < 2
 
 
 func _move_selected_entity(delta_i: int) -> void:
@@ -90,13 +116,17 @@ func _move_selected_entity(delta_i: int) -> void:
 		push_warning("Select an entity before moving.")
 		return
 
-	action_queue.enQueue([{
+	action_queue.enQueue([_create_move_action(_selected_entity_id, Vector2i(delta_i, 0))])
+
+
+func _create_move_action(entity_id: StringName, vector: Vector2i) -> Dictionary:
+	return {
 		"eventName": "move_entity",
 		"payload": {
-			"id": _selected_entity_id,
-			"vector": Vector2i(delta_i, 0),
+			"id": entity_id,
+			"vector": vector,
 		},
-	}])
+	}
 
 
 func _attack_selected_cell(delta_i: int) -> void:
@@ -135,3 +165,67 @@ func _get_board_entity_ids() -> Array[StringName]:
 
 	return entity_ids
 
+
+func _get_random_move_options() -> Array[Dictionary]:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var options: Array[Dictionary] = []
+	var cells: Array = board.get(&"cells", [])
+
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			var entity_ids := _get_cell_entity_ids(cell)
+
+			for entity_id: StringName in entity_ids:
+				for vector: Vector2i in RANDOM_MOVE_VECTORS:
+					var target_cell := Vector2i(i, j) + vector
+					if _has_board_cell(board, target_cell):
+						options.append({
+							"entity_id": entity_id,
+							"vector": vector,
+							"target_cell": target_cell,
+						})
+
+	options.shuffle()
+	return options
+
+
+func _get_distinct_target_move_options(options: Array[Dictionary]) -> Array[Dictionary]:
+	for first_option: Dictionary in options:
+		for second_option: Dictionary in options:
+			if first_option == second_option:
+				continue
+
+			if first_option["entity_id"] == second_option["entity_id"]:
+				continue
+
+			if first_option["target_cell"] == second_option["target_cell"]:
+				continue
+
+			return [first_option, second_option]
+
+	return []
+
+
+func _get_cell_entity_ids(cell: Dictionary) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for entity_id: Variant in cell.get(&"entity_ids", []):
+		var entity_string_name := StringName(str(entity_id))
+		if not result.has(entity_string_name):
+			result.append(entity_string_name)
+
+	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
+	if legacy_entity_id != &"" and not result.has(legacy_entity_id):
+		result.append(legacy_entity_id)
+
+	return result
+
+
+func _has_board_cell(board: Dictionary, cell: Vector2i) -> bool:
+	return (
+		cell.x >= 0
+		and cell.y >= 0
+		and cell.x < int(board.get(&"cols", 0))
+		and cell.y < int(board.get(&"rows", 0))
+	)
