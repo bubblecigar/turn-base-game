@@ -1,26 +1,10 @@
 {
-	"stage1": {
-		"board": { "cols": 5, "rows": 3 },
-		"entities": [
-			{
-				"type": "character",
-				"position": { "i": 0, "j": 0 },
-				"spec": {
-					"head": { "radius": 10 },
-					"neck": { "width": 8, "height": 6 },
-					"body": { "width": 24, "height": 32 },
-					"arms": { "width": 8, "height": 24 },
-					"legs": { "width": 10, "height": 28 }
-				}
-			}
-		]
-	},
-	"stage2": {
+	"a": {
 		"board": { "cols": 5, "rows": 5 },
 		"entities": [
 			{
 				"type": "character",
-				"position": { "i": 0, "j": 0 },
+				"position": { "i": 0, "j": 4 },
 				"spec": {
 					"head": { "radius": 12 },
 					"neck": { "width": 10, "height": 8 },
@@ -31,7 +15,7 @@
 			},
 			{
 				"type": "slime",
-				"position": { "i": 2, "j": 2 },
+				"position": { "i": 4, "j": 4 },
 				"spec": { "radius": 20 }
 			}
 		]
