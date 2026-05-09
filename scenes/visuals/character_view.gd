@@ -59,6 +59,7 @@ func _play_attack_performed_visual(args: Dictionary) -> void:
 	_attack_tween.tween_property(body, "rotation_degrees", -ATTACK_BODY_LEAN_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_property(left_arm, "rotation_degrees", ATTACK_ARM_SWING_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_property(right_arm, "rotation_degrees", -ATTACK_ARM_SWING_DEGREES, ATTACK_ANIMATION_SECONDS * 0.35)
+	_attack_tween.chain().tween_callback(_emit_attack_target_cell_reached.bind(args))
 	_attack_tween.chain().tween_property(self, "position", start_position, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_property(body, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_property(left_arm, "rotation_degrees", 0.0, ATTACK_ANIMATION_SECONDS * 0.65)

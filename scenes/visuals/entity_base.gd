@@ -2,9 +2,14 @@ extends Node2D
 
 class_name EntityBoardView
 
+signal attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary)
+
 const MOVE_ANIMATION_SECONDS := 1.75
 const MOVE_ANIMATION_NAME := &"entity_move"
 const WALK_STEP_SECONDS := 0.35
+const HIT_ANIMATION_SECONDS := 0.24
+const HIT_ANIMATION_NAME := &"entity_hit"
+const HIT_SHAKE_PIXELS := 7.0
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 
@@ -12,7 +17,9 @@ var _entity_id := &""
 var _entity: Dictionary = {}
 var _id_label: Label
 var _move_tween: Tween
+var _hit_tween: Tween
 var _move_animation_id := &""
+var _hit_animation_id := &""
 var _is_moving := false
 var _move_time := 0.0
 
@@ -60,6 +67,40 @@ func get_entity() -> Dictionary:
 	return _entity.duplicate(true)
 
 
+func is_in_board_cell(cell_index: Dictionary) -> bool:
+	if not cell_index.has("i") or not cell_index.has("j"):
+		return false
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var own_index := _get_entity_board_index(board, _entity_id)
+	return own_index == Vector2i(int(cell_index["i"]), int(cell_index["j"]))
+
+
+func play_hit_visual(attacker_id: StringName) -> void:
+	if animation_tracker == null:
+		return
+
+	if _hit_tween:
+		_hit_tween.kill()
+		_consume_active_hit_animation()
+
+	var start_position := position
+	var hit_direction := position - _get_entity_board_position(attacker_id)
+	if hit_direction == Vector2.ZERO or hit_direction == Vector2.INF:
+		hit_direction = Vector2.RIGHT
+
+	var shake_offset := hit_direction.normalized() * HIT_SHAKE_PIXELS
+	var animation_id: StringName = animation_tracker.register_animation(HIT_ANIMATION_NAME)
+	_hit_animation_id = animation_id
+	_hit_tween = create_tween()
+	_hit_tween.set_parallel(true)
+	_hit_tween.tween_property(self, "modulate", Color(1.0, 0.55, 0.55), HIT_ANIMATION_SECONDS * 0.45)
+	_hit_tween.tween_property(self, "position", start_position + shake_offset, HIT_ANIMATION_SECONDS * 0.3)
+	_hit_tween.chain().tween_property(self, "position", start_position, HIT_ANIMATION_SECONDS * 0.7)
+	_hit_tween.parallel().tween_property(self, "modulate", Color.WHITE, HIT_ANIMATION_SECONDS * 0.55)
+	_hit_tween.finished.connect(_on_hit_tween_finished.bind(animation_id))
+
+
 func get_visual_size() -> Vector2:
 	return Vector2.ZERO
 
@@ -74,6 +115,14 @@ func _set_move_pose(_direction: float) -> void:
 
 func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
+
+
+func _emit_attack_target_cell_reached(args: Dictionary) -> void:
+	var target_cell: Variant = args.get("target_cell", {})
+	if not target_cell is Dictionary:
+		return
+
+	attack_target_cell_reached.emit(_entity_id, target_cell)
 
 
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
@@ -133,6 +182,16 @@ func _on_move_tween_finished(animation_id: StringName) -> void:
 		_stop_move_animation()
 
 
+func _on_hit_tween_finished(animation_id: StringName) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _hit_animation_id == animation_id:
+		_hit_animation_id = &""
+		_hit_tween = null
+		modulate = Color.WHITE
+		_update_board_position()
+
+
 func _consume_active_move_animation() -> void:
 	if _move_animation_id == &"":
 		return
@@ -140,6 +199,15 @@ func _consume_active_move_animation() -> void:
 	animation_tracker.consume_animation(_move_animation_id)
 	_move_animation_id = &""
 	_stop_move_animation()
+
+
+func _consume_active_hit_animation() -> void:
+	if _hit_animation_id == &"":
+		return
+
+	animation_tracker.consume_animation(_hit_animation_id)
+	_hit_animation_id = &""
+	modulate = Color.WHITE
 
 
 func _start_move_animation() -> void:

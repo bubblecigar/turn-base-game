@@ -48,6 +48,7 @@ func _play_attack_performed_visual(args: Dictionary) -> void:
 	_attack_tween.set_parallel(true)
 	_attack_tween.tween_property(self, "position", target_position, ATTACK_ANIMATION_SECONDS * 0.35)
 	_attack_tween.tween_method(_set_attack_squeeze, 0.0, ATTACK_SQUEEZE_AMOUNT, ATTACK_ANIMATION_SECONDS * 0.35)
+	_attack_tween.chain().tween_callback(_emit_attack_target_cell_reached.bind(args))
 	_attack_tween.chain().tween_property(self, "position", start_position, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.parallel().tween_method(_set_attack_squeeze, ATTACK_SQUEEZE_AMOUNT, 0.0, ATTACK_ANIMATION_SECONDS * 0.65)
 	_attack_tween.finished.connect(_on_attack_tween_finished.bind(animation_id))

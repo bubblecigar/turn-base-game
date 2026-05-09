@@ -41,6 +41,7 @@ func sync_entities(entities: Dictionary) -> void:
 		entity_view.animation_tracker_path = ANIMATION_TRACKER_PATH
 		entity_view.board_view_path = BOARD_VIEW_PATH
 		entity_view.set_entity_id(entity_id)
+		entity_view.attack_target_cell_reached.connect(_on_attack_target_cell_reached)
 		add_child(entity_view)
 		_entity_views[entity_id] = entity_view
 
@@ -54,6 +55,16 @@ func sync_entities(entities: Dictionary) -> void:
 		_entity_views.erase(entity_id)
 		remove_child(character_view)
 		character_view.queue_free()
+
+
+func _on_attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary) -> void:
+	for entity_id: Variant in _entity_views:
+		if StringName(str(entity_id)) == attacker_id:
+			continue
+
+		var entity_view: EntityBoardView = _entity_views[entity_id]
+		if entity_view.is_in_board_cell(target_cell):
+			entity_view.play_hit_visual(attacker_id)
 
 
 func _get_entity_scene(entity: Dictionary) -> PackedScene:
