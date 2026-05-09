@@ -81,6 +81,10 @@ func get_entity() -> Dictionary:
 	return _entity.duplicate(true)
 
 
+func is_dead() -> bool:
+	return int(_entity.get(&"current_hp", 1)) <= 0
+
+
 func is_in_board_cell(cell_index: Dictionary) -> bool:
 	if not cell_index.has("i") or not cell_index.has("j"):
 		return false

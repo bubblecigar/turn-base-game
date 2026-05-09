@@ -4,6 +4,8 @@ const BOUNCE_AMOUNT := 0.25
 const ATTACK_ANIMATION_SECONDS := 0.34
 const ATTACK_ANIMATION_NAME := &"slime_attack"
 const ATTACK_SQUEEZE_AMOUNT := 0.38
+const BONE_COLOR := Color(0.88, 0.84, 0.72)
+const BONE_WIDTH := 4.0
 
 var _radius := 0.0
 var _squeeze := 0.0
@@ -82,6 +84,10 @@ func _draw() -> void:
 	if _radius <= 0.0:
 		return
 
+	if is_dead():
+		_draw_skeleton()
+		return
+
 	var total_squeeze = max(_squeeze, _attack_squeeze)
 	# Anchor squash/stretch at the bottom-center so the slime appears to bounce on the ground.
 	# draw_set_transform origin = bottom-center (radius, radius*2), scale = squash axes.
@@ -89,3 +95,11 @@ func _draw() -> void:
 	draw_set_transform(Vector2(_radius, _radius * 2.0), 0.0, Vector2(1.0 + total_squeeze, 1.0 - total_squeeze))
 	draw_circle(Vector2(0.0, -_radius), _radius, Color.MEDIUM_SEA_GREEN)
 	draw_set_transform(Vector2.ZERO)
+
+
+func _draw_skeleton() -> void:
+	var center := Vector2(_radius, _radius)
+	var arm := _radius * 0.6
+	draw_line(center + Vector2(-arm, -arm), center + Vector2(arm, arm), BONE_COLOR, BONE_WIDTH)
+	draw_line(center + Vector2(arm, -arm), center + Vector2(-arm, arm), BONE_COLOR, BONE_WIDTH)
+	draw_circle(center, _radius * 0.22, BONE_COLOR)

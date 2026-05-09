@@ -7,6 +7,8 @@ const ATTACK_ANIMATION_SECONDS := 0.32
 const ATTACK_ANIMATION_NAME := &"character_attack"
 const ATTACK_ARM_SWING_DEGREES := 58.0
 const ATTACK_BODY_LEAN_DEGREES := 6.0
+const BONE_COLOR := Color(0.88, 0.84, 0.72)
+const BONE_SHADOW_COLOR := Color(0.62, 0.58, 0.5)
 
 var _character_size := Vector2.ZERO
 var _attack_tween: Tween
@@ -111,6 +113,16 @@ func _update_parts(entity_state: Dictionary) -> void:
 	right_arm.position = Vector2(width - arm_size.x, body.position.y + body_size.y * 0.05)
 	left_leg.position = Vector2(width * 0.25, body.position.y + body_size.y)
 	right_leg.position = Vector2(width * 0.53, body.position.y + body_size.y)
+
+	if is_dead():
+		head.set_part(head_size, BONE_COLOR)
+		neck.set_part(neck_size, BONE_SHADOW_COLOR)
+		body.set_part(body_size, BONE_COLOR)
+		left_arm.set_part(arm_size, BONE_SHADOW_COLOR)
+		right_arm.set_part(arm_size, BONE_SHADOW_COLOR)
+		left_leg.set_part(leg_size, BONE_SHADOW_COLOR)
+		right_leg.set_part(leg_size, BONE_SHADOW_COLOR)
+		return
 
 	head.set_part(head_size, Color.CORNFLOWER_BLUE)
 	neck.set_part(neck_size, Color.LIGHT_SKY_BLUE)
