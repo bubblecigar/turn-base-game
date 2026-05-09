@@ -119,13 +119,15 @@ func play_hit_visual(attacker_id: StringName, args: Dictionary = {}) -> void:
 		hit_direction = Vector2.RIGHT
 
 	var shake_offset := hit_direction.normalized() * HIT_SHAKE_PIXELS
+	var should_shake_position := not _is_position_animation_active()
 	var animation_id: StringName = animation_tracker.register_animation(HIT_ANIMATION_NAME)
 	_hit_animation_id = animation_id
 	_hit_tween = create_tween()
 	_hit_tween.set_parallel(true)
 	_hit_tween.tween_property(self, "modulate", Color(1.0, 0.55, 0.55), HIT_ANIMATION_SECONDS * 0.45)
-	_hit_tween.tween_property(self, "position", start_position + shake_offset, HIT_ANIMATION_SECONDS * 0.3)
-	_hit_tween.chain().tween_property(self, "position", start_position, HIT_ANIMATION_SECONDS * 0.7)
+	if should_shake_position:
+		_hit_tween.tween_property(self, "position", start_position + shake_offset, HIT_ANIMATION_SECONDS * 0.3)
+		_hit_tween.chain().tween_property(self, "position", start_position, HIT_ANIMATION_SECONDS * 0.7)
 	_hit_tween.parallel().tween_property(self, "modulate", Color.WHITE, HIT_ANIMATION_SECONDS * 0.55)
 	_hit_tween.finished.connect(_on_hit_tween_finished.bind(animation_id))
 
@@ -211,7 +213,8 @@ func _on_hit_tween_finished(animation_id: StringName) -> void:
 		_hit_animation_id = &""
 		_hit_tween = null
 		modulate = Color.WHITE
-		_update_board_position()
+		if not _is_position_animation_active():
+			_update_board_position()
 
 
 func _consume_active_move_animation() -> void:
@@ -230,6 +233,10 @@ func _consume_active_hit_animation() -> void:
 	animation_tracker.consume_animation(_hit_animation_id)
 	_hit_animation_id = &""
 	modulate = Color.WHITE
+
+
+func _is_position_animation_active() -> bool:
+	return _move_tween != null or _has_active_collision()
 
 
 func _show_damage_number(damage: Variant) -> void:
