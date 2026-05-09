@@ -45,19 +45,19 @@ func _load_template(key: String) -> Dictionary:
 
 func _init_from_template(t: Dictionary) -> void:
 	var board: Dictionary = t.get("board", {})
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "spawn_board",
 		"payload": {
 			"i": int(board.get("cols", 4)),
 			"j": int(board.get("rows", 4)),
 		},
-	})
+	}])
 
 	var entities: Array = t.get("entities", [])
 	for entity in entities:
 		if entity is Dictionary and entity.has("type") and entity.has("spec"):
 			var position: Dictionary = entity.get("position", {})
-			action_queue.enQueue({
+			action_queue.enQueue([{
 				"eventName": "spawn_entity",
 				"payload": {
 					"type": entity["type"],
@@ -65,4 +65,4 @@ func _init_from_template(t: Dictionary) -> void:
 					"max_hp": int(entity.get("max_hp", entity.get("hp", 1))),
 					"position": position,
 				},
-			})
+			}])

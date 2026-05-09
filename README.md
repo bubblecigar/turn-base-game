@@ -25,23 +25,28 @@ The main gameplay scene is `scenes/TurnBaseScene.tscn`. It owns the root systems
 
 ## Action Flow
 
-Game changes are requested as action dictionaries:
+Game changes are requested as batches of action dictionaries:
 
 ```gdscript
-{
-	"eventName": "move_entity",
-	"payload": {
-		"id": &"character_1",
-		"vector": Vector2i(1, 0),
+[
+	{
+		"eventName": "move_entity",
+		"payload": {
+			"id": &"character_1",
+			"vector": Vector2i(1, 0),
+		},
 	},
-}
+]
 ```
 
-`ActionQueue.enQueue()` stores actions and only consumes the next action when:
+`ActionQueue.enQueue()` stores action batches and only consumes the next batch when:
 
 - `ActionHandler` is not already consuming an action.
 - `AnimationTracker` has no active animations.
 - The queue is not empty.
+
+Every action in the same batch is consumed before the queue waits for animations
+again.
 
 `ActionHandler.consume()` dispatches by `eventName`. Current actions include:
 

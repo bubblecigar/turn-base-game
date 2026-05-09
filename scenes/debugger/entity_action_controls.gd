@@ -90,13 +90,13 @@ func _move_selected_entity(delta_i: int) -> void:
 		push_warning("Select an entity before moving.")
 		return
 
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "move_entity",
 		"payload": {
 			"id": _selected_entity_id,
 			"vector": Vector2i(delta_i, 0),
 		},
-	})
+	}])
 
 
 func _attack_selected_cell(delta_i: int) -> void:
@@ -110,7 +110,7 @@ func _attack_selected_cell(delta_i: int) -> void:
 		push_warning("Cannot attack outside the board with %s." % _selected_entity_id)
 		return
 
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "perform_attack",
 		"payload": {
 			"id": _selected_entity_id,
@@ -120,7 +120,7 @@ func _attack_selected_cell(delta_i: int) -> void:
 				"target_cell": target_cell,
 			},
 		},
-	})
+	}])
 
 
 func _get_board_entity_ids() -> Array[StringName]:

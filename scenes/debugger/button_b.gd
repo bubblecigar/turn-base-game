@@ -8,14 +8,14 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "spawn_entity",
 		"payload": {
 			"type": "character",
 			"max_hp": 20,
 			"spec": _get_character_spec(),
 		},
-	})
+	}])
 
 
 func _get_character_spec() -> Dictionary:

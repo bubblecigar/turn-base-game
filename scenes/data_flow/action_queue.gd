@@ -1,6 +1,6 @@
 extends Node
 
-var _event_queue: Array[Dictionary] = []
+var _event_queue: Array[Array] = []
 
 @onready var action_handler: Node = $"../ActionHandler"
 @onready var animation_tracker: Node = $"../AnimationTracker"
@@ -13,14 +13,28 @@ func _ready() -> void:
 	pass # Replace with function body.
 
 
-func enQueue(event: Dictionary) -> void:
-	if not _is_valid_event(event):
-		push_error('Invalid action queue event. Expected { eventName: String, payload: Dictionary }.')
+func enQueue(events: Array) -> void:
+	if not _is_valid_event_batch(events):
+		push_error('Invalid action queue events. Expected a non-empty Array[Dictionary] of { eventName: String, payload: Dictionary }.')
 		return
 
-	_event_queue.append(event)
+	_event_queue.append(events)
 	print(_event_queue);
 	consume_next()
+
+
+func _is_valid_event_batch(events: Array) -> bool:
+	if events.is_empty():
+		return false
+
+	for event: Variant in events:
+		if not event is Dictionary:
+			return false
+
+		if not _is_valid_event(event):
+			return false
+
+	return true
 
 
 func _is_valid_event(event: Dictionary) -> bool:
@@ -36,8 +50,10 @@ func consume_next() -> void:
 	if action_handler.is_consuming() or animation_tracker.has_active_animations() or _event_queue.is_empty():
 		return
 
-	var event: Dictionary = _event_queue.pop_front()
-	await action_handler.consume(event)
+	var events: Array = _event_queue.pop_front()
+	for event: Dictionary in events:
+		await action_handler.consume(event)
+
 	consume_next()
 
 

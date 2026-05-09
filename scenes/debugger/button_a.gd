@@ -20,7 +20,7 @@ func _on_pressed() -> void:
 		push_warning("Cannot move entity before entity is spawned.")
 		return
 
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "move_entity",
 		"payload": {
 			"id": entity_id,
@@ -29,7 +29,7 @@ func _on_pressed() -> void:
 				randi_range(-int(board.get(&"rows", 1)) + 1, int(board.get(&"rows", 1)) - 1)
 			),
 		},
-	})
+	}])
 
 
 func _get_latest_entity_id() -> StringName:

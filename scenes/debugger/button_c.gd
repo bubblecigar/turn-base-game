@@ -12,10 +12,10 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "spawn_board",
 		"payload": {
 			"i": randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE),
 			"j": randi_range(MIN_BOARD_SIZE, MAX_BOARD_SIZE),
 		},
-	})
+	}])

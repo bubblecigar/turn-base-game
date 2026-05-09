@@ -12,7 +12,7 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "spawn_entity",
 		"payload": {
 			"type": "slime",
@@ -21,4 +21,4 @@ func _on_pressed() -> void:
 				"radius": randi_range(MIN_RADIUS, MAX_RADIUS),
 			},
 		},
-	})
+	}])

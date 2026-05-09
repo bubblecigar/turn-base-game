@@ -25,7 +25,7 @@ func _on_pressed() -> void:
 		push_warning("Cannot perform attack against entity outside board: %s." % attack_pair["target_id"])
 		return
 
-	action_queue.enQueue({
+	action_queue.enQueue([{
 		"eventName": "perform_attack",
 		"payload": {
 			"id": attack_pair["attacker_id"],
@@ -36,7 +36,7 @@ func _on_pressed() -> void:
 				"target_cell": target_cell,
 			},
 		},
-	})
+	}])
 
 
 func _get_random_attack_pair() -> Dictionary:
