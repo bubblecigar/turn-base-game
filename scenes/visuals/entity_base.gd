@@ -72,6 +72,10 @@ func _set_move_pose(_direction: float) -> void:
 	pass
 
 
+func _play_attack_performed_visual(_args: Dictionary) -> void:
+	pass
+
+
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
 	if _entity_id == &"" or not entities.has(_entity_id):
 		return
@@ -117,6 +121,7 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 		return
 
 	print("attack performed by %s" % attacker_id)
+	_play_attack_performed_visual(_args)
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:
