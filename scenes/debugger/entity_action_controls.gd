@@ -8,6 +8,14 @@ const RANDOM_MOVE_VECTORS := [
 	Vector2i.UP,
 	Vector2i.DOWN,
 ]
+const ACTION_CATEGORY_CAST := &"cast"
+const ACTION_CATEGORY_MOVE := &"move"
+const ACTION_CATEGORY_ATTACK := &"attack"
+const ACTION_CATEGORY_ORDER := [
+	ACTION_CATEGORY_CAST,
+	ACTION_CATEGORY_MOVE,
+	ACTION_CATEGORY_ATTACK,
+]
 
 @onready var action_queue: Node = $"../../ActionQueue"
 @onready var state_store: Node = $"../../StateStore"
@@ -87,7 +95,7 @@ func _on_send_batch_pressed() -> void:
 		push_warning("Cannot send an empty debugger action batch.")
 		return
 
-	action_queue.enQueue(_action_stack.duplicate(true))
+	_enqueue_action_stack(_action_stack)
 	_action_stack.clear()
 	_update_action_stack_status()
 
@@ -163,6 +171,53 @@ func _attack_selected_cell(delta_i: int) -> void:
 func _stack_action(action: Dictionary) -> void:
 	_action_stack.append(action)
 	_update_action_stack_status()
+
+
+func _enqueue_action_stack(action_stack: Array[Dictionary]) -> void:
+	var action_batches := _create_ordered_action_batches(action_stack)
+	for action_batch: Array[Dictionary] in action_batches:
+		action_queue.enQueue(action_batch)
+
+
+func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Array]:
+	var actions_by_category := {
+		ACTION_CATEGORY_CAST: [],
+		ACTION_CATEGORY_MOVE: [],
+		ACTION_CATEGORY_ATTACK: [],
+	}
+
+	for action: Dictionary in action_stack:
+		var category := _get_action_category(action)
+		if category == &"":
+			push_warning("Cannot categorize debugger action: %s." % action)
+			continue
+
+		actions_by_category[category].append(action)
+
+	var action_batches: Array[Array] = []
+	for category: StringName in ACTION_CATEGORY_ORDER:
+		var category_actions: Array = actions_by_category[category]
+		if category_actions.is_empty():
+			continue
+
+		action_batches.append(category_actions)
+
+	return action_batches
+
+
+func _get_action_category(action: Dictionary) -> StringName:
+	if action.has("category"):
+		return StringName(str(action["category"]))
+
+	match action.get("eventName", ""):
+		"cast", "perform_cast":
+			return ACTION_CATEGORY_CAST
+		"move_entity":
+			return ACTION_CATEGORY_MOVE
+		"perform_attack":
+			return ACTION_CATEGORY_ATTACK
+		_:
+			return &""
 
 
 func _update_action_stack_status() -> void:
