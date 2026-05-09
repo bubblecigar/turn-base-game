@@ -8,6 +8,7 @@ signal entities_updated(entities: Dictionary, previous_entities: Variant)
 signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal entity_moved(entity_id: StringName, position: Vector2, previous_position: Variant)
+signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: int)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -56,6 +57,7 @@ func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int 
 		&"type": entity_type,
 		&"max_hp": max_hp,
 		&"current_hp": max_hp,
+		&"focus": 0,
 		&"spec": spec.duplicate(true),
 	}
 	_set_entity(next_entity)
@@ -126,6 +128,24 @@ func damage_entity(entity_id: StringName, damage: int) -> void:
 	next_entity[&"current_hp"] = next_hp
 	_set_entity(next_entity)
 	print("damaged entity: %s -%d hp %d/%d" % [entity_id, damage, next_hp, max_hp])
+
+
+func increase_entity_focus(entity_id: StringName, amount: int = 1) -> void:
+	if amount <= 0:
+		return
+
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot increase focus for missing entity: %s." % entity_id)
+		return
+
+	var previous_focus: int = max(int(entity.get(&"focus", 0)), 0)
+	var next_focus := previous_focus + amount
+	var next_entity := entity.duplicate(true)
+	next_entity[&"focus"] = next_focus
+	_set_entity(next_entity)
+	entity_focus_changed.emit(entity_id, next_focus, previous_focus)
+	print("increased entity focus: %s +%d focus %d" % [entity_id, amount, next_focus])
 
 
 func patch(values: Dictionary) -> void:

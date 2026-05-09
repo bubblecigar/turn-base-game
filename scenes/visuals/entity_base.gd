@@ -18,6 +18,10 @@ const HP_BAR_MIN_WIDTH := 28.0
 const HP_BAR_TOP_OFFSET := 12.0
 const HP_TEXT_FONT_SIZE := 8.0
 const HP_TEXT_HEIGHT := 12.0
+const FOCUS_TEXT_FONT_SIZE := 8.0
+const FOCUS_TEXT_HEIGHT := 12.0
+const FOCUS_ANIMATION_SECONDS := 0.28
+const FOCUS_ANIMATION_NAME := &"entity_focus"
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
@@ -33,13 +37,16 @@ var _entity_collision_shape: RectangleShape2D
 var _hp_bar_background: ColorRect
 var _hp_bar_fill: ColorRect
 var _hp_label: Label
+var _focus_label: Label
 var _id_label: Label
 var _damage_label: Label
 var _move_tween: Tween
 var _hit_tween: Tween
 var _damage_tween: Tween
+var _focus_tween: Tween
 var _move_animation_id := &""
 var _hit_animation_id := &""
+var _focus_animation_id := &""
 var _active_collision_payload: Dictionary = {}
 var _active_collision_entity_ids: Dictionary = {}
 var _is_moving := false
@@ -66,6 +73,7 @@ func _ready() -> void:
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
+	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
@@ -189,6 +197,13 @@ func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_
 	_start_move_animation()
 
 
+func _on_entity_focus_changed(entity_id: StringName, _focus: int, _previous_focus: int) -> void:
+	if _entity_id == &"" or entity_id != _entity_id:
+		return
+
+	_play_focus_visual()
+
+
 func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	if _entity_id != attacker_id:
 		return
@@ -217,6 +232,17 @@ func _on_hit_tween_finished(animation_id: StringName) -> void:
 			_update_board_position()
 
 
+func _on_focus_tween_finished(animation_id: StringName) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _focus_animation_id == animation_id:
+		_focus_animation_id = &""
+		_focus_tween = null
+		if _focus_label:
+			_focus_label.modulate = Color.WHITE
+			_focus_label.scale = Vector2.ONE
+
+
 func _consume_active_move_animation() -> void:
 	if _move_animation_id == &"":
 		return
@@ -233,6 +259,17 @@ func _consume_active_hit_animation() -> void:
 	animation_tracker.consume_animation(_hit_animation_id)
 	_hit_animation_id = &""
 	modulate = Color.WHITE
+
+
+func _consume_active_focus_animation() -> void:
+	if _focus_animation_id == &"":
+		return
+
+	animation_tracker.consume_animation(_focus_animation_id)
+	_focus_animation_id = &""
+	if _focus_label:
+		_focus_label.modulate = Color.WHITE
+		_focus_label.scale = Vector2.ONE
 
 
 func _is_position_animation_active() -> bool:
@@ -267,6 +304,25 @@ func _show_damage_number(damage: Variant) -> void:
 	_damage_tween.tween_property(_damage_label, "position", start_position - Vector2(0.0, DAMAGE_LABEL_RISE_PIXELS), HIT_ANIMATION_SECONDS)
 	_damage_tween.tween_property(_damage_label, "modulate", Color(1.0, 0.1, 0.1, 0.0), HIT_ANIMATION_SECONDS)
 	_damage_tween.finished.connect(_on_damage_tween_finished)
+
+
+func _play_focus_visual() -> void:
+	if animation_tracker == null or _focus_label == null:
+		return
+
+	if _focus_tween:
+		_focus_tween.kill()
+		_consume_active_focus_animation()
+
+	var animation_id: StringName = animation_tracker.register_animation(FOCUS_ANIMATION_NAME)
+	_focus_animation_id = animation_id
+	_focus_label.modulate = Color(1.0, 0.88, 0.2, 1.0)
+	_focus_label.scale = Vector2(1.25, 1.25)
+	_focus_tween = create_tween()
+	_focus_tween.set_parallel(true)
+	_focus_tween.tween_property(_focus_label, "modulate", Color.WHITE, FOCUS_ANIMATION_SECONDS)
+	_focus_tween.tween_property(_focus_label, "scale", Vector2.ONE, FOCUS_ANIMATION_SECONDS)
+	_focus_tween.finished.connect(_on_focus_tween_finished.bind(animation_id))
 
 
 func _on_damage_tween_finished() -> void:
@@ -304,6 +360,7 @@ func _set_entity(entity_state: Dictionary) -> void:
 	_on_entity_updated(_entity)
 	_update_id_label()
 	_update_hp_bar()
+	_update_focus_label()
 
 
 func _update_board_position() -> void:
@@ -447,6 +504,13 @@ func _create_hp_bar() -> void:
 	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(_hp_label)
 
+	_focus_label = Label.new()
+	_focus_label.layout_mode = 0
+	_focus_label.add_theme_font_size_override("font_size", FOCUS_TEXT_FONT_SIZE)
+	_focus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_focus_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	add_child(_focus_label)
+
 
 func _update_id_label() -> void:
 	if _id_label == null:
@@ -479,6 +543,20 @@ func _update_hp_bar() -> void:
 	_hp_label.text = "%d/%d" % [current_hp, max_hp]
 	_hp_label.position = bar_position - Vector2(0.0, HP_TEXT_HEIGHT)
 	_hp_label.size = Vector2(bar_width, HP_TEXT_HEIGHT)
+
+
+func _update_focus_label() -> void:
+	if _focus_label == null:
+		return
+
+	var focus: int = max(int(_entity.get(&"focus", 0)), 0)
+	var visual_size := get_visual_size()
+	var label_width: float = max(visual_size.x, HP_BAR_MIN_WIDTH)
+	var bar_position := Vector2((visual_size.x - label_width) / 2.0, -HP_BAR_TOP_OFFSET - HP_BAR_HEIGHT)
+	_focus_label.text = "Focus: %d" % focus
+	_focus_label.position = bar_position - Vector2(0.0, HP_TEXT_HEIGHT + FOCUS_TEXT_HEIGHT)
+	_focus_label.size = Vector2(label_width, FOCUS_TEXT_HEIGHT)
+	_focus_label.pivot_offset = _focus_label.size / 2.0
 
 
 func _get_hp_bar_color(hp_ratio: float) -> Color:

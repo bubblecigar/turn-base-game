@@ -11,6 +11,7 @@ const MIN_HEAD_RADIUS := 6
 const MAX_HEAD_RADIUS := 14
 const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
+const CAST_TYPE_FOCUS := &"focus"
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
@@ -54,6 +55,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_spawn_entity(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
+		'perform_cast':
+			_perform_cast(event['payload'])
 		'perform_attack':
 			_perform_attack(event['payload'])
 		'debugger_button_pressed':
@@ -187,6 +190,39 @@ func _get_move_entity_vector(value: Variant) -> Vector2i:
 
 	var vector: Vector2 = value
 	return Vector2i(int(vector.x), int(vector.y))
+
+
+func _perform_cast(payload: Dictionary) -> void:
+	if not _is_perform_cast_payload(payload):
+		push_warning('Invalid perform_cast payload. Expected { id: String, args: { type: "focus", value: int } }.')
+		return
+
+	var performer_id := StringName(str(payload["id"]))
+	if not state_store.has_entity(performer_id):
+		push_warning("Cannot perform cast with missing entity: %s." % performer_id)
+		return
+
+	var args: Dictionary = payload["args"]
+	var cast_type := StringName(str(args["type"]))
+	match cast_type:
+		CAST_TYPE_FOCUS:
+			state_store.increase_entity_focus(performer_id, int(args["value"]))
+			print('performed focus cast: ', performer_id, ' ', args)
+		_:
+			push_warning("Unsupported perform_cast type: %s." % cast_type)
+
+
+func _is_perform_cast_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("id")
+		and payload.has("args")
+		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
+		and payload["args"] is Dictionary
+		and payload["args"].has("type")
+		and (typeof(payload["args"]["type"]) == TYPE_STRING or typeof(payload["args"]["type"]) == TYPE_STRING_NAME)
+		and payload["args"].has("value")
+		and (typeof(payload["args"]["value"]) == TYPE_INT or typeof(payload["args"]["value"]) == TYPE_FLOAT)
+	)
 
 
 func _perform_attack(payload: Dictionary) -> void:

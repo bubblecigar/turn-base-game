@@ -53,6 +53,7 @@ again.
 - `spawn_board`
 - `spawn_entity`
 - `move_entity`
+- `perform_cast`
 - `perform_attack`
 
 The handler should stay thin: validate payloads, normalize values, and call the
@@ -82,6 +83,7 @@ Entities are stored separately by id:
 		&"type": &"character",
 		&"max_hp": 20,
 		&"current_hp": 20,
+		&"focus": 0,
 		&"spec": {...},
 	},
 }
@@ -92,6 +94,7 @@ State changes are announced with signals:
 - `entities_updated`
 - `board_init`
 - `entity_moved`
+- `entity_focus_changed`
 - generic `state_changed` and `value_changed`
 
 ## Visual Layer
@@ -111,6 +114,7 @@ assigned by `EntitiesLayer`.
 Entity visuals update their board position from state. They also react to signals:
 
 - `entity_moved`: tween to the new cell.
+- `entity_focus_changed`: pop the focus display above the HP bar.
 
 Move animations register with `AnimationTracker`. This keeps the action queue from
 consuming the next action before the current visual reaction is finished.
