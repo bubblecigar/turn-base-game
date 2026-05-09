@@ -1,6 +1,7 @@
 extends Node
 
 signal processing_status_changed(is_processing: bool, event: Dictionary)
+signal attack_performed(attacker_id: StringName, args: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -53,6 +54,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_spawn_entity(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
+		'perform_attack':
+			_perform_attack(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -161,6 +164,31 @@ func _is_board_position_payload(payload: Dictionary) -> bool:
 		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
 		and typeof(payload["i"]) == TYPE_INT
 		and typeof(payload["j"]) == TYPE_INT
+	)
+
+
+func _perform_attack(payload: Dictionary) -> void:
+	if not _is_perform_attack_payload(payload):
+		push_warning('Invalid perform_attack payload. Expected { id: String, args: Dictionary }.')
+		return
+
+	var attacker_id := StringName(str(payload["id"]))
+	if not state_store.has_entity(attacker_id):
+		push_warning("Cannot perform attack with missing entity: %s." % attacker_id)
+		return
+
+	var args: Dictionary = payload["args"].duplicate(true)
+	attack_performed.emit(attacker_id, args)
+	print('performed attack: ', attacker_id, ' ', args)
+
+
+func _is_perform_attack_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("id")
+		and payload.has("args")
+		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
+		and payload["args"] is Dictionary
+		and not payload["args"].is_empty()
 	)
 
 

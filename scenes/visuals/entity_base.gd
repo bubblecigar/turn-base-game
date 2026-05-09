@@ -17,10 +17,12 @@ var _is_moving := false
 var _move_time := 0.0
 
 @export var state_store_path: NodePath
+@export var action_handler_path: NodePath
 @export var animation_tracker_path: NodePath
 @export var board_view_path: NodePath
 
 @onready var state_store: Node = get_node(state_store_path)
+@onready var action_handler: Node = get_node(action_handler_path)
 @onready var animation_tracker: Node = get_node(animation_tracker_path)
 @onready var board_view: Node = get_node(board_view_path)
 
@@ -33,6 +35,7 @@ func _ready() -> void:
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
+	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
 
@@ -107,6 +110,13 @@ func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_
 	_move_tween.tween_property(self, "position", next_position, MOVE_ANIMATION_SECONDS)
 	_move_tween.finished.connect(_on_move_tween_finished.bind(animation_id))
 	_start_move_animation()
+
+
+func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
+	if _entity_id != attacker_id:
+		return
+
+	print("attack performed by %s" % attacker_id)
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:

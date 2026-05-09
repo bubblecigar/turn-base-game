@@ -4,6 +4,7 @@ const CHARACTER_SCENE := preload("res://scenes/visuals/CharacterScene.tscn")
 const SLIME_SCENE := preload("res://scenes/visuals/SlimeScene.tscn")
 
 const STATE_STORE_PATH := NodePath("../../../StateStore")
+const ACTION_HANDLER_PATH := NodePath("../../../ActionHandler")
 const ANIMATION_TRACKER_PATH := NodePath("../../../AnimationTracker")
 const BOARD_VIEW_PATH := NodePath("../../BoardView")
 
@@ -36,6 +37,7 @@ func sync_entities(entities: Dictionary) -> void:
 
 		var entity_view: EntityBoardView = entity_scene.instantiate() as EntityBoardView
 		entity_view.state_store_path = STATE_STORE_PATH
+		entity_view.action_handler_path = ACTION_HANDLER_PATH
 		entity_view.animation_tracker_path = ANIMATION_TRACKER_PATH
 		entity_view.board_view_path = BOARD_VIEW_PATH
 		entity_view.set_entity_id(entity_id)

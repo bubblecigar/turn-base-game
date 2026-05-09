@@ -86,6 +86,10 @@ func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
 	entity_moved.emit(entity.get(&"id", &""), position, previous_position)
 
 
+func has_entity(entity_id: StringName) -> bool:
+	return not _get_entity(entity_id).is_empty()
+
+
 func patch(values: Dictionary) -> void:
 	var changed := false
 

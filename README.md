@@ -21,7 +21,7 @@ The main gameplay scene is `scenes/TurnBaseScene.tscn`. It owns the root systems
 - `AnimationTracker`: tracks active visual animations so queued actions wait for them.
 - `View`: contains `BoardView` and `EntitiesLayer`.
 - `StageController`: loads an initial stage template and enqueues spawn actions.
-- `Debugger`: UI buttons for spawning, moving, attacking, and printing state.
+- `Debugger`: UI buttons for spawning, moving, and printing state.
 
 ## Action Flow
 
@@ -49,10 +49,10 @@ Game changes are requested as action dictionaries:
 - `spawn_board`
 - `spawn_entity`
 - `move_entity`
-- `attack_entity`
+- `perform_attack`
 
 The handler should stay thin: validate payloads, normalize values, and call the
-appropriate `StateStore` function.
+appropriate `StateStore` function or emit a transient action signal.
 
 ## State Model
 
@@ -86,7 +86,6 @@ State changes are announced with signals:
 - `entities_updated`
 - `board_init`
 - `entity_moved`
-- `entity_attack_pair_triggered`
 - generic `state_changed` and `value_changed`
 
 ## Visual Layer
@@ -106,11 +105,9 @@ assigned by `EntitiesLayer`.
 Entity visuals update their board position from state. They also react to signals:
 
 - `entity_moved`: tween to the new cell.
-- `entity_attack_pair_triggered`: attacker lunges, receiver shakes/flashes.
 
-Move, attack, and hit animations register with `AnimationTracker`. This keeps the
-action queue from consuming the next action before the current visual reaction is
-finished.
+Move animations register with `AnimationTracker`. This keeps the action queue from
+consuming the next action before the current visual reaction is finished.
 
 ## Stage Initialization
 

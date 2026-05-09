@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://onilkytl2pr" path="res://scenes/debugger/processing_label.gd" id="3_el5hy"]
 [ext_resource type="Script" uid="uid://d143k6kh3jci5" path="res://scenes/debugger/button_c.gd" id="4_r14ok"]
 [ext_resource type="Script" uid="uid://kx05fb0s35bf" path="res://scenes/debugger/button_d.gd" id="5_butnd"]
+[ext_resource type="Script" path="res://scenes/debugger/button_perform_attack.gd" id="6_attack"]
 [ext_resource type="Script" uid="uid://djq6b16xo7xp" path="res://scenes/debugger/button_print_state.gd" id="7_print_state"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
@@ -54,6 +55,16 @@ offset_bottom = 432.0
 scale = Vector2(2.4857094, 3.2024686)
 text = "Spawn Slime"
 script = ExtResource("5_butnd")
+
+[node name="ButtonPerformAttack" type="Button" parent="." unique_id=768274259]
+layout_mode = 0
+offset_left = 769.0
+offset_top = 283.0
+offset_right = 846.0
+offset_bottom = 314.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Attack"
+script = ExtResource("6_attack")
 
 [node name="ButtonPrintState" type="Button" parent="." unique_id=1224587122]
 layout_mode = 0
