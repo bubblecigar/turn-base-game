@@ -7,6 +7,8 @@ const ATTACK_ANIMATION_SECONDS := 0.32
 const ATTACK_ANIMATION_NAME := &"character_attack"
 const ATTACK_ARM_SWING_DEGREES := 58.0
 const ATTACK_BODY_LEAN_DEGREES := 6.0
+const CAST_ARM_RAISE_DEGREES := -115.0
+const CAST_BODY_LEAN_DEGREES := -7.0
 const BONE_COLOR := Color(0.88, 0.84, 0.72)
 const BONE_SHADOW_COLOR := Color(0.62, 0.58, 0.5)
 
@@ -88,6 +90,47 @@ func _consume_active_attack_animation() -> void:
 	animation_tracker.consume_animation(_attack_animation_id)
 	_attack_animation_id = &""
 	_finish_attack_collision()
+
+
+func _play_cast_performed_visual() -> void:
+	if animation_tracker == null:
+		return
+
+	if _cast_tween:
+		_cast_tween.kill()
+		_consume_active_cast_animation()
+
+	var start_position := position
+	var bounce_target := start_position - Vector2(0.0, CAST_BOUNCE_PIXELS)
+	var animation_id: StringName = animation_tracker.register_animation(CAST_ANIMATION_NAME)
+	_cast_animation_id = animation_id
+	_cast_tween = create_tween()
+	_cast_tween.set_trans(Tween.TRANS_QUAD)
+	_cast_tween.set_ease(Tween.EASE_OUT)
+	_cast_tween.set_parallel(true)
+	_cast_tween.tween_property(self, "modulate", CAST_GLOW_COLOR, CAST_ANIMATION_SECONDS * 0.3)
+	_cast_tween.tween_property(self, "position", bounce_target, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.tween_property(left_arm, "rotation_degrees", CAST_ARM_RAISE_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.tween_property(right_arm, "rotation_degrees", CAST_ARM_RAISE_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.tween_property(body, "rotation_degrees", CAST_BODY_LEAN_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.chain().tween_property(self, "position", start_position, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.parallel().tween_property(self, "modulate", Color.WHITE, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.parallel().tween_property(left_arm, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.parallel().tween_property(right_arm, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.parallel().tween_property(body, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.finished.connect(_on_cast_tween_finished.bind(animation_id))
+
+
+func _on_cast_tween_finished(animation_id: StringName) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _cast_animation_id == animation_id:
+		_cast_animation_id = &""
+		_cast_tween = null
+		modulate = Color.WHITE
+		left_arm.rotation_degrees = 0.0
+		right_arm.rotation_degrees = 0.0
+		body.rotation_degrees = 0.0
 
 
 func _update_parts(entity_state: Dictionary) -> void:

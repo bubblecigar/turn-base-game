@@ -22,6 +22,10 @@ const FOCUS_TEXT_FONT_SIZE := 8.0
 const FOCUS_TEXT_HEIGHT := 12.0
 const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
+const CAST_ANIMATION_SECONDS := 0.65
+const CAST_ANIMATION_NAME := &"entity_cast"
+const CAST_BOUNCE_PIXELS := 14.0
+const CAST_GLOW_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
@@ -44,9 +48,11 @@ var _move_tween: Tween
 var _hit_tween: Tween
 var _damage_tween: Tween
 var _focus_tween: Tween
+var _cast_tween: Tween
 var _move_animation_id := &""
 var _hit_animation_id := &""
 var _focus_animation_id := &""
+var _cast_animation_id := &""
 var _active_collision_payload: Dictionary = {}
 var _active_collision_entity_ids: Dictionary = {}
 var _is_moving := false
@@ -74,6 +80,7 @@ func _ready() -> void:
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
+	state_store.cast_performed.connect(_on_cast_performed)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
@@ -156,6 +163,29 @@ func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
 
 
+func _play_cast_performed_visual() -> void:
+	if animation_tracker == null:
+		return
+
+	if _cast_tween:
+		_cast_tween.kill()
+		_consume_active_cast_animation()
+
+	var start_position := position
+	var bounce_target := start_position - Vector2(0.0, CAST_BOUNCE_PIXELS)
+	var animation_id: StringName = animation_tracker.register_animation(CAST_ANIMATION_NAME)
+	_cast_animation_id = animation_id
+	_cast_tween = create_tween()
+	_cast_tween.set_trans(Tween.TRANS_QUAD)
+	_cast_tween.set_ease(Tween.EASE_OUT)
+	_cast_tween.set_parallel(true)
+	_cast_tween.tween_property(self, "modulate", CAST_GLOW_COLOR, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.tween_property(self, "position", bounce_target, CAST_ANIMATION_SECONDS * 0.35)
+	_cast_tween.chain().tween_property(self, "position", start_position, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.parallel().tween_property(self, "modulate", Color.WHITE, CAST_ANIMATION_SECONDS * 0.65)
+	_cast_tween.finished.connect(_on_cast_tween_finished.bind(animation_id))
+
+
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
 	if _entity_id == &"" or not entities.has(_entity_id):
 		return
@@ -212,6 +242,13 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	_play_attack_performed_visual(_args)
 
 
+func _on_cast_performed(caster_id: StringName, _focus: int) -> void:
+	if _entity_id == &"" or caster_id != _entity_id:
+		return
+
+	_play_cast_performed_visual()
+
+
 func _on_move_tween_finished(animation_id: StringName) -> void:
 	animation_tracker.consume_animation(animation_id)
 
@@ -243,6 +280,15 @@ func _on_focus_tween_finished(animation_id: StringName) -> void:
 			_focus_label.scale = Vector2.ONE
 
 
+func _on_cast_tween_finished(animation_id: StringName) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _cast_animation_id == animation_id:
+		_cast_animation_id = &""
+		_cast_tween = null
+		modulate = Color.WHITE
+
+
 func _consume_active_move_animation() -> void:
 	if _move_animation_id == &"":
 		return
@@ -270,6 +316,15 @@ func _consume_active_focus_animation() -> void:
 	if _focus_label:
 		_focus_label.modulate = Color.WHITE
 		_focus_label.scale = Vector2.ONE
+
+
+func _consume_active_cast_animation() -> void:
+	if _cast_animation_id == &"":
+		return
+
+	animation_tracker.consume_animation(_cast_animation_id)
+	_cast_animation_id = &""
+	modulate = Color.WHITE
 
 
 func _is_position_animation_active() -> bool:

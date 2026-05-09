@@ -9,6 +9,7 @@ signal board_init(board: Dictionary, previous_board: Variant)
 signal character_initialized(character: Dictionary, previous_character: Variant)
 signal entity_moved(entity_id: StringName, position: Vector2, previous_position: Variant)
 signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: int)
+signal cast_performed(caster_id: StringName, focus: int)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -145,6 +146,7 @@ func increase_entity_focus(entity_id: StringName, amount: int = 1) -> void:
 	next_entity[&"focus"] = next_focus
 	_set_entity(next_entity)
 	entity_focus_changed.emit(entity_id, next_focus, previous_focus)
+	cast_performed.emit(entity_id, next_focus)
 	print("increased entity focus: %s +%d focus %d" % [entity_id, amount, next_focus])
 
 
