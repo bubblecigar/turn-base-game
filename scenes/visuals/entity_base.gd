@@ -20,9 +20,14 @@ const HP_TEXT_FONT_SIZE := 8.0
 const HP_TEXT_HEIGHT := 12.0
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
+const ENTITY_AREA_NAME := "EntityArea"
+const ENTITY_COLLISION_NAME := "EntityCollision"
 
 var _entity_id := &""
 var _entity: Dictionary = {}
+var _entity_area: Area2D
+var _entity_collision: CollisionShape2D
+var _entity_collision_shape: RectangleShape2D
 var _hp_bar_background: ColorRect
 var _hp_bar_fill: ColorRect
 var _hp_label: Label
@@ -51,6 +56,7 @@ func _ready() -> void:
 	if state_store == null:
 		return
 
+	_create_entity_area()
 	_create_id_label()
 	_create_hp_bar()
 	state_store.entities_updated.connect(_on_entities_updated)
@@ -160,6 +166,7 @@ func _on_board_init(board: Dictionary, previous_board: Variant) -> void:
 			return
 
 	_update_board_position()
+	_update_entity_area()
 
 
 func _on_entity_moved(entity_id: StringName, _next_position: Vector2, _previous_position: Variant) -> void:
@@ -303,6 +310,61 @@ func _update_board_position() -> void:
 	var next_position := _get_board_position()
 	if next_position != Vector2.INF:
 		position = next_position
+
+
+func _create_entity_area() -> void:
+	_entity_area = Area2D.new()
+	_entity_area.name = ENTITY_AREA_NAME
+	_entity_area.area_entered.connect(_on_entity_area_entered)
+	add_child(_entity_area)
+
+	_entity_collision_shape = RectangleShape2D.new()
+	_entity_collision = CollisionShape2D.new()
+	_entity_collision.name = ENTITY_COLLISION_NAME
+	_entity_collision.shape = _entity_collision_shape
+	_entity_area.add_child(_entity_collision)
+
+
+func _update_entity_area() -> void:
+	if _entity_area == null or _entity_collision_shape == null:
+		return
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
+	if cell_size == Vector2.ZERO:
+		_entity_collision.disabled = true
+		return
+
+	_entity_collision.disabled = false
+	_entity_collision_shape.size = cell_size
+	var visual_size := get_visual_size()
+	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
+
+
+func _on_entity_area_entered(area: Area2D) -> void:
+	var other_entity_view := area.get_parent() as EntityBoardView
+	if other_entity_view == null:
+		return
+
+	if other_entity_view.get_entity_id() == _entity_id:
+		return
+
+	var collided_entity_ids: Array[StringName] = []
+	for overlapping_area: Area2D in _entity_area.get_overlapping_areas():
+		var overlapping_entity_view := overlapping_area.get_parent() as EntityBoardView
+		if overlapping_entity_view == null:
+			continue
+
+		var overlapping_entity_id := overlapping_entity_view.get_entity_id()
+		if overlapping_entity_id == _entity_id:
+			continue
+
+		collided_entity_ids.append(overlapping_entity_id)
+
+	if collided_entity_ids.is_empty():
+		return
+
+	print("entity collision list for %s: %s" % [_entity_id, collided_entity_ids])
 
 
 func _create_id_label() -> void:
