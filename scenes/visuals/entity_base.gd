@@ -2,7 +2,7 @@ extends Node2D
 
 class_name EntityBoardView
 
-signal attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary)
+signal attack_target_cell_reached(attacker_id: StringName, target_cell: Dictionary, args: Dictionary)
 
 const MOVE_ANIMATION_SECONDS := 1.75
 const MOVE_ANIMATION_NAME := &"entity_move"
@@ -10,14 +10,19 @@ const WALK_STEP_SECONDS := 0.35
 const HIT_ANIMATION_SECONDS := 0.24
 const HIT_ANIMATION_NAME := &"entity_hit"
 const HIT_SHAKE_PIXELS := 7.0
+const DAMAGE_LABEL_FONT_SIZE := 14.0
+const DAMAGE_LABEL_HEIGHT := 18.0
+const DAMAGE_LABEL_RISE_PIXELS := 20.0
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 
 var _entity_id := &""
 var _entity: Dictionary = {}
 var _id_label: Label
+var _damage_label: Label
 var _move_tween: Tween
 var _hit_tween: Tween
+var _damage_tween: Tween
 var _move_animation_id := &""
 var _hit_animation_id := &""
 var _is_moving := false
@@ -76,7 +81,7 @@ func is_in_board_cell(cell_index: Dictionary) -> bool:
 	return own_index == Vector2i(int(cell_index["i"]), int(cell_index["j"]))
 
 
-func play_hit_visual(attacker_id: StringName) -> void:
+func play_hit_visual(attacker_id: StringName, args: Dictionary = {}) -> void:
 	if animation_tracker == null:
 		return
 
@@ -84,6 +89,7 @@ func play_hit_visual(attacker_id: StringName) -> void:
 		_hit_tween.kill()
 		_consume_active_hit_animation()
 
+	_show_damage_number(args.get("damage", null))
 	var start_position := position
 	var hit_direction := position - _get_entity_board_position(attacker_id)
 	if hit_direction == Vector2.ZERO or hit_direction == Vector2.INF:
@@ -122,7 +128,7 @@ func _emit_attack_target_cell_reached(args: Dictionary) -> void:
 	if not target_cell is Dictionary:
 		return
 
-	attack_target_cell_reached.emit(_entity_id, target_cell)
+	attack_target_cell_reached.emit(_entity_id, target_cell, args)
 
 
 func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
@@ -208,6 +214,43 @@ func _consume_active_hit_animation() -> void:
 	animation_tracker.consume_animation(_hit_animation_id)
 	_hit_animation_id = &""
 	modulate = Color.WHITE
+
+
+func _show_damage_number(damage: Variant) -> void:
+	if damage == null:
+		return
+
+	if _damage_tween:
+		_damage_tween.kill()
+
+	if _damage_label == null:
+		_damage_label = Label.new()
+		_damage_label.layout_mode = 0
+		_damage_label.add_theme_font_size_override("font_size", DAMAGE_LABEL_FONT_SIZE)
+		_damage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_damage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		add_child(_damage_label)
+
+	var visual_size := get_visual_size()
+	var start_position := Vector2(0.0, -DAMAGE_LABEL_HEIGHT)
+	_damage_label.text = str(damage)
+	_damage_label.position = start_position
+	_damage_label.size = Vector2(max(visual_size.x, 1.0), DAMAGE_LABEL_HEIGHT)
+	_damage_label.modulate = Color(1.0, 0.1, 0.1, 1.0)
+	_damage_label.show()
+
+	_damage_tween = create_tween()
+	_damage_tween.set_parallel(true)
+	_damage_tween.tween_property(_damage_label, "position", start_position - Vector2(0.0, DAMAGE_LABEL_RISE_PIXELS), HIT_ANIMATION_SECONDS)
+	_damage_tween.tween_property(_damage_label, "modulate", Color(1.0, 0.1, 0.1, 0.0), HIT_ANIMATION_SECONDS)
+	_damage_tween.finished.connect(_on_damage_tween_finished)
+
+
+func _on_damage_tween_finished() -> void:
+	if _damage_label:
+		_damage_label.hide()
+
+	_damage_tween = null
 
 
 func _start_move_animation() -> void:

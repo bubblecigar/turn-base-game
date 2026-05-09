@@ -30,6 +30,7 @@ func _on_pressed() -> void:
 		"payload": {
 			"id": attack_pair["attacker_id"],
 			"args": {
+				"damage": randi_range(1, 9),
 				"source": "debugger",
 				"target_id": attack_pair["target_id"],
 				"target_cell": target_cell,
