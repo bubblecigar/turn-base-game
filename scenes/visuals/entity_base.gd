@@ -93,6 +93,7 @@ func _ready() -> void:
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
 	state_store.cast_resolved.connect(_on_cast_resolved)
 	action_handler.attack_performed.connect(_on_attack_performed)
+	action_handler.attack_prepared.connect(_on_attack_prepared)
 	_refresh_from_state()
 
 
@@ -174,6 +175,10 @@ func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
 
 
+func _play_attack_prepared_visual(_args: Dictionary) -> void:
+	pass
+
+
 func _tween_cast_finish_pose(_tween: Tween, _seconds: float) -> void:
 	pass
 
@@ -249,6 +254,13 @@ func _on_entity_focus_changed(entity_id: StringName, _focus: int, _previous_focu
 		return
 
 	_play_focus_visual()
+
+
+func _on_attack_prepared(attacker_id: StringName, _args: Dictionary) -> void:
+	if _entity_id != attacker_id:
+		return
+
+	_play_attack_prepared_visual(_args)
 
 
 func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:

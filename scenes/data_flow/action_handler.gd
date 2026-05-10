@@ -2,6 +2,7 @@ extends Node
 
 signal processing_status_changed(is_processing: bool, event: Dictionary)
 signal attack_performed(attacker_id: StringName, args: Dictionary)
+signal attack_prepared(attacker_id: StringName, args: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -59,6 +60,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_perform_cast(event['payload'])
 		'resolve_cast':
 			_resolve_cast(event['payload'])
+		'prepare_attack':
+			_prepare_attack(event['payload'])
 		'perform_attack':
 			_perform_attack(event['payload'])
 		'debugger_button_pressed':
@@ -247,6 +250,21 @@ func _is_resolve_cast_payload(payload: Dictionary) -> bool:
 		and (typeof(payload["entity_id"]) == TYPE_STRING or typeof(payload["entity_id"]) == TYPE_STRING_NAME)
 		and typeof(payload["result"]) == TYPE_BOOL
 	)
+
+
+func _prepare_attack(payload: Dictionary) -> void:
+	if not _is_perform_attack_payload(payload):
+		push_warning('Invalid prepare_attack payload. Expected { id: String, args: { type: String, vector: Vector2i } }.')
+		return
+
+	var attacker_id := StringName(str(payload["id"]))
+	if not state_store.has_entity(attacker_id):
+		push_warning("Cannot prepare attack with missing entity: %s." % attacker_id)
+		return
+
+	var args: Dictionary = payload["args"].duplicate(true)
+	attack_prepared.emit(attacker_id, args)
+	print('prepared attack: ', attacker_id, ' ', args)
 
 
 func _perform_attack(payload: Dictionary) -> void:

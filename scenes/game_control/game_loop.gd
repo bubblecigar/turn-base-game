@@ -209,6 +209,7 @@ func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Ar
 
 	var attack_batch: Array = actions_by_category[ACTION_CATEGORY_ATTACK]
 	if not attack_batch.is_empty():
+		action_batches.append(_create_prepare_attack_batch(attack_batch))
 		action_batches.append(attack_batch)
 
 	var cast_success_batch := _create_cast_success_batch(action_stack)
@@ -216,6 +217,17 @@ func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Ar
 		action_batches.append(cast_success_batch)
 
 	return action_batches
+
+
+func _create_prepare_attack_batch(attack_actions: Array) -> Array[Dictionary]:
+	var batch: Array[Dictionary] = []
+	for action: Dictionary in attack_actions:
+		var payload: Dictionary = action.get("payload", {})
+		batch.append({
+			"eventName": "prepare_attack",
+			"payload": payload.duplicate(true),
+		})
+	return batch
 
 
 func _create_cast_success_batch(action_stack: Array[Dictionary]) -> Array[Dictionary]:
