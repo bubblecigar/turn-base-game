@@ -132,6 +132,9 @@ func damage_entity(entity_id: StringName, damage: int) -> void:
 	var next_entity := entity.duplicate(true)
 	next_entity[&"current_hp"] = next_hp
 	_set_entity(next_entity)
+	if _is_entity_casting(next_entity):
+		resolve_entity_cast(entity_id, false)
+
 	print("damaged entity: %s -%d hp %d/%d" % [entity_id, damage, next_hp, max_hp])
 
 
@@ -173,7 +176,7 @@ func resolve_entity_cast(entity_id: StringName, result: bool) -> void:
 		push_warning("Cannot resolve casting for missing entity: %s." % entity_id)
 		return
 
-	if StringName(str(entity.get(&"state", &"idle"))) != &"casting":
+	if not _is_entity_casting(entity):
 		print("ignored cast resolve for non-casting entity: %s" % entity_id)
 		return
 
@@ -213,6 +216,10 @@ func _resolve_focus_cast(entity: Dictionary, cast_args: Dictionary, result: bool
 
 func _apply_interrupted_cast_result(entity_id: StringName, cast_args: Dictionary) -> void:
 	print("interrupted cast result pending implementation: %s %s" % [entity_id, cast_args])
+
+
+func _is_entity_casting(entity: Dictionary) -> bool:
+	return StringName(str(entity.get(&"state", &"idle"))) == &"casting"
 
 
 func patch(values: Dictionary) -> void:
