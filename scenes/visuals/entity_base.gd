@@ -36,6 +36,8 @@ const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
 const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
 const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
+const PREPARE_ATTACK_TRAVEL_SECONDS := 0.4
+const PREPARE_ATTACK_DWELL_SECONDS := 0.75
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
@@ -216,9 +218,10 @@ func _play_attack_prepared_visual(args: Dictionary) -> void:
 	_prepare_attack_tween.set_parallel(true)
 	_prepare_attack_tween.set_trans(Tween.TRANS_QUAD)
 	_prepare_attack_tween.set_ease(Tween.EASE_IN_OUT)
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "rotation", TAU, PREPARE_ATTACK_ANIMATION_SECONDS)
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "position", target_position, PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.4).set_delay(PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
+	var total_seconds := PREPARE_ATTACK_TRAVEL_SECONDS + PREPARE_ATTACK_DWELL_SECONDS
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "rotation", TAU * 1.0, total_seconds)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "position", target_position, PREPARE_ATTACK_TRAVEL_SECONDS)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_DWELL_SECONDS * 0.35).set_delay(PREPARE_ATTACK_TRAVEL_SECONDS + PREPARE_ATTACK_DWELL_SECONDS * 0.65)
 	_prepare_attack_tween.finished.connect(_on_prepare_attack_tween_finished.bind(animation_id))
 
 
