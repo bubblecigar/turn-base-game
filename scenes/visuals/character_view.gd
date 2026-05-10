@@ -131,8 +131,8 @@ func _consume_active_cast_animation() -> void:
 	body.rotation_degrees = 0.0
 
 
-func _finish_cast_visual() -> void:
-	super._finish_cast_visual()
+func _finish_cast_visual(result: bool) -> void:
+	super._finish_cast_visual(result)
 	left_arm.rotation_degrees = 0.0
 	right_arm.rotation_degrees = 0.0
 	body.rotation_degrees = 0.0
