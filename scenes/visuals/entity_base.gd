@@ -306,14 +306,11 @@ func _on_cast_tween_finished(animation_id: StringName) -> void:
 
 
 func _on_cast_finish_tween_finished(animation_id: StringName, result: bool) -> void:
-	animation_tracker.consume_animation(animation_id)
-
 	if _cast_animation_id == animation_id:
-		_cast_animation_id = &""
 		_cast_tween = null
 		modulate = Color.WHITE
 		_update_board_position()
-		_show_cast_result_text(result)
+		_show_cast_result_text(result, animation_id)
 
 
 func _consume_active_move_animation() -> void:
@@ -423,7 +420,7 @@ func _show_damage_number(damage: Variant) -> void:
 	_damage_tween.finished.connect(_on_damage_tween_finished)
 
 
-func _show_cast_result_text(result: bool) -> void:
+func _show_cast_result_text(result: bool, pending_animation_id: StringName = &"") -> void:
 	if _cast_result_tween:
 		_cast_result_tween.kill()
 
@@ -447,7 +444,7 @@ func _show_cast_result_text(result: bool) -> void:
 	_cast_result_tween.set_parallel(true)
 	_cast_result_tween.tween_property(_cast_result_label, "position", start_position - Vector2(0.0, CAST_RESULT_LABEL_RISE_PIXELS), CAST_RESULT_ANIMATION_SECONDS)
 	_cast_result_tween.tween_property(_cast_result_label, "modulate:a", 0.0, CAST_RESULT_ANIMATION_SECONDS)
-	_cast_result_tween.finished.connect(_on_cast_result_tween_finished)
+	_cast_result_tween.finished.connect(_on_cast_result_tween_finished.bind(pending_animation_id))
 
 
 func _play_focus_visual() -> void:
@@ -476,11 +473,17 @@ func _on_damage_tween_finished() -> void:
 	_damage_tween = null
 
 
-func _on_cast_result_tween_finished() -> void:
+func _on_cast_result_tween_finished(pending_animation_id: StringName = &"") -> void:
 	if _cast_result_label:
 		_cast_result_label.hide()
 
 	_cast_result_tween = null
+
+	if pending_animation_id != &"" and animation_tracker != null:
+		animation_tracker.consume_animation(pending_animation_id)
+
+	if _cast_animation_id == pending_animation_id:
+		_cast_animation_id = &""
 
 
 func _start_move_animation() -> void:
