@@ -263,6 +263,14 @@ func _prepare_attack(payload: Dictionary) -> void:
 		return
 
 	var args: Dictionary = payload["args"].duplicate(true)
+	var attacker_cell := _get_entity_board_index(attacker_id)
+	if attacker_cell != Vector2i(-1, -1):
+		var attack_vector := _get_move_entity_vector(args["vector"])
+		var target_cell := attacker_cell + attack_vector
+		args[&"target_cell"] = {
+			"i": target_cell.x,
+			"j": target_cell.y,
+		}
 	attack_prepared.emit(attacker_id, args)
 	print('prepared attack: ', attacker_id, ' ', args)
 
@@ -285,11 +293,10 @@ func _perform_attack(payload: Dictionary) -> void:
 
 	var attack_vector := _get_move_entity_vector(args["vector"])
 	var target_cell := attacker_cell + attack_vector
-	if _has_board_cell(target_cell.x, target_cell.y):
-		args[&"target_cell"] = {
-			"i": target_cell.x,
-			"j": target_cell.y,
-		}
+	args[&"target_cell"] = {
+		"i": target_cell.x,
+		"j": target_cell.y,
+	}
 	attack_performed.emit(attacker_id, args)
 	print('performed attack: ', attacker_id, ' ', args)
 
