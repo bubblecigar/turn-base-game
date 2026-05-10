@@ -197,6 +197,12 @@ func _play_attack_prepared_visual(args: Dictionary) -> void:
 	if target_position == Vector2.INF:
 		return
 
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var board_index := _get_entity_board_index(board, _entity_id)
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var attacker_bottom: Vector2 = board_view.position + board_view.index_to_bottom_position(board_index.x, board_index.y)
+	var start_position := attacker_bottom - Vector2(0.0, cell_size.y / 2.0)
+
 	if _prepare_attack_mark == null:
 		_prepare_attack_mark = ColorRect.new()
 		_prepare_attack_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -204,14 +210,17 @@ func _play_attack_prepared_visual(args: Dictionary) -> void:
 
 	_prepare_attack_mark.color = PREPARE_ATTACK_MARK_COLOR
 	_prepare_attack_mark.size = PREPARE_ATTACK_MARK_SIZE
-	_prepare_attack_mark.position = target_position - PREPARE_ATTACK_MARK_SIZE / 2.0
+	_prepare_attack_mark.position = start_position - PREPARE_ATTACK_MARK_SIZE / 2.0
 	_prepare_attack_mark.modulate.a = 1.0
 	_prepare_attack_mark.show()
 
 	var animation_id: StringName = animation_tracker.register_animation(PREPARE_ATTACK_ANIMATION_NAME)
 	_prepare_attack_animation_id = animation_id
 	_prepare_attack_tween = create_tween()
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS)
+	_prepare_attack_tween.set_trans(Tween.TRANS_QUAD)
+	_prepare_attack_tween.set_ease(Tween.EASE_IN_OUT)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "position", target_position - PREPARE_ATTACK_MARK_SIZE / 2.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.4)
 	_prepare_attack_tween.finished.connect(_on_prepare_attack_tween_finished.bind(animation_id))
 
 
