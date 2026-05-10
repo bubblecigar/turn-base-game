@@ -13,6 +13,7 @@ signal cast_performed(caster_id: StringName, focus: int)
 signal cast_resolved(caster_id: StringName, result: bool)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
+const CAST_TYPE_FOCUS := &"focus"
 
 @export var initial_state: Dictionary = {}
 
@@ -176,12 +177,42 @@ func resolve_entity_cast(entity_id: StringName, result: bool) -> void:
 		print("ignored cast resolve for non-casting entity: %s" % entity_id)
 		return
 
+	var cast_args: Dictionary = entity.get(&"cast_args", {})
+	var cast_type := StringName(str(cast_args.get("type", &"")))
+	match cast_type:
+		CAST_TYPE_FOCUS:
+			_resolve_focus_cast(entity, cast_args, result)
+		_:
+			push_warning("Unsupported cast resolve type: %s." % cast_type)
+
+
+func _resolve_focus_cast(entity: Dictionary, cast_args: Dictionary, result: bool) -> void:
+	var entity_id: StringName = entity.get(&"id", &"")
+	var previous_focus: int = max(int(entity.get(&"focus", 0)), 0)
+	var next_focus := previous_focus
 	var next_entity := entity.duplicate(true)
 	next_entity[&"state"] = &"idle"
 	next_entity[&"cast_args"] = {}
+
+	if result:
+		var focus_gain: int = max(int(cast_args.get("value", 0)), 0)
+		next_focus = previous_focus + focus_gain
+		next_entity[&"focus"] = next_focus
+		print("resolved focus cast: %s +%d focus %d" % [entity_id, focus_gain, next_focus])
+	else:
+		_apply_interrupted_cast_result(entity_id, cast_args)
+
 	_set_entity(next_entity)
+	if next_focus != previous_focus:
+		entity_focus_changed.emit(entity_id, next_focus, previous_focus)
+		cast_performed.emit(entity_id, next_focus)
+
 	cast_resolved.emit(entity_id, result)
 	print("entity cast resolved: %s result=%s" % [entity_id, result])
+
+
+func _apply_interrupted_cast_result(entity_id: StringName, cast_args: Dictionary) -> void:
+	print("interrupted cast result pending implementation: %s %s" % [entity_id, cast_args])
 
 
 func patch(values: Dictionary) -> void:
