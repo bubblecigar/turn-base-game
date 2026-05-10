@@ -211,13 +211,17 @@ func _resolve_selected_cast(result: bool) -> void:
 		push_warning("Select an entity before resolving cast.")
 		return
 
-	_stack_action({
+	_stack_action(_create_resolve_cast_action(_selected_entity_id, result))
+
+
+func _create_resolve_cast_action(entity_id: StringName, result: bool) -> Dictionary:
+	return {
 		"eventName": "resolve_cast",
 		"payload": {
-			"entity_id": _selected_entity_id,
+			"entity_id": entity_id,
 			"result": result,
 		},
-	})
+	}
 
 
 func _stack_action(action: Dictionary) -> void:
@@ -254,7 +258,44 @@ func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Ar
 
 		action_batches.append(category_actions)
 
+	var cast_success_batch := _create_cast_success_batch(action_stack)
+	if not cast_success_batch.is_empty():
+		action_batches.append(cast_success_batch)
+
 	return action_batches
+
+
+func _create_cast_success_batch(action_stack: Array[Dictionary]) -> Array[Dictionary]:
+	var entity_ids := _get_casting_entity_ids()
+
+	for action: Dictionary in action_stack:
+		if action.get("eventName", "") != "perform_cast":
+			continue
+
+		var payload: Dictionary = action.get("payload", {})
+		var entity_id := StringName(str(payload.get("id", &"")))
+		if entity_id != &"" and not entity_ids.has(entity_id):
+			entity_ids.append(entity_id)
+
+	var batch: Array[Dictionary] = []
+	for entity_id: StringName in entity_ids:
+		batch.append(_create_resolve_cast_action(entity_id, true))
+
+	return batch
+
+
+func _get_casting_entity_ids() -> Array[StringName]:
+	var entity_ids: Array[StringName] = []
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+
+	for entity_id: Variant in entities:
+		var entity: Dictionary = entities[entity_id]
+		if StringName(str(entity.get(&"state", &"idle"))) != &"casting":
+			continue
+
+		entity_ids.append(StringName(str(entity_id)))
+
+	return entity_ids
 
 
 func _get_action_category(action: Dictionary) -> StringName:
