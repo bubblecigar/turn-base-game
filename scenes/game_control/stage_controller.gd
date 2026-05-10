@@ -1,6 +1,6 @@
 extends Node
 
-const STAGES_PATH := "res://scenes/stage_control/stage_templates.json"
+const STAGES_PATH := "res://scenes/game_control/stage_templates.json"
 
 @export var stage_key: String = ""
 

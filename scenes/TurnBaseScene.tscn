@@ -9,8 +9,8 @@
 [ext_resource type="PackedScene" uid="uid://w51f3o3ssfcn" path="res://scenes/visuals/CharacterScene.tscn" id="5_yl804"]
 [ext_resource type="PackedScene" uid="uid://b0x40j6ngl3co" path="res://scenes/visuals/BoardScene.tscn" id="6_vcus8"]
 [ext_resource type="Script" path="res://scenes/visuals/entities_layer.gd" id="7_l81iu"]
-[ext_resource type="Script" path="res://scenes/stage_control/stage_controller.gd" id="8_stctl"]
-[ext_resource type="Script" path="res://scenes/game_loop.gd" id="9_game_loop"]
+[ext_resource type="Script" path="res://scenes/game_control/stage_controller.gd" id="8_stctl"]
+[ext_resource type="Script" path="res://scenes/game_control/game_loop.gd" id="9_game_loop"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
