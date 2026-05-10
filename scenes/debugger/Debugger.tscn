@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bi6dtt065awmx" path="res://scenes/debugger/button_perform_cast.gd" id="9_cast"]
 [ext_resource type="Script" uid="uid://da87bhpqcgche" path="res://scenes/debugger/action_status_label.gd" id="10_action_status"]
 [ext_resource type="Script" uid="uid://jgb6jeiow7cx" path="res://scenes/debugger/game_loop_status_label.gd" id="11_loop_status"]
+[ext_resource type="Script" uid="uid://c52agvnv42w5s" path="res://scenes/debugger/button_restart.gd" id="12_restart"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -96,6 +97,16 @@ offset_bottom = 182.0
 scale = Vector2(2.4857094, 3.2024686)
 text = "Print State"
 script = ExtResource("7_print_state")
+
+[node name="ButtonRestart" type="Button" parent="." unique_id=2025981178]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 379.0
+offset_right = 353.0
+offset_bottom = 410.0
+scale = Vector2(2.4857094, 3.2024686)
+text = "Restart"
+script = ExtResource("12_restart")
 
 [node name="ProcessingLabel" type="Label" parent="." unique_id=2013759462]
 layout_mode = 0
