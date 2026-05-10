@@ -81,6 +81,7 @@ func _ready() -> void:
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
+	state_store.cast_resolved.connect(_on_cast_resolved)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
@@ -242,6 +243,13 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 
 	print("attack performed by %s with args %s" % [attacker_id, _args])
 	_play_attack_performed_visual(_args)
+
+
+func _on_cast_resolved(caster_id: StringName, _result: bool) -> void:
+	if _entity_id == &"" or caster_id != _entity_id:
+		return
+
+	_finish_cast_visual()
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:

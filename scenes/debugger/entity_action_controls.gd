@@ -25,6 +25,8 @@ const ACTION_CATEGORY_ORDER := [
 @onready var attack_left_button: Button = $AttackLeftButton
 @onready var attack_right_button: Button = $AttackRightButton
 @onready var cast_button: Button = $CastButton
+@onready var cast_success_button: Button = $CastSuccessButton
+@onready var cast_interrupted_button: Button = $CastInterruptedButton
 @onready var batch_random_move_button: Button = $BatchRandomMoveButton
 @onready var send_batch_button: Button = $SendBatchButton
 @onready var action_stack_label: Label = $ActionStackLabel
@@ -43,6 +45,8 @@ func _ready() -> void:
 	attack_left_button.pressed.connect(_on_attack_left_pressed)
 	attack_right_button.pressed.connect(_on_attack_right_pressed)
 	cast_button.pressed.connect(_on_cast_pressed)
+	cast_success_button.pressed.connect(_on_cast_success_pressed)
+	cast_interrupted_button.pressed.connect(_on_cast_interrupted_pressed)
 	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
 	send_batch_button.pressed.connect(_on_send_batch_pressed)
 	_refresh_entity_options()
@@ -79,6 +83,14 @@ func _on_attack_right_pressed() -> void:
 
 func _on_cast_pressed() -> void:
 	_cast_selected_entity()
+
+
+func _on_cast_success_pressed() -> void:
+	_resolve_selected_cast(true)
+
+
+func _on_cast_interrupted_pressed() -> void:
+	_resolve_selected_cast(false)
 
 
 func _on_batch_random_move_pressed() -> void:
@@ -136,6 +148,8 @@ func _refresh_entity_options() -> void:
 	attack_left_button.disabled = not has_entity
 	attack_right_button.disabled = not has_entity
 	cast_button.disabled = not has_entity
+	cast_success_button.disabled = not has_entity
+	cast_interrupted_button.disabled = not has_entity
 	batch_random_move_button.disabled = entity_ids.size() < 2
 
 
@@ -192,6 +206,20 @@ func _cast_selected_entity() -> void:
 	})
 
 
+func _resolve_selected_cast(result: bool) -> void:
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before resolving cast.")
+		return
+
+	_stack_action({
+		"eventName": "resolve_cast",
+		"payload": {
+			"entity_id": _selected_entity_id,
+			"result": result,
+		},
+	})
+
+
 func _stack_action(action: Dictionary) -> void:
 	_action_stack.append(action)
 	_update_action_stack_status()
@@ -234,7 +262,7 @@ func _get_action_category(action: Dictionary) -> StringName:
 		return StringName(str(action["category"]))
 
 	match action.get("eventName", ""):
-		"cast", "perform_cast":
+		"cast", "perform_cast", "resolve_cast":
 			return ACTION_CATEGORY_CAST
 		"move_entity":
 			return ACTION_CATEGORY_MOVE

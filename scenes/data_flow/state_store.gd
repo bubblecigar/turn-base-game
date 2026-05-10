@@ -10,6 +10,7 @@ signal character_initialized(character: Dictionary, previous_character: Variant)
 signal entity_moved(entity_id: StringName, position: Vector2, previous_position: Variant)
 signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: int)
 signal cast_performed(caster_id: StringName, focus: int)
+signal cast_resolved(caster_id: StringName, result: bool)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -163,6 +164,20 @@ func start_entity_casting(entity_id: StringName, args: Dictionary) -> void:
 	next_entity[&"cast_args"] = args.duplicate(true)
 	_set_entity(next_entity)
 	print("entity started casting: %s %s" % [entity_id, args])
+
+
+func resolve_entity_cast(entity_id: StringName, result: bool) -> void:
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot resolve casting for missing entity: %s." % entity_id)
+		return
+
+	var next_entity := entity.duplicate(true)
+	next_entity[&"state"] = &"idle"
+	next_entity[&"cast_args"] = {}
+	_set_entity(next_entity)
+	cast_resolved.emit(entity_id, result)
+	print("entity cast resolved: %s result=%s" % [entity_id, result])
 
 
 func patch(values: Dictionary) -> void:

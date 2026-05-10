@@ -57,6 +57,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_move_entity(event['payload'])
 		'perform_cast':
 			_perform_cast(event['payload'])
+		'resolve_cast':
+			_resolve_cast(event['payload'])
 		'perform_attack':
 			_perform_attack(event['payload'])
 		'debugger_button_pressed':
@@ -222,6 +224,28 @@ func _is_perform_cast_payload(payload: Dictionary) -> bool:
 		and (typeof(payload["args"]["type"]) == TYPE_STRING or typeof(payload["args"]["type"]) == TYPE_STRING_NAME)
 		and payload["args"].has("value")
 		and (typeof(payload["args"]["value"]) == TYPE_INT or typeof(payload["args"]["value"]) == TYPE_FLOAT)
+	)
+
+
+func _resolve_cast(payload: Dictionary) -> void:
+	if not _is_resolve_cast_payload(payload):
+		push_warning('Invalid resolve_cast payload. Expected { entity_id: String, result: bool }.')
+		return
+
+	var entity_id := StringName(str(payload["entity_id"]))
+	if not state_store.has_entity(entity_id):
+		push_warning("Cannot resolve cast for missing entity: %s." % entity_id)
+		return
+
+	state_store.resolve_entity_cast(entity_id, bool(payload["result"]))
+
+
+func _is_resolve_cast_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("entity_id")
+		and payload.has("result")
+		and (typeof(payload["entity_id"]) == TYPE_STRING or typeof(payload["entity_id"]) == TYPE_STRING_NAME)
+		and typeof(payload["result"]) == TYPE_BOOL
 	)
 
 
