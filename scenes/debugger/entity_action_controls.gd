@@ -24,6 +24,7 @@ const ACTION_CATEGORY_ORDER := [
 @onready var move_right_button: Button = $MoveRightButton
 @onready var attack_left_button: Button = $AttackLeftButton
 @onready var attack_right_button: Button = $AttackRightButton
+@onready var cast_button: Button = $CastButton
 @onready var batch_random_move_button: Button = $BatchRandomMoveButton
 @onready var send_batch_button: Button = $SendBatchButton
 @onready var action_stack_label: Label = $ActionStackLabel
@@ -41,6 +42,7 @@ func _ready() -> void:
 	move_right_button.pressed.connect(_on_move_right_pressed)
 	attack_left_button.pressed.connect(_on_attack_left_pressed)
 	attack_right_button.pressed.connect(_on_attack_right_pressed)
+	cast_button.pressed.connect(_on_cast_pressed)
 	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
 	send_batch_button.pressed.connect(_on_send_batch_pressed)
 	_refresh_entity_options()
@@ -73,6 +75,10 @@ func _on_attack_left_pressed() -> void:
 
 func _on_attack_right_pressed() -> void:
 	_attack_selected_cell(1)
+
+
+func _on_cast_pressed() -> void:
+	_cast_selected_entity()
 
 
 func _on_batch_random_move_pressed() -> void:
@@ -129,6 +135,7 @@ func _refresh_entity_options() -> void:
 	move_right_button.disabled = not has_entity
 	attack_left_button.disabled = not has_entity
 	attack_right_button.disabled = not has_entity
+	cast_button.disabled = not has_entity
 	batch_random_move_button.disabled = entity_ids.size() < 2
 
 
@@ -163,6 +170,23 @@ func _attack_selected_cell(delta_i: int) -> void:
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "debugger",
 				"vector": Vector2i(delta_i, 0),
+			},
+		},
+	})
+
+
+func _cast_selected_entity() -> void:
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before casting.")
+		return
+
+	_stack_action({
+		"eventName": "perform_cast",
+		"payload": {
+			"id": _selected_entity_id,
+			"args": {
+				"type": "focus",
+				"value": 1,
 			},
 		},
 	})

@@ -74,6 +74,7 @@ text = "Attack"
 script = ExtResource("6_attack")
 
 [node name="ButtonPerformCast" type="Button" parent="." unique_id=891234567]
+visible = false
 layout_mode = 0
 offset_left = 769.0
 offset_top = 200.0
@@ -325,6 +326,14 @@ offset_top = 44.0
 offset_right = 244.0
 offset_bottom = 75.0
 text = "attack =>"
+
+[node name="CastButton" type="Button" parent="EntityActionControls" unique_id=1336948177]
+layout_mode = 0
+offset_left = 256.0
+offset_top = 44.0
+offset_right = 340.0
+offset_bottom = 75.0
+text = "cast"
 
 [node name="BatchRandomMoveButton" type="Button" parent="EntityActionControls" unique_id=2043601682]
 layout_mode = 0
