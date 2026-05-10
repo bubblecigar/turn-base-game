@@ -131,11 +131,10 @@ func _consume_active_cast_animation() -> void:
 	body.rotation_degrees = 0.0
 
 
-func _finish_cast_visual(result: bool) -> void:
-	super._finish_cast_visual(result)
-	left_arm.rotation_degrees = 0.0
-	right_arm.rotation_degrees = 0.0
-	body.rotation_degrees = 0.0
+func _tween_cast_finish_pose(tween: Tween, seconds: float) -> void:
+	tween.tween_property(left_arm, "rotation_degrees", 0.0, seconds)
+	tween.tween_property(right_arm, "rotation_degrees", 0.0, seconds)
+	tween.tween_property(body, "rotation_degrees", 0.0, seconds)
 
 
 func _update_parts(entity_state: Dictionary) -> void:

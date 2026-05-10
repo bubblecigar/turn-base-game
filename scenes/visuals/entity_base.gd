@@ -24,6 +24,8 @@ const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
 const CAST_ANIMATION_SECONDS := 0.65
 const CAST_ANIMATION_NAME := &"entity_cast"
+const CAST_FINISH_ANIMATION_SECONDS := 0.24
+const CAST_FINISH_ANIMATION_NAME := &"entity_cast_finish"
 const CAST_BOUNCE_PIXELS := 14.0
 const CAST_GLOW_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const CAST_RESULT_LABEL_FONT_SIZE := 12.0
@@ -172,6 +174,10 @@ func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
 
 
+func _tween_cast_finish_pose(_tween: Tween, _seconds: float) -> void:
+	pass
+
+
 func _play_cast_performed_visual() -> void:
 	if animation_tracker == null:
 		return
@@ -299,6 +305,17 @@ func _on_cast_tween_finished(animation_id: StringName) -> void:
 		_cast_tween = null
 
 
+func _on_cast_finish_tween_finished(animation_id: StringName, result: bool) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _cast_animation_id == animation_id:
+		_cast_animation_id = &""
+		_cast_tween = null
+		modulate = Color.WHITE
+		_update_board_position()
+		_show_cast_result_text(result)
+
+
 func _consume_active_move_animation() -> void:
 	if _move_animation_id == &"":
 		return
@@ -350,9 +367,26 @@ func _finish_cast_visual(result: bool) -> void:
 		animation_tracker.consume_animation(_cast_animation_id)
 		_cast_animation_id = &""
 
-	modulate = Color.WHITE
-	_update_board_position()
-	_show_cast_result_text(result)
+	if animation_tracker == null:
+		modulate = Color.WHITE
+		_update_board_position()
+		_show_cast_result_text(result)
+		return
+
+	var target_position := _get_board_position()
+	if target_position == Vector2.INF:
+		target_position = position
+
+	var animation_id: StringName = animation_tracker.register_animation(CAST_FINISH_ANIMATION_NAME)
+	_cast_animation_id = animation_id
+	_cast_tween = create_tween()
+	_cast_tween.set_trans(Tween.TRANS_QUAD)
+	_cast_tween.set_ease(Tween.EASE_OUT)
+	_cast_tween.set_parallel(true)
+	_cast_tween.tween_property(self, "position", target_position, CAST_FINISH_ANIMATION_SECONDS)
+	_cast_tween.tween_property(self, "modulate", Color.WHITE, CAST_FINISH_ANIMATION_SECONDS)
+	_tween_cast_finish_pose(_cast_tween, CAST_FINISH_ANIMATION_SECONDS)
+	_cast_tween.finished.connect(_on_cast_finish_tween_finished.bind(animation_id, result))
 
 
 func _is_position_animation_active() -> bool:
