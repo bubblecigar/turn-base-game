@@ -1,6 +1,8 @@
 extends Node
 
 signal queue_drained
+signal batch_enqueued(events: Array, pending_batch_count: int)
+signal batch_started(events: Array, pending_batch_count: int)
 
 var _event_queue: Array[Array] = []
 
@@ -21,6 +23,7 @@ func enQueue(events: Array) -> void:
 		return
 
 	_event_queue.append(events)
+	batch_enqueued.emit(events, _event_queue.size())
 	print(_event_queue);
 	consume_next()
 
@@ -61,6 +64,7 @@ func consume_next() -> void:
 		return
 
 	var events: Array = _event_queue.pop_front()
+	batch_started.emit(events, _event_queue.size())
 	for event: Dictionary in events:
 		await action_handler.consume(event)
 

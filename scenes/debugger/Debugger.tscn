@@ -9,6 +9,8 @@
 [ext_resource type="Script" uid="uid://djq6b16xo7xp" path="res://scenes/debugger/button_print_state.gd" id="7_print_state"]
 [ext_resource type="Script" uid="uid://byqhpg1st61go" path="res://scenes/debugger/entity_action_controls.gd" id="8_entity_controls"]
 [ext_resource type="Script" uid="uid://bi6dtt065awmx" path="res://scenes/debugger/button_perform_cast.gd" id="9_cast"]
+[ext_resource type="Script" path="res://scenes/debugger/action_status_label.gd" id="10_action_status"]
+[ext_resource type="Script" path="res://scenes/debugger/game_loop_status_label.gd" id="11_loop_status"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -104,6 +106,24 @@ offset_bottom = 359.0
 scale = Vector2(2.2266638, 1.7437714)
 text = "Idle"
 script = ExtResource("3_el5hy")
+
+[node name="ActionStatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 560.0
+offset_top = 24.0
+offset_right = 920.0
+offset_bottom = 47.0
+text = "Action: idle"
+script = ExtResource("10_action_status")
+
+[node name="GameLoopStatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 560.0
+offset_top = 56.0
+offset_right = 920.0
+offset_bottom = 79.0
+text = "Game loop: waiting"
+script = ExtResource("11_loop_status")
 
 [node name="HeadRadiusLabel" type="Label" parent="." unique_id=899199176]
 visible = false

@@ -1,5 +1,7 @@
 extends Node
 
+signal status_changed(status: String)
+
 const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
 const ACTION_CATEGORY_CAST := &"cast"
@@ -31,11 +33,13 @@ func _ready() -> void:
 	_board_initialized = not state_store.get_value(&"board", {}).is_empty()
 	state_store.board_init.connect(_on_board_init)
 	action_queue.queue_drained.connect(_on_queue_drained)
+	_emit_status("waiting for board")
 	call_deferred("_maybe_start_next_turn")
 
 
 func _on_board_init(_board: Dictionary, _previous_board: Variant) -> void:
 	_board_initialized = true
+	_emit_status("board ready")
 	call_deferred("_maybe_start_next_turn")
 
 
@@ -65,6 +69,7 @@ func _maybe_start_next_turn() -> void:
 
 	_turn_in_progress = true
 	_turn_index += 1
+	_emit_status("turn %d: queued %d actions" % [_turn_index, action_stack.size()])
 	print("game loop turn %d actions: %s" % [_turn_index, action_stack])
 	for action_batch: Array[Dictionary] in action_batches:
 		action_queue.enQueue(action_batch)
@@ -259,10 +264,17 @@ func _check_for_winner() -> bool:
 	_game_over = true
 	if living_entity_ids.is_empty():
 		print("game over: no winner")
+		_emit_status("game over: no winner")
 	else:
 		print("game over winner: %s" % living_entity_ids)
+		_emit_status("game over winner: %s" % living_entity_ids)
 
 	return true
+
+
+func _emit_status(status: String) -> void:
+	status_changed.emit(status)
+	print("game loop status: %s" % status)
 
 
 func _get_alive_entity_ids() -> Array[StringName]:
