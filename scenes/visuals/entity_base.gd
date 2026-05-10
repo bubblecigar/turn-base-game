@@ -34,6 +34,10 @@ const CAST_RESULT_LABEL_RISE_PIXELS := 18.0
 const CAST_RESULT_ANIMATION_SECONDS := 0.45
 const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
+const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
+const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
+const PREPARE_ATTACK_MARK_COLOR := Color(1.0, 0.15, 0.15, 0.85)
+const PREPARE_ATTACK_MARK_SIZE := Vector2(18.0, 18.0)
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
@@ -60,6 +64,9 @@ var _damage_tween: Tween
 var _focus_tween: Tween
 var _cast_tween: Tween
 var _cast_result_tween: Tween
+var _prepare_attack_tween: Tween
+var _prepare_attack_mark: ColorRect
+var _prepare_attack_animation_id := &""
 var _move_animation_id := &""
 var _hit_animation_id := &""
 var _focus_animation_id := &""
@@ -175,8 +182,37 @@ func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
 
 
-func _play_attack_prepared_visual(_args: Dictionary) -> void:
-	pass
+func _play_attack_prepared_visual(args: Dictionary) -> void:
+	if animation_tracker == null or board_view == null:
+		return
+
+	if _prepare_attack_tween:
+		_prepare_attack_tween.kill()
+		_prepare_attack_tween = null
+		if _prepare_attack_animation_id != &"":
+			animation_tracker.consume_animation(_prepare_attack_animation_id)
+			_prepare_attack_animation_id = &""
+
+	var target_position := _get_attack_target_cell_center(args)
+	if target_position == Vector2.INF:
+		return
+
+	if _prepare_attack_mark == null:
+		_prepare_attack_mark = ColorRect.new()
+		_prepare_attack_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		get_parent().add_child(_prepare_attack_mark)
+
+	_prepare_attack_mark.color = PREPARE_ATTACK_MARK_COLOR
+	_prepare_attack_mark.size = PREPARE_ATTACK_MARK_SIZE
+	_prepare_attack_mark.position = target_position - PREPARE_ATTACK_MARK_SIZE / 2.0
+	_prepare_attack_mark.modulate.a = 1.0
+	_prepare_attack_mark.show()
+
+	var animation_id: StringName = animation_tracker.register_animation(PREPARE_ATTACK_ANIMATION_NAME)
+	_prepare_attack_animation_id = animation_id
+	_prepare_attack_tween = create_tween()
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS)
+	_prepare_attack_tween.finished.connect(_on_prepare_attack_tween_finished.bind(animation_id))
 
 
 func _tween_cast_finish_pose(_tween: Tween, _seconds: float) -> void:
@@ -498,6 +534,19 @@ func _on_cast_result_tween_finished(pending_animation_id: StringName = &"") -> v
 		_cast_animation_id = &""
 
 
+func _on_prepare_attack_tween_finished(animation_id: StringName) -> void:
+	if _prepare_attack_mark:
+		_prepare_attack_mark.hide()
+
+	_prepare_attack_tween = null
+
+	if animation_tracker != null:
+		animation_tracker.consume_animation(animation_id)
+
+	if _prepare_attack_animation_id == animation_id:
+		_prepare_attack_animation_id = &""
+
+
 func _start_move_animation() -> void:
 	_stop_move_animation()
 	_is_moving = true
@@ -780,6 +829,28 @@ func _get_attack_target_position(args: Dictionary) -> Vector2:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y)
+
+
+func _get_attack_target_cell_center(args: Dictionary) -> Vector2:
+	if board_view == null:
+		return Vector2.INF
+
+	var target_cell: Variant = args.get("target_cell", {})
+	if target_cell is Dictionary and target_cell.has("i") and target_cell.has("j"):
+		var i := int(target_cell["i"])
+		var j := int(target_cell["j"])
+		var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
+		var board: Dictionary = state_store.get_value(&"board", {})
+		var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+		return bottom_position - Vector2(0.0, cell_size.y / 2.0)
+
+	var vector: Vector2i = args.get("vector", Vector2i.ZERO)
+	if vector == Vector2i.ZERO:
+		return Vector2.INF
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) - Vector2(0.0, cell_size.y / 2.0)
 
 
 func _get_entity_board_position(entity_id: StringName) -> Vector2:

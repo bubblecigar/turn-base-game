@@ -201,15 +201,17 @@ func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Ar
 
 	var action_batches: Array[Array] = []
 
+	var attack_batch: Array = actions_by_category[ACTION_CATEGORY_ATTACK]
+	var prepare_attack_batch := _create_prepare_attack_batch(attack_batch)
+
 	var cast_move_batch: Array = []
 	cast_move_batch.append_array(actions_by_category[ACTION_CATEGORY_CAST])
 	cast_move_batch.append_array(actions_by_category[ACTION_CATEGORY_MOVE])
+	cast_move_batch.append_array(prepare_attack_batch)
 	if not cast_move_batch.is_empty():
 		action_batches.append(cast_move_batch)
 
-	var attack_batch: Array = actions_by_category[ACTION_CATEGORY_ATTACK]
 	if not attack_batch.is_empty():
-		action_batches.append(_create_prepare_attack_batch(attack_batch))
 		action_batches.append(attack_batch)
 
 	var cast_success_batch := _create_cast_success_batch(action_stack)
