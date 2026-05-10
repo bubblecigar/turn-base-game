@@ -36,8 +36,6 @@ const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
 const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
 const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
-const PREPARE_ATTACK_MARK_COLOR := Color(1.0, 0.15, 0.15, 0.85)
-const PREPARE_ATTACK_MARK_SIZE := Vector2(18.0, 18.0)
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
@@ -65,7 +63,7 @@ var _focus_tween: Tween
 var _cast_tween: Tween
 var _cast_result_tween: Tween
 var _prepare_attack_tween: Tween
-var _prepare_attack_mark: ColorRect
+var _prepare_attack_mark: Node2D
 var _prepare_attack_animation_id := &""
 var _move_animation_id := &""
 var _hit_animation_id := &""
@@ -204,23 +202,23 @@ func _play_attack_prepared_visual(args: Dictionary) -> void:
 	var start_position := attacker_bottom - Vector2(0.0, cell_size.y / 2.0)
 
 	if _prepare_attack_mark == null:
-		_prepare_attack_mark = ColorRect.new()
-		_prepare_attack_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_prepare_attack_mark = preload("res://scenes/visuals/attack_mark.gd").new()
 		get_parent().add_child(_prepare_attack_mark)
 
-	_prepare_attack_mark.color = PREPARE_ATTACK_MARK_COLOR
-	_prepare_attack_mark.size = PREPARE_ATTACK_MARK_SIZE
-	_prepare_attack_mark.position = start_position - PREPARE_ATTACK_MARK_SIZE / 2.0
+	_prepare_attack_mark.position = start_position
+	_prepare_attack_mark.rotation = 0.0
 	_prepare_attack_mark.modulate.a = 1.0
 	_prepare_attack_mark.show()
 
 	var animation_id: StringName = animation_tracker.register_animation(PREPARE_ATTACK_ANIMATION_NAME)
 	_prepare_attack_animation_id = animation_id
 	_prepare_attack_tween = create_tween()
+	_prepare_attack_tween.set_parallel(true)
 	_prepare_attack_tween.set_trans(Tween.TRANS_QUAD)
 	_prepare_attack_tween.set_ease(Tween.EASE_IN_OUT)
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "position", target_position - PREPARE_ATTACK_MARK_SIZE / 2.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
-	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.4)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "rotation", TAU, PREPARE_ATTACK_ANIMATION_SECONDS)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "position", target_position, PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
+	_prepare_attack_tween.tween_property(_prepare_attack_mark, "modulate:a", 0.0, PREPARE_ATTACK_ANIMATION_SECONDS * 0.4).set_delay(PREPARE_ATTACK_ANIMATION_SECONDS * 0.6)
 	_prepare_attack_tween.finished.connect(_on_prepare_attack_tween_finished.bind(animation_id))
 
 
