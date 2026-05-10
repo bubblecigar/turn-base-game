@@ -751,21 +751,20 @@ func _get_attack_target_position(args: Dictionary) -> Vector2:
 		return Vector2.INF
 
 	var target_cell: Variant = args.get("target_cell", {})
-	if not target_cell is Dictionary:
+	if target_cell is Dictionary and target_cell.has("i") and target_cell.has("j"):
+		var visual_size := get_visual_size()
+		var i := int(target_cell["i"])
+		var j := int(target_cell["j"])
+		var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
+		return bottom_position - Vector2(visual_size.x / 2.0, visual_size.y)
+
+	var vector: Vector2i = args.get("vector", Vector2i.ZERO)
+	if vector == Vector2i.ZERO:
 		return Vector2.INF
 
-	if not target_cell.has("i") or not target_cell.has("j"):
-		return Vector2.INF
-
-	var i := int(target_cell["i"])
-	var j := int(target_cell["j"])
 	var board: Dictionary = state_store.get_value(&"board", {})
-	if not _has_board_cell(board, i, j):
-		return Vector2.INF
-
-	var visual_size := get_visual_size()
-	var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
-	return bottom_position - Vector2(visual_size.x / 2.0, visual_size.y)
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y)
 
 
 func _get_entity_board_position(entity_id: StringName) -> Vector2:

@@ -267,14 +267,11 @@ func _perform_attack(payload: Dictionary) -> void:
 
 	var attack_vector := _get_move_entity_vector(args["vector"])
 	var target_cell := attacker_cell + attack_vector
-	if not _has_board_cell(target_cell.x, target_cell.y):
-		push_warning("Cannot perform attack outside board with %s to %s." % [attacker_id, target_cell])
-		return
-
-	args[&"target_cell"] = {
-		"i": target_cell.x,
-		"j": target_cell.y,
-	}
+	if _has_board_cell(target_cell.x, target_cell.y):
+		args[&"target_cell"] = {
+			"i": target_cell.x,
+			"j": target_cell.y,
+		}
 	attack_performed.emit(attacker_id, args)
 	print('performed attack: ', attacker_id, ' ', args)
 

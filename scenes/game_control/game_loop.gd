@@ -118,17 +118,8 @@ func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array
 
 
 func _create_random_attack_action(entity_id: StringName) -> Dictionary:
-	var board: Dictionary = state_store.get_value(&"board", {})
 	var own_cell := _get_entity_board_index(entity_id)
 	if own_cell == Vector2i(-1, -1):
-		return {}
-
-	var valid_vectors: Array[Vector2i] = []
-	for vector: Vector2i in MOVE_VECTORS:
-		if _has_board_cell(board, own_cell + vector):
-			valid_vectors.append(vector)
-
-	if valid_vectors.is_empty():
 		return {}
 
 	return {
@@ -138,7 +129,7 @@ func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 			"args": {
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "game_loop",
-				"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],
+				"vector": MOVE_VECTORS[randi_range(0, MOVE_VECTORS.size() - 1)],
 			},
 		},
 	}
