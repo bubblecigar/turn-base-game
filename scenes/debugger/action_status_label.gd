@@ -1,11 +1,17 @@
 extends Label
 
+const MAX_LINES := 12
+
 @onready var action_queue: Node = $"../../ActionQueue"
 @onready var action_handler: Node = $"../../ActionHandler"
 
+var _log: Array[String] = []
+
 
 func _ready() -> void:
-	text = "Action: idle"
+	autowrap_mode = TextServer.AUTOWRAP_OFF
+	clip_text = false
+	_push_log("Action: idle")
 	action_queue.batch_enqueued.connect(_on_batch_enqueued)
 	action_queue.batch_started.connect(_on_batch_started)
 	action_queue.queue_drained.connect(_on_queue_drained)
@@ -13,20 +19,27 @@ func _ready() -> void:
 
 
 func _on_batch_enqueued(events: Array, pending_batch_count: int) -> void:
-	text = "Action queued: %s (%d pending)" % [_summarize_events(events), pending_batch_count]
+	_push_log("Queued: %s (%d pending)" % [_summarize_events(events), pending_batch_count])
 
 
 func _on_batch_started(events: Array, pending_batch_count: int) -> void:
-	text = "Action batch: %s (%d pending)" % [_summarize_events(events), pending_batch_count]
+	_push_log("Batch: %s (%d pending)" % [_summarize_events(events), pending_batch_count])
 
 
 func _on_queue_drained() -> void:
-	text = "Action: idle"
+	_push_log("Queue drained")
 
 
 func _on_processing_status_changed(is_processing: bool, event: Dictionary) -> void:
 	if is_processing:
-		text = "Action processing: %s" % event.get("eventName", "unknown")
+		_push_log("Processing: %s" % event.get("eventName", "unknown"))
+
+
+func _push_log(entry: String) -> void:
+	_log.push_front(entry)
+	if _log.size() > MAX_LINES:
+		_log.resize(MAX_LINES)
+	text = "\n".join(_log)
 
 
 func _summarize_events(events: Array) -> String:

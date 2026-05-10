@@ -94,9 +94,6 @@ func _create_turn_actions() -> Array[Dictionary]:
 
 func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
 	var options: Array[Dictionary] = []
-	var attack_action := _create_random_attack_action(entity_id, alive_entity_ids)
-	if not attack_action.is_empty():
-		options.append(attack_action)
 
 	var move_action := _create_random_move_action(entity_id)
 	if not move_action.is_empty():
@@ -104,6 +101,11 @@ func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array
 
 	options.append(_create_cast_action(entity_id))
 	options.shuffle()
+
+	var attack_action := _create_random_attack_action(entity_id, alive_entity_ids)
+	if not attack_action.is_empty():
+		options.push_front(attack_action)
+
 	return options.front()
 
 

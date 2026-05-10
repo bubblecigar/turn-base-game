@@ -112,7 +112,7 @@ layout_mode = 0
 offset_left = 560.0
 offset_top = 24.0
 offset_right = 920.0
-offset_bottom = 47.0
+offset_bottom = 228.0
 text = "Action: idle"
 script = ExtResource("10_action_status")
 
