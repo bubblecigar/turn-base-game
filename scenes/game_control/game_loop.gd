@@ -26,6 +26,7 @@ var _board_initialized := false
 var _turn_in_progress := false
 var _game_over := false
 var _turn_index := 0
+var _running := false
 
 
 func _ready() -> void:
@@ -37,6 +38,7 @@ func _ready() -> void:
 
 
 func start() -> void:
+	_running = true
 	_emit_status("started")
 	call_deferred("_maybe_start_next_turn")
 
@@ -44,10 +46,14 @@ func start() -> void:
 func _on_board_init(_board: Dictionary, _previous_board: Variant) -> void:
 	_board_initialized = true
 	_emit_status("board ready")
-	call_deferred("_maybe_start_next_turn")
+	if _running:
+		call_deferred("_maybe_start_next_turn")
 
 
 func _on_queue_drained() -> void:
+	if not _running:
+		return
+
 	if not _turn_in_progress:
 		call_deferred("_maybe_start_next_turn")
 		return
