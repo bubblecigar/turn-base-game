@@ -4,7 +4,7 @@ class_name EntityBoardView
 
 signal entities_collided(entity_id: StringName, collided_entity_ids: Array[StringName], payload: Dictionary)
 
-const MOVE_ANIMATION_SECONDS := 1.75
+const MOVE_ANIMATION_SECONDS := 1.2
 const MOVE_ANIMATION_NAME := &"entity_move"
 const WALK_STEP_SECONDS := 0.35
 const HIT_ANIMATION_SECONDS := 0.24
