@@ -1,6 +1,4 @@
-extends Label
-
-const MAX_LINES := 12
+extends RichTextLabel
 
 @onready var action_queue: Node = $"../../ActionQueue"
 @onready var action_handler: Node = $"../../ActionHandler"
@@ -9,8 +7,6 @@ var _log: Array[String] = []
 
 
 func _ready() -> void:
-	autowrap_mode = TextServer.AUTOWRAP_OFF
-	clip_text = false
 	_push_log("Action: idle")
 	action_queue.batch_enqueued.connect(_on_batch_enqueued)
 	action_queue.batch_started.connect(_on_batch_started)
@@ -37,9 +33,8 @@ func _on_processing_status_changed(is_processing: bool, event: Dictionary) -> vo
 
 func _push_log(entry: String) -> void:
 	_log.push_front(entry)
-	if _log.size() > MAX_LINES:
-		_log.resize(MAX_LINES)
 	text = "\n".join(_log)
+	scroll_to_line(0)
 
 
 func _summarize_events(events: Array) -> String:
