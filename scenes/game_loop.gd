@@ -94,6 +94,9 @@ func _create_turn_actions() -> Array[Dictionary]:
 
 func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
 	var options: Array[Dictionary] = []
+	var attack_action := _create_random_attack_action(entity_id)
+	if not attack_action.is_empty():
+		options.append(attack_action)
 
 	var move_action := _create_random_move_action(entity_id)
 	if not move_action.is_empty():
@@ -101,31 +104,21 @@ func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array
 
 	options.append(_create_cast_action(entity_id))
 	options.shuffle()
-
-	var attack_action := _create_random_attack_action(entity_id, alive_entity_ids)
-	if not attack_action.is_empty():
-		options.push_front(attack_action)
-
 	return options.front()
 
 
-func _create_random_attack_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
+func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var own_cell := _get_entity_board_index(entity_id)
 	if own_cell == Vector2i(-1, -1):
 		return {}
 
-	var attack_vectors: Array[Vector2i] = []
-	for target_entity_id: StringName in alive_entity_ids:
-		if target_entity_id == entity_id:
-			continue
+	var valid_vectors: Array[Vector2i] = []
+	for vector: Vector2i in MOVE_VECTORS:
+		if _has_board_cell(board, own_cell + vector):
+			valid_vectors.append(vector)
 
-		var target_cell := _get_entity_board_index(target_entity_id)
-		var vector := target_cell - own_cell
-		if abs(vector.x) + abs(vector.y) == 1 and _has_board_cell(board, own_cell + vector):
-			attack_vectors.append(vector)
-
-	if attack_vectors.is_empty():
+	if valid_vectors.is_empty():
 		return {}
 
 	return {
@@ -135,7 +128,7 @@ func _create_random_attack_action(entity_id: StringName, alive_entity_ids: Array
 			"args": {
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "game_loop",
-				"vector": attack_vectors[randi_range(0, attack_vectors.size() - 1)],
+				"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],
 			},
 		},
 	}
