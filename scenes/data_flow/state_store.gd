@@ -172,6 +172,10 @@ func resolve_entity_cast(entity_id: StringName, result: bool) -> void:
 		push_warning("Cannot resolve casting for missing entity: %s." % entity_id)
 		return
 
+	if StringName(str(entity.get(&"state", &"idle"))) != &"casting":
+		print("ignored cast resolve for non-casting entity: %s" % entity_id)
+		return
+
 	var next_entity := entity.duplicate(true)
 	next_entity[&"state"] = &"idle"
 	next_entity[&"cast_args"] = {}
