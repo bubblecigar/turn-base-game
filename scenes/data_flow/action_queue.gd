@@ -1,5 +1,9 @@
 extends Node
 
+signal queue_drained
+signal batch_enqueued(events: Array, pending_batch_count: int)
+signal batch_started(events: Array, pending_batch_count: int)
+
 var _event_queue: Array[Array] = []
 
 @onready var action_handler: Node = $"../ActionHandler"
@@ -19,6 +23,7 @@ func enQueue(events: Array) -> void:
 		return
 
 	_event_queue.append(events)
+	batch_enqueued.emit(events, _event_queue.size())
 	print(_event_queue);
 	consume_next()
 
@@ -46,11 +51,20 @@ func _is_valid_event(event: Dictionary) -> bool:
 	)
 
 
+func is_idle() -> bool:
+	return not action_handler.is_consuming() and not animation_tracker.has_active_animations() and _event_queue.is_empty()
+
+
 func consume_next() -> void:
-	if action_handler.is_consuming() or animation_tracker.has_active_animations() or _event_queue.is_empty():
+	if action_handler.is_consuming() or animation_tracker.has_active_animations():
+		return
+
+	if _event_queue.is_empty():
+		queue_drained.emit()
 		return
 
 	var events: Array = _event_queue.pop_front()
+	batch_started.emit(events, _event_queue.size())
 	for event: Dictionary in events:
 		await action_handler.consume(event)
 

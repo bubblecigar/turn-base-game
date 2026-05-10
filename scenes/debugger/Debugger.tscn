@@ -9,6 +9,10 @@
 [ext_resource type="Script" uid="uid://djq6b16xo7xp" path="res://scenes/debugger/button_print_state.gd" id="7_print_state"]
 [ext_resource type="Script" uid="uid://byqhpg1st61go" path="res://scenes/debugger/entity_action_controls.gd" id="8_entity_controls"]
 [ext_resource type="Script" uid="uid://bi6dtt065awmx" path="res://scenes/debugger/button_perform_cast.gd" id="9_cast"]
+[ext_resource type="Script" uid="uid://da87bhpqcgche" path="res://scenes/debugger/action_status_label.gd" id="10_action_status"]
+[ext_resource type="Script" uid="uid://jgb6jeiow7cx" path="res://scenes/debugger/game_loop_status_label.gd" id="11_loop_status"]
+[ext_resource type="Script" uid="uid://c52agvnv42w5s" path="res://scenes/debugger/button_restart.gd" id="12_restart"]
+[ext_resource type="Script" uid="uid://dekpsf583nr68" path="res://scenes/debugger/button_start_game_loop.gd" id="13_start_loop"]
 
 [node name="Debugger" type="Control" unique_id=1084566502]
 layout_mode = 3
@@ -95,7 +99,30 @@ scale = Vector2(2.4857094, 3.2024686)
 text = "Print State"
 script = ExtResource("7_print_state")
 
+[node name="ButtonRestart" type="Button" parent="." unique_id=2025981178]
+layout_mode = 0
+offset_left = 329.0
+offset_top = 436.99997
+offset_right = 373.0
+offset_bottom = 458.99997
+scale = Vector2(2.4857094, 3.2024686)
+theme_override_font_sizes/font_size = 10
+text = "Restart"
+script = ExtResource("12_restart")
+
+[node name="ButtonStartGameLoop" type="Button" parent="." unique_id=595265833]
+layout_mode = 0
+offset_left = 449.0
+offset_top = 451.0
+offset_right = 498.71265
+offset_bottom = 468.0
+scale = Vector2(2.4857094, 3.2024686)
+theme_override_font_sizes/font_size = 6
+text = "Start Loop"
+script = ExtResource("13_start_loop")
+
 [node name="ProcessingLabel" type="Label" parent="." unique_id=2013759462]
+visible = false
 layout_mode = 0
 offset_left = 64.0
 offset_top = 336.0
@@ -104,6 +131,24 @@ offset_bottom = 359.0
 scale = Vector2(2.2266638, 1.7437714)
 text = "Idle"
 script = ExtResource("3_el5hy")
+
+[node name="ActionStatusLabel" type="RichTextLabel" parent="." unique_id=945606770]
+layout_mode = 0
+offset_left = 568.0
+offset_top = 63.0
+offset_right = 928.0
+offset_bottom = 516.0
+text = "Action: idle"
+script = ExtResource("10_action_status")
+
+[node name="GameLoopStatusLabel" type="Label" parent="." unique_id=1771022692]
+layout_mode = 0
+offset_left = 569.0
+offset_top = 26.0
+offset_right = 929.0
+offset_bottom = 49.0
+text = "Game loop: waiting"
+script = ExtResource("11_loop_status")
 
 [node name="HeadRadiusLabel" type="Label" parent="." unique_id=899199176]
 visible = false
