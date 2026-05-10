@@ -113,11 +113,6 @@ func _play_cast_performed_visual() -> void:
 	_cast_tween.tween_property(left_arm, "rotation_degrees", CAST_ARM_RAISE_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
 	_cast_tween.tween_property(right_arm, "rotation_degrees", CAST_ARM_RAISE_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
 	_cast_tween.tween_property(body, "rotation_degrees", CAST_BODY_LEAN_DEGREES, CAST_ANIMATION_SECONDS * 0.35)
-	_cast_tween.chain().tween_property(self, "position", start_position, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(self, "modulate", Color.WHITE, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(left_arm, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(right_arm, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(body, "rotation_degrees", 0.0, CAST_ANIMATION_SECONDS * 0.65)
 	_cast_tween.finished.connect(_on_cast_tween_finished.bind(animation_id))
 
 
@@ -127,10 +122,19 @@ func _on_cast_tween_finished(animation_id: StringName) -> void:
 	if _cast_animation_id == animation_id:
 		_cast_animation_id = &""
 		_cast_tween = null
-		modulate = Color.WHITE
-		left_arm.rotation_degrees = 0.0
-		right_arm.rotation_degrees = 0.0
-		body.rotation_degrees = 0.0
+
+
+func _consume_active_cast_animation() -> void:
+	super._consume_active_cast_animation()
+	left_arm.rotation_degrees = 0.0
+	right_arm.rotation_degrees = 0.0
+	body.rotation_degrees = 0.0
+
+
+func _tween_cast_finish_pose(tween: Tween, seconds: float) -> void:
+	tween.tween_property(left_arm, "rotation_degrees", 0.0, seconds)
+	tween.tween_property(right_arm, "rotation_degrees", 0.0, seconds)
+	tween.tween_property(body, "rotation_degrees", 0.0, seconds)
 
 
 func _update_parts(entity_state: Dictionary) -> void:

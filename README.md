@@ -54,6 +54,7 @@ again.
 - `spawn_entity`
 - `move_entity`
 - `perform_cast`
+- `resolve_cast`
 - `perform_attack`
 
 The handler should stay thin: validate payloads, normalize values, and call the
@@ -84,6 +85,8 @@ Entities are stored separately by id:
 		&"max_hp": 20,
 		&"current_hp": 20,
 		&"focus": 0,
+		&"state": &"idle",
+		&"cast_args": {},
 		&"spec": {...},
 	},
 }
@@ -95,6 +98,7 @@ State changes are announced with signals:
 - `board_init`
 - `entity_moved`
 - `entity_focus_changed`
+- `cast_resolved`
 - generic `state_changed` and `value_changed`
 
 ## Visual Layer

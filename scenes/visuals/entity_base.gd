@@ -24,14 +24,23 @@ const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
 const CAST_ANIMATION_SECONDS := 0.65
 const CAST_ANIMATION_NAME := &"entity_cast"
+const CAST_FINISH_ANIMATION_SECONDS := 0.24
+const CAST_FINISH_ANIMATION_NAME := &"entity_cast_finish"
 const CAST_BOUNCE_PIXELS := 14.0
 const CAST_GLOW_COLOR := Color(0.9, 0.85, 0.2, 1.0)
+const CAST_RESULT_LABEL_FONT_SIZE := 12.0
+const CAST_RESULT_LABEL_HEIGHT := 16.0
+const CAST_RESULT_LABEL_RISE_PIXELS := 18.0
+const CAST_RESULT_ANIMATION_SECONDS := 0.45
+const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
+const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
 const ID_LABEL_FONT_SIZE := 8.0
 const ID_LABEL_HEIGHT := 16.0
 const ENTITY_AREA_NAME := "EntityArea"
 const ENTITY_COLLISION_NAME := "EntityCollision"
 const ENTITY_COLLISION_CELL_SCALE := 0.8
 const COLLISION_PAYLOAD_ATTACK := &"attack"
+const ENTITY_STATE_CASTING := &"casting"
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -44,11 +53,13 @@ var _hp_label: Label
 var _focus_label: Label
 var _id_label: Label
 var _damage_label: Label
+var _cast_result_label: Label
 var _move_tween: Tween
 var _hit_tween: Tween
 var _damage_tween: Tween
 var _focus_tween: Tween
 var _cast_tween: Tween
+var _cast_result_tween: Tween
 var _move_animation_id := &""
 var _hit_animation_id := &""
 var _focus_animation_id := &""
@@ -80,7 +91,7 @@ func _ready() -> void:
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
-	state_store.cast_performed.connect(_on_cast_performed)
+	state_store.cast_resolved.connect(_on_cast_resolved)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
@@ -163,6 +174,10 @@ func _play_attack_performed_visual(_args: Dictionary) -> void:
 	pass
 
 
+func _tween_cast_finish_pose(_tween: Tween, _seconds: float) -> void:
+	pass
+
+
 func _play_cast_performed_visual() -> void:
 	if animation_tracker == null:
 		return
@@ -181,17 +196,19 @@ func _play_cast_performed_visual() -> void:
 	_cast_tween.set_parallel(true)
 	_cast_tween.tween_property(self, "modulate", CAST_GLOW_COLOR, CAST_ANIMATION_SECONDS * 0.35)
 	_cast_tween.tween_property(self, "position", bounce_target, CAST_ANIMATION_SECONDS * 0.35)
-	_cast_tween.chain().tween_property(self, "position", start_position, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(self, "modulate", Color.WHITE, CAST_ANIMATION_SECONDS * 0.65)
 	_cast_tween.finished.connect(_on_cast_tween_finished.bind(animation_id))
 
 
-func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
+func _on_entities_updated(entities: Dictionary, previous_entities: Variant) -> void:
 	if _entity_id == &"" or not entities.has(_entity_id):
 		return
 
-	_set_entity(entities[_entity_id])
+	var next_entity: Dictionary = entities[_entity_id]
+	var previous_entity := _get_previous_entity(previous_entities)
+	_set_entity(next_entity)
 	_update_board_position()
+	if _should_play_cast_started_visual(next_entity, previous_entity):
+		_play_cast_performed_visual()
 
 
 func _on_board_init(board: Dictionary, previous_board: Variant) -> void:
@@ -242,11 +259,11 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	_play_attack_performed_visual(_args)
 
 
-func _on_cast_performed(caster_id: StringName, _focus: int) -> void:
+func _on_cast_resolved(caster_id: StringName, result: bool) -> void:
 	if _entity_id == &"" or caster_id != _entity_id:
 		return
 
-	_play_cast_performed_visual()
+	_finish_cast_visual(result)
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:
@@ -286,7 +303,17 @@ func _on_cast_tween_finished(animation_id: StringName) -> void:
 	if _cast_animation_id == animation_id:
 		_cast_animation_id = &""
 		_cast_tween = null
+
+
+func _on_cast_finish_tween_finished(animation_id: StringName, result: bool) -> void:
+	animation_tracker.consume_animation(animation_id)
+
+	if _cast_animation_id == animation_id:
+		_cast_animation_id = &""
+		_cast_tween = null
 		modulate = Color.WHITE
+		_update_board_position()
+		_show_cast_result_text(result)
 
 
 func _consume_active_move_animation() -> void:
@@ -319,12 +346,47 @@ func _consume_active_focus_animation() -> void:
 
 
 func _consume_active_cast_animation() -> void:
+	if _cast_tween:
+		_cast_tween.kill()
+		_cast_tween = null
+
 	if _cast_animation_id == &"":
 		return
 
 	animation_tracker.consume_animation(_cast_animation_id)
 	_cast_animation_id = &""
 	modulate = Color.WHITE
+
+
+func _finish_cast_visual(result: bool) -> void:
+	if _cast_tween:
+		_cast_tween.kill()
+		_cast_tween = null
+
+	if _cast_animation_id != &"":
+		animation_tracker.consume_animation(_cast_animation_id)
+		_cast_animation_id = &""
+
+	if animation_tracker == null:
+		modulate = Color.WHITE
+		_update_board_position()
+		_show_cast_result_text(result)
+		return
+
+	var target_position := _get_board_position()
+	if target_position == Vector2.INF:
+		target_position = position
+
+	var animation_id: StringName = animation_tracker.register_animation(CAST_FINISH_ANIMATION_NAME)
+	_cast_animation_id = animation_id
+	_cast_tween = create_tween()
+	_cast_tween.set_trans(Tween.TRANS_QUAD)
+	_cast_tween.set_ease(Tween.EASE_OUT)
+	_cast_tween.set_parallel(true)
+	_cast_tween.tween_property(self, "position", target_position, CAST_FINISH_ANIMATION_SECONDS)
+	_cast_tween.tween_property(self, "modulate", Color.WHITE, CAST_FINISH_ANIMATION_SECONDS)
+	_tween_cast_finish_pose(_cast_tween, CAST_FINISH_ANIMATION_SECONDS)
+	_cast_tween.finished.connect(_on_cast_finish_tween_finished.bind(animation_id, result))
 
 
 func _is_position_animation_active() -> bool:
@@ -361,6 +423,33 @@ func _show_damage_number(damage: Variant) -> void:
 	_damage_tween.finished.connect(_on_damage_tween_finished)
 
 
+func _show_cast_result_text(result: bool) -> void:
+	if _cast_result_tween:
+		_cast_result_tween.kill()
+
+	if _cast_result_label == null:
+		_cast_result_label = Label.new()
+		_cast_result_label.layout_mode = 0
+		_cast_result_label.add_theme_font_size_override("font_size", CAST_RESULT_LABEL_FONT_SIZE)
+		_cast_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_cast_result_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		add_child(_cast_result_label)
+
+	var visual_size := get_visual_size()
+	var start_position := Vector2(0.0, -CAST_RESULT_LABEL_HEIGHT)
+	_cast_result_label.text = "Cast success" if result else "Cast interrupted"
+	_cast_result_label.position = start_position
+	_cast_result_label.size = Vector2(max(visual_size.x, HP_BAR_MIN_WIDTH), CAST_RESULT_LABEL_HEIGHT)
+	_cast_result_label.modulate = CAST_RESULT_SUCCESS_COLOR if result else CAST_RESULT_INTERRUPTED_COLOR
+	_cast_result_label.show()
+
+	_cast_result_tween = create_tween()
+	_cast_result_tween.set_parallel(true)
+	_cast_result_tween.tween_property(_cast_result_label, "position", start_position - Vector2(0.0, CAST_RESULT_LABEL_RISE_PIXELS), CAST_RESULT_ANIMATION_SECONDS)
+	_cast_result_tween.tween_property(_cast_result_label, "modulate:a", 0.0, CAST_RESULT_ANIMATION_SECONDS)
+	_cast_result_tween.finished.connect(_on_cast_result_tween_finished)
+
+
 func _play_focus_visual() -> void:
 	if animation_tracker == null or _focus_label == null:
 		return
@@ -385,6 +474,13 @@ func _on_damage_tween_finished() -> void:
 		_damage_label.hide()
 
 	_damage_tween = null
+
+
+func _on_cast_result_tween_finished() -> void:
+	if _cast_result_label:
+		_cast_result_label.hide()
+
+	_cast_result_tween = null
 
 
 func _start_move_animation() -> void:
@@ -416,6 +512,28 @@ func _set_entity(entity_state: Dictionary) -> void:
 	_update_id_label()
 	_update_hp_bar()
 	_update_focus_label()
+
+
+func _get_previous_entity(previous_entities: Variant) -> Dictionary:
+	if not previous_entities is Dictionary:
+		return {}
+
+	return previous_entities.get(_entity_id, {})
+
+
+func _should_play_cast_started_visual(next_entity: Dictionary, previous_entity: Dictionary) -> bool:
+	if previous_entity.is_empty():
+		return false
+
+	var next_state := StringName(str(next_entity.get(&"state", &"idle")))
+	if next_state != ENTITY_STATE_CASTING:
+		return false
+
+	var previous_state := StringName(str(previous_entity.get(&"state", &"idle")))
+	if previous_state != ENTITY_STATE_CASTING:
+		return true
+
+	return next_entity.get(&"cast_args", {}) != previous_entity.get(&"cast_args", {})
 
 
 func _update_board_position() -> void:

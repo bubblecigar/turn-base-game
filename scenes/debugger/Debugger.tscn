@@ -74,6 +74,7 @@ text = "Attack"
 script = ExtResource("6_attack")
 
 [node name="ButtonPerformCast" type="Button" parent="." unique_id=891234567]
+visible = false
 layout_mode = 0
 offset_left = 769.0
 offset_top = 200.0
@@ -326,24 +327,47 @@ offset_right = 244.0
 offset_bottom = 75.0
 text = "attack =>"
 
-[node name="BatchRandomMoveButton" type="Button" parent="EntityActionControls" unique_id=2043601682]
+[node name="CastButton" type="Button" parent="EntityActionControls" unique_id=1336948177]
+layout_mode = 0
+offset_left = 256.0
+offset_top = 44.0
+offset_right = 340.0
+offset_bottom = 75.0
+text = "cast"
+
+[node name="CastSuccessButton" type="Button" parent="EntityActionControls" unique_id=116822393]
 layout_mode = 0
 offset_top = 88.0
-offset_right = 196.0
+offset_right = 120.0
 offset_bottom = 119.0
+text = "cast success"
+
+[node name="CastInterruptedButton" type="Button" parent="EntityActionControls" unique_id=2113636079]
+layout_mode = 0
+offset_left = 132.0
+offset_top = 88.0
+offset_right = 276.0
+offset_bottom = 119.0
+text = "cast interrupted"
+
+[node name="BatchRandomMoveButton" type="Button" parent="EntityActionControls" unique_id=2043601682]
+layout_mode = 0
+offset_top = 132.0
+offset_right = 196.0
+offset_bottom = 163.0
 text = "batch random moves"
 
 [node name="SendBatchButton" type="Button" parent="EntityActionControls" unique_id=1400637785]
 layout_mode = 0
-offset_top = 132.0
+offset_top = 176.0
 offset_right = 120.0
-offset_bottom = 163.0
+offset_bottom = 207.0
 text = "send batch"
 
 [node name="ActionStackLabel" type="Label" parent="EntityActionControls" unique_id=1872298261]
 layout_mode = 0
 offset_left = 136.0
-offset_top = 136.0
+offset_top = 180.0
 offset_right = 212.0
-offset_bottom = 159.0
+offset_bottom = 203.0
 text = "Stack: 0"
