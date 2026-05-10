@@ -32,6 +32,7 @@ const ENTITY_AREA_NAME := "EntityArea"
 const ENTITY_COLLISION_NAME := "EntityCollision"
 const ENTITY_COLLISION_CELL_SCALE := 0.8
 const COLLISION_PAYLOAD_ATTACK := &"attack"
+const ENTITY_STATE_CASTING := &"casting"
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -80,7 +81,6 @@ func _ready() -> void:
 	state_store.board_init.connect(_on_board_init)
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
-	state_store.cast_performed.connect(_on_cast_performed)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	_refresh_from_state()
 
@@ -181,17 +181,19 @@ func _play_cast_performed_visual() -> void:
 	_cast_tween.set_parallel(true)
 	_cast_tween.tween_property(self, "modulate", CAST_GLOW_COLOR, CAST_ANIMATION_SECONDS * 0.35)
 	_cast_tween.tween_property(self, "position", bounce_target, CAST_ANIMATION_SECONDS * 0.35)
-	_cast_tween.chain().tween_property(self, "position", start_position, CAST_ANIMATION_SECONDS * 0.65)
-	_cast_tween.parallel().tween_property(self, "modulate", Color.WHITE, CAST_ANIMATION_SECONDS * 0.65)
 	_cast_tween.finished.connect(_on_cast_tween_finished.bind(animation_id))
 
 
-func _on_entities_updated(entities: Dictionary, _previous_entities: Variant) -> void:
+func _on_entities_updated(entities: Dictionary, previous_entities: Variant) -> void:
 	if _entity_id == &"" or not entities.has(_entity_id):
 		return
 
-	_set_entity(entities[_entity_id])
+	var next_entity: Dictionary = entities[_entity_id]
+	var previous_entity := _get_previous_entity(previous_entities)
+	_set_entity(next_entity)
 	_update_board_position()
+	if _should_play_cast_started_visual(next_entity, previous_entity):
+		_play_cast_performed_visual()
 
 
 func _on_board_init(board: Dictionary, previous_board: Variant) -> void:
@@ -242,13 +244,6 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	_play_attack_performed_visual(_args)
 
 
-func _on_cast_performed(caster_id: StringName, _focus: int) -> void:
-	if _entity_id == &"" or caster_id != _entity_id:
-		return
-
-	_play_cast_performed_visual()
-
-
 func _on_move_tween_finished(animation_id: StringName) -> void:
 	animation_tracker.consume_animation(animation_id)
 
@@ -286,7 +281,6 @@ func _on_cast_tween_finished(animation_id: StringName) -> void:
 	if _cast_animation_id == animation_id:
 		_cast_animation_id = &""
 		_cast_tween = null
-		modulate = Color.WHITE
 
 
 func _consume_active_move_animation() -> void:
@@ -319,12 +313,29 @@ func _consume_active_focus_animation() -> void:
 
 
 func _consume_active_cast_animation() -> void:
+	if _cast_tween:
+		_cast_tween.kill()
+		_cast_tween = null
+
 	if _cast_animation_id == &"":
 		return
 
 	animation_tracker.consume_animation(_cast_animation_id)
 	_cast_animation_id = &""
 	modulate = Color.WHITE
+
+
+func _finish_cast_visual() -> void:
+	if _cast_tween:
+		_cast_tween.kill()
+		_cast_tween = null
+
+	if _cast_animation_id != &"":
+		animation_tracker.consume_animation(_cast_animation_id)
+		_cast_animation_id = &""
+
+	modulate = Color.WHITE
+	_update_board_position()
 
 
 func _is_position_animation_active() -> bool:
@@ -416,6 +427,28 @@ func _set_entity(entity_state: Dictionary) -> void:
 	_update_id_label()
 	_update_hp_bar()
 	_update_focus_label()
+
+
+func _get_previous_entity(previous_entities: Variant) -> Dictionary:
+	if not previous_entities is Dictionary:
+		return {}
+
+	return previous_entities.get(_entity_id, {})
+
+
+func _should_play_cast_started_visual(next_entity: Dictionary, previous_entity: Dictionary) -> bool:
+	if previous_entity.is_empty():
+		return false
+
+	var next_state := StringName(str(next_entity.get(&"state", &"idle")))
+	if next_state != ENTITY_STATE_CASTING:
+		return false
+
+	var previous_state := StringName(str(previous_entity.get(&"state", &"idle")))
+	if previous_state != ENTITY_STATE_CASTING:
+		return true
+
+	return next_entity.get(&"cast_args", {}) != previous_entity.get(&"cast_args", {})
 
 
 func _update_board_position() -> void:

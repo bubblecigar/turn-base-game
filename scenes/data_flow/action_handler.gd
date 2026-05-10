@@ -206,8 +206,8 @@ func _perform_cast(payload: Dictionary) -> void:
 	var cast_type := StringName(str(args["type"]))
 	match cast_type:
 		CAST_TYPE_FOCUS:
-			state_store.increase_entity_focus(performer_id, int(args["value"]))
-			print('performed focus cast: ', performer_id, ' ', args)
+			state_store.start_entity_casting(performer_id, args)
+			print('started focus cast: ', performer_id, ' ', args)
 		_:
 			push_warning("Unsupported perform_cast type: %s." % cast_type)
 

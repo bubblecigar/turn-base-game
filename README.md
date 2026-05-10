@@ -84,6 +84,8 @@ Entities are stored separately by id:
 		&"max_hp": 20,
 		&"current_hp": 20,
 		&"focus": 0,
+		&"state": &"idle",
+		&"cast_args": {},
 		&"spec": {...},
 	},
 }

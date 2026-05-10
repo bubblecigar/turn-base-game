@@ -59,6 +59,8 @@ func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int 
 		&"max_hp": max_hp,
 		&"current_hp": max_hp,
 		&"focus": 0,
+		&"state": &"idle",
+		&"cast_args": {},
 		&"spec": spec.duplicate(true),
 	}
 	_set_entity(next_entity)
@@ -148,6 +150,19 @@ func increase_entity_focus(entity_id: StringName, amount: int = 1) -> void:
 	entity_focus_changed.emit(entity_id, next_focus, previous_focus)
 	cast_performed.emit(entity_id, next_focus)
 	print("increased entity focus: %s +%d focus %d" % [entity_id, amount, next_focus])
+
+
+func start_entity_casting(entity_id: StringName, args: Dictionary) -> void:
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot start casting for missing entity: %s." % entity_id)
+		return
+
+	var next_entity := entity.duplicate(true)
+	next_entity[&"state"] = &"casting"
+	next_entity[&"cast_args"] = args.duplicate(true)
+	_set_entity(next_entity)
+	print("entity started casting: %s %s" % [entity_id, args])
 
 
 func patch(values: Dictionary) -> void:
