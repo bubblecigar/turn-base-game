@@ -33,7 +33,11 @@ func _ready() -> void:
 	_board_initialized = not state_store.get_value(&"board", {}).is_empty()
 	state_store.board_init.connect(_on_board_init)
 	action_queue.queue_drained.connect(_on_queue_drained)
-	_emit_status("waiting for board")
+	_emit_status("waiting to start")
+
+
+func start() -> void:
+	_emit_status("started")
 	call_deferred("_maybe_start_next_turn")
 
 
