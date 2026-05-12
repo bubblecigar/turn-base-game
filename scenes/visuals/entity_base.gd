@@ -55,7 +55,7 @@ const ATTACK_TYPE_STRONG_BUMP := &"strong_bump"
 const ATTACK_TYPE_THROW_PROJECTILE := &"throw_projectile"
 const PROJECTILE_ATTACK_ANIMATION_NAME := &"entity_projectile_attack"
 const PROJECTILE_ATTACK_SECONDS := 0.55
-const PROJECTILE_ARC_HEIGHT := 52.0
+const PROJECTILE_ARC_CELL_HEIGHT := 3.0
 const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
 const PROJECTILE_ROCK_BOTTOM_OFFSET := 11.0
 
@@ -688,7 +688,7 @@ func _set_projectile_position(progress: float, start_position: Vector2, target_p
 	if _projectile_node == null:
 		return
 
-	var arc_offset := Vector2(0.0, -sin(progress * PI) * PROJECTILE_ARC_HEIGHT)
+	var arc_offset := Vector2(0.0, -sin(progress * PI) * _get_projectile_arc_height())
 	var projectile_position := start_position.lerp(target_position, progress) + arc_offset
 	_projectile_node.position = projectile_position
 	_set_projectile_collision_position(projectile_position)
@@ -922,6 +922,12 @@ func _set_projectile_collision_position(projectile_position: Vector2) -> void:
 		return
 
 	_projectile_area.position = to_local(get_parent().to_global(projectile_position))
+
+
+func _get_projectile_arc_height() -> float:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	return cell_size.y * PROJECTILE_ARC_CELL_HEIGHT
 
 
 func _get_collision_area() -> Area2D:
