@@ -5,6 +5,8 @@ const DAMAGE_MAX := 9
 const ATTACK_TYPE_BUMP := "bump"
 const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
 const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
+const CAST_TYPE_FOCUS := "focus"
+const CAST_TYPE_SUMMON_THUNDER := "summon_thunder"
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
 const THROW_PROJECTILE_RESOURCE_COST := 0
@@ -33,6 +35,7 @@ const ACTION_CATEGORY_ORDER := [
 @onready var strong_bump_button: Button = $StrongBumpButton
 @onready var throw_projectile_button: Button = $ThrowProjectileButton
 @onready var cast_button: Button = $CastButton
+@onready var summon_thunder_button: Button = $SummonThunderButton
 @onready var cast_success_button: Button = $CastSuccessButton
 @onready var cast_interrupted_button: Button = $CastInterruptedButton
 @onready var batch_random_move_button: Button = $BatchRandomMoveButton
@@ -55,6 +58,7 @@ func _ready() -> void:
 	strong_bump_button.pressed.connect(_on_strong_bump_pressed)
 	throw_projectile_button.pressed.connect(_on_throw_projectile_pressed)
 	cast_button.pressed.connect(_on_cast_pressed)
+	summon_thunder_button.pressed.connect(_on_summon_thunder_pressed)
 	cast_success_button.pressed.connect(_on_cast_success_pressed)
 	cast_interrupted_button.pressed.connect(_on_cast_interrupted_pressed)
 	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
@@ -101,6 +105,10 @@ func _on_throw_projectile_pressed() -> void:
 
 func _on_cast_pressed() -> void:
 	_cast_selected_entity()
+
+
+func _on_summon_thunder_pressed() -> void:
+	_summon_thunder_selected_entity()
 
 
 func _on_cast_success_pressed() -> void:
@@ -168,6 +176,7 @@ func _refresh_entity_options() -> void:
 	strong_bump_button.disabled = not has_entity
 	throw_projectile_button.disabled = not has_entity
 	cast_button.disabled = not has_entity
+	summon_thunder_button.disabled = not has_entity
 	cast_success_button.disabled = not has_entity
 	cast_interrupted_button.disabled = not has_entity
 	batch_random_move_button.disabled = entity_ids.size() < 2
@@ -239,16 +248,31 @@ func _cast_selected_entity() -> void:
 		push_warning("Select an entity before casting.")
 		return
 
-	_stack_action({
+	_stack_action(_create_cast_action(_selected_entity_id, {
+		"type": CAST_TYPE_FOCUS,
+		"value": 1,
+	}))
+
+
+func _summon_thunder_selected_entity() -> void:
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before casting.")
+		return
+
+	_stack_action(_create_cast_action(_selected_entity_id, {
+		"type": CAST_TYPE_SUMMON_THUNDER,
+		"source": "debugger",
+	}))
+
+
+func _create_cast_action(entity_id: StringName, args: Dictionary) -> Dictionary:
+	return {
 		"eventName": "perform_cast",
 		"payload": {
-			"id": _selected_entity_id,
-			"args": {
-				"type": "focus",
-				"value": 1,
-			},
+			"id": entity_id,
+			"args": args,
 		},
-	})
+	}
 
 
 func _resolve_selected_cast(result: bool) -> void:
