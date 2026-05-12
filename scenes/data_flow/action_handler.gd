@@ -13,10 +13,11 @@ const MAX_HEAD_RADIUS := 14
 const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
 const CAST_TYPE_FOCUS := &"focus"
-const ATTACK_TYPE_BUMP := &"bump"
+const AttackHandlerScript := preload("res://scenes/data_flow/attack_handler.gd")
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
+var _attack_handler: RefCounted
 
 @onready var state_store: Node = $"../StateStore"
 
@@ -24,7 +25,9 @@ var _is_consuming := false
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	randomize()
-	pass # Replace with function body.
+	_attack_handler = AttackHandlerScript.new(state_store)
+	_attack_handler.attack_prepared.connect(_on_attack_prepared)
+	_attack_handler.attack_performed.connect(_on_attack_performed)
 
 
 func consume(event: Dictionary) -> void:
@@ -62,9 +65,9 @@ func _handle_consumed_event(event: Dictionary) -> void:
 		'resolve_cast':
 			_resolve_cast(event['payload'])
 		'prepare_attack':
-			_prepare_attack(event['payload'])
+			_attack_handler.prepare_attack(event['payload'])
 		'perform_attack':
-			_perform_attack(event['payload'])
+			_attack_handler.perform_attack(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -253,110 +256,12 @@ func _is_resolve_cast_payload(payload: Dictionary) -> bool:
 	)
 
 
-func _prepare_attack(payload: Dictionary) -> void:
-	if not _is_perform_attack_payload(payload):
-		push_warning('Invalid prepare_attack payload. Expected { id: String, args: { type: String, vector: Vector2i } }.')
-		return
-
-	var attacker_id := StringName(str(payload["id"]))
-	if not state_store.has_entity(attacker_id):
-		push_warning("Cannot prepare attack with missing entity: %s." % attacker_id)
-		return
-
-	var args: Dictionary = payload["args"].duplicate(true)
-	var attacker_cell := _get_entity_board_index(attacker_id)
-	if attacker_cell != Vector2i(-1, -1):
-		var attack_vector := _get_move_entity_vector(args["vector"])
-		var target_cell := attacker_cell + attack_vector
-		args[&"target_cell"] = {
-			"i": target_cell.x,
-			"j": target_cell.y,
-		}
+func _on_attack_prepared(attacker_id: StringName, args: Dictionary) -> void:
 	attack_prepared.emit(attacker_id, args)
-	print('prepared attack: ', attacker_id, ' ', args)
 
 
-func _perform_attack(payload: Dictionary) -> void:
-	if not _is_perform_attack_payload(payload):
-		push_warning('Invalid perform_attack payload. Expected { id: String, args: { type: "bump", vector: Vector2i } }.')
-		return
-
-	var attacker_id := StringName(str(payload["id"]))
-	if not state_store.has_entity(attacker_id):
-		push_warning("Cannot perform attack with missing entity: %s." % attacker_id)
-		return
-
-	var args: Dictionary = payload["args"].duplicate(true)
-	var attacker_cell := _get_entity_board_index(attacker_id)
-	if attacker_cell == Vector2i(-1, -1):
-		push_warning("Cannot perform attack with entity outside board: %s." % attacker_id)
-		return
-
-	var attack_vector := _get_move_entity_vector(args["vector"])
-	var target_cell := attacker_cell + attack_vector
-	args[&"target_cell"] = {
-		"i": target_cell.x,
-		"j": target_cell.y,
-	}
+func _on_attack_performed(attacker_id: StringName, args: Dictionary) -> void:
 	attack_performed.emit(attacker_id, args)
-	print('performed attack: ', attacker_id, ' ', args)
-
-
-func _is_perform_attack_payload(payload: Dictionary) -> bool:
-	return (
-		payload.has("id")
-		and payload.has("args")
-		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
-		and payload["args"] is Dictionary
-		and payload["args"].has("type")
-		and _is_attack_type(payload["args"]["type"])
-		and payload["args"].has("vector")
-		and _is_move_vector(payload["args"]["vector"])
-	)
-
-
-func _is_attack_type(value: Variant) -> bool:
-	if typeof(value) != TYPE_STRING and typeof(value) != TYPE_STRING_NAME:
-		return false
-
-	match StringName(str(value)):
-		ATTACK_TYPE_BUMP:
-			return true
-		_:
-			return false
-
-
-func _get_entity_board_index(entity_id: StringName) -> Vector2i:
-	var board: Dictionary = state_store.get_value(&"board", {})
-	if board.is_empty() or not board.has(&"cells"):
-		return Vector2i(-1, -1)
-
-	var cells: Array = board[&"cells"]
-	for i in cells.size():
-		var col_cells: Array = cells[i]
-
-		for j in col_cells.size():
-			var cell: Dictionary = col_cells[j]
-			if _cell_has_entity_id(cell, entity_id):
-				return Vector2i(i, j)
-
-	return Vector2i(-1, -1)
-
-
-func _cell_has_entity_id(cell: Dictionary, entity_id: StringName) -> bool:
-	var entity_ids: Array = cell.get(&"entity_ids", [])
-	return entity_ids.has(entity_id) or cell.get(&"entity_id", &"") == entity_id
-
-
-func _has_board_cell(i: int, j: int) -> bool:
-	var board: Dictionary = state_store.get_value(&"board", {})
-	return (
-		board.has(&"cells")
-		and i >= 0
-		and j >= 0
-		and i < int(board.get(&"cols", 0))
-		and j < int(board.get(&"rows", 0))
-	)
 
 
 func _consume_debugger_button_pressed(payload: Dictionary) -> void:
