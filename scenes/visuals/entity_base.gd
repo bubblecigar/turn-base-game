@@ -21,6 +21,10 @@ const HP_TEXT_FONT_SIZE := 8.0
 const HP_TEXT_HEIGHT := 12.0
 const FOCUS_TEXT_FONT_SIZE := 8.0
 const FOCUS_TEXT_HEIGHT := 12.0
+const FOCUS_BAR_HEIGHT := HP_BAR_HEIGHT * 0.66
+const MAX_FOCUS := 5
+const FOCUS_BAR_COLOR := Color(0.25, 0.55, 1.0, 1.0)
+const FOCUS_BAR_EMPTY_COLOR := Color(0.12, 0.12, 0.12, 0.9)
 const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
 const FOCUS_CHANGE_LABEL_FONT_SIZE := 12.0
@@ -74,6 +78,8 @@ var _entity_collision_shape: RectangleShape2D
 var _hp_bar_background: ColorRect
 var _hp_bar_fill: ColorRect
 var _hp_label: Label
+var _focus_bar_background: ColorRect
+var _focus_bar_fill: ColorRect
 var _focus_label: Label
 var _focus_change_label: Label
 var _id_label: Label
@@ -446,9 +452,9 @@ func _on_focus_tween_finished(animation_id: StringName) -> void:
 	if _focus_animation_id == animation_id:
 		_focus_animation_id = &""
 		_focus_tween = null
-		if _focus_label:
-			_focus_label.modulate = Color.WHITE
-			_focus_label.scale = Vector2.ONE
+		if _focus_bar_fill:
+			_focus_bar_fill.modulate = Color.WHITE
+			_focus_bar_fill.scale = Vector2.ONE
 
 
 func _on_cast_tween_finished(animation_id: StringName) -> void:
@@ -491,9 +497,9 @@ func _consume_active_focus_animation() -> void:
 
 	animation_tracker.consume_animation(_focus_animation_id)
 	_focus_animation_id = &""
-	if _focus_label:
-		_focus_label.modulate = Color.WHITE
-		_focus_label.scale = Vector2.ONE
+	if _focus_bar_fill:
+		_focus_bar_fill.modulate = Color.WHITE
+		_focus_bar_fill.scale = Vector2.ONE
 
 
 func _consume_active_projectile_animation() -> void:
@@ -673,7 +679,7 @@ func _show_cast_result_text(result: bool, pending_animation_id: StringName = &""
 
 
 func _play_focus_visual() -> void:
-	if animation_tracker == null or _focus_label == null:
+	if animation_tracker == null or _focus_bar_fill == null:
 		return
 
 	if _focus_tween:
@@ -682,12 +688,12 @@ func _play_focus_visual() -> void:
 
 	var animation_id: StringName = animation_tracker.register_animation(FOCUS_ANIMATION_NAME)
 	_focus_animation_id = animation_id
-	_focus_label.modulate = Color(1.0, 0.88, 0.2, 1.0)
-	_focus_label.scale = Vector2(1.25, 1.25)
+	_focus_bar_fill.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	_focus_bar_fill.scale = Vector2(1.0, 1.6)
 	_focus_tween = create_tween()
 	_focus_tween.set_parallel(true)
-	_focus_tween.tween_property(_focus_label, "modulate", Color.WHITE, FOCUS_ANIMATION_SECONDS)
-	_focus_tween.tween_property(_focus_label, "scale", Vector2.ONE, FOCUS_ANIMATION_SECONDS)
+	_focus_tween.tween_property(_focus_bar_fill, "modulate", FOCUS_BAR_COLOR, FOCUS_ANIMATION_SECONDS)
+	_focus_tween.tween_property(_focus_bar_fill, "scale", Vector2.ONE, FOCUS_ANIMATION_SECONDS)
 	_focus_tween.finished.connect(_on_focus_tween_finished.bind(animation_id))
 
 
@@ -1056,6 +1062,14 @@ func _create_hp_bar() -> void:
 	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(_hp_label)
 
+	_focus_bar_background = ColorRect.new()
+	_focus_bar_background.color = FOCUS_BAR_EMPTY_COLOR
+	add_child(_focus_bar_background)
+
+	_focus_bar_fill = ColorRect.new()
+	_focus_bar_fill.color = FOCUS_BAR_COLOR
+	add_child(_focus_bar_fill)
+
 	_focus_label = Label.new()
 	_focus_label.layout_mode = 0
 	_focus_label.add_theme_font_size_override("font_size", FOCUS_TEXT_FONT_SIZE)
@@ -1098,17 +1112,26 @@ func _update_hp_bar() -> void:
 
 
 func _update_focus_label() -> void:
-	if _focus_label == null:
+	if _focus_bar_background == null or _focus_bar_fill == null:
 		return
 
-	var focus: int = max(int(_entity.get(&"focus", 0)), 0)
+	var focus: int = clamp(int(_entity.get(&"focus", 0)), 0, MAX_FOCUS)
 	var visual_size := get_visual_size()
-	var label_width: float = max(visual_size.x, HP_BAR_MIN_WIDTH)
-	var bar_position := Vector2((visual_size.x - label_width) / 2.0, -HP_BAR_TOP_OFFSET - HP_BAR_HEIGHT)
-	_focus_label.text = "Focus: %d" % focus
-	_focus_label.position = bar_position - Vector2(0.0, HP_TEXT_HEIGHT + FOCUS_TEXT_HEIGHT)
-	_focus_label.size = Vector2(label_width, FOCUS_TEXT_HEIGHT)
-	_focus_label.pivot_offset = _focus_label.size / 2.0
+	var bar_width: float = max(visual_size.x, HP_BAR_MIN_WIDTH)
+	var bar_x := (visual_size.x - bar_width) / 2.0
+	var bar_y := -HP_BAR_TOP_OFFSET
+	var bar_position := Vector2(bar_x, bar_y)
+	var fill_ratio := float(focus) / float(MAX_FOCUS)
+
+	_focus_bar_background.position = bar_position
+	_focus_bar_background.size = Vector2(bar_width, FOCUS_BAR_HEIGHT)
+	_focus_bar_fill.position = bar_position
+	_focus_bar_fill.size = Vector2(bar_width * fill_ratio, FOCUS_BAR_HEIGHT)
+
+	if _focus_label:
+		_focus_label.position = bar_position - Vector2(0.0, FOCUS_TEXT_HEIGHT)
+		_focus_label.size = Vector2(bar_width, FOCUS_TEXT_HEIGHT)
+		_focus_label.pivot_offset = _focus_label.size / 2.0
 
 
 func _get_hp_bar_color(hp_ratio: float) -> Color:
