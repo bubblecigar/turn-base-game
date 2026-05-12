@@ -43,6 +43,12 @@ func perform_attack(payload: Dictionary) -> void:
 		return
 
 	var args := _get_attack_args_with_target_cell(attacker_id, payload["args"])
+	match StringName(str(args["type"])):
+		ATTACK_TYPE_BUMP:
+			pass
+		_:
+			pass
+
 	attack_performed.emit(attacker_id, args)
 	print('performed attack: ', attacker_id, ' ', args)
 
