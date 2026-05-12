@@ -7,8 +7,11 @@ const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
 const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
 const CAST_TYPE_FOCUS := "focus"
 const CAST_TYPE_HEAL := "heal"
+const CAST_TYPE_SUMMON_THUNDER := "summon_thunder"
 const HEAL_FOCUS_COST := 1
 const HEAL_HP_RESTORE := 3
+const SUMMON_THUNDER_FOCUS_COST := 1
+const SUMMON_THUNDER_DAMAGE := 3
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
 const THROW_PROJECTILE_RESOURCE_COST := 0
@@ -38,6 +41,7 @@ const ACTION_CATEGORY_ORDER := [
 @onready var throw_projectile_button: Button = $ThrowProjectileButton
 @onready var cast_button: Button = $CastButton
 @onready var heal_button: Button = $HealButton
+@onready var thunder_button: Button = $ThunderButton
 @onready var cast_success_button: Button = $CastSuccessButton
 @onready var cast_interrupted_button: Button = $CastInterruptedButton
 @onready var batch_random_move_button: Button = $BatchRandomMoveButton
@@ -61,6 +65,7 @@ func _ready() -> void:
 	throw_projectile_button.pressed.connect(_on_throw_projectile_pressed)
 	cast_button.pressed.connect(_on_cast_pressed)
 	heal_button.pressed.connect(_on_heal_pressed)
+	thunder_button.pressed.connect(_on_thunder_pressed)
 	cast_success_button.pressed.connect(_on_cast_success_pressed)
 	cast_interrupted_button.pressed.connect(_on_cast_interrupted_pressed)
 	batch_random_move_button.pressed.connect(_on_batch_random_move_pressed)
@@ -111,6 +116,10 @@ func _on_cast_pressed() -> void:
 
 func _on_heal_pressed() -> void:
 	_heal_selected_entity()
+
+
+func _on_thunder_pressed() -> void:
+	_thunder_selected_entity()
 
 
 func _on_cast_success_pressed() -> void:
@@ -179,6 +188,7 @@ func _refresh_entity_options() -> void:
 	throw_projectile_button.disabled = not has_entity
 	cast_button.disabled = not has_entity
 	heal_button.disabled = not has_entity
+	thunder_button.disabled = not has_entity
 	cast_success_button.disabled = not has_entity
 	cast_interrupted_button.disabled = not has_entity
 	batch_random_move_button.disabled = entity_ids.size() < 2
@@ -265,6 +275,19 @@ func _heal_selected_entity() -> void:
 		"type": CAST_TYPE_HEAL,
 		"resource": HEAL_FOCUS_COST,
 		"value": HEAL_HP_RESTORE,
+		"source": "debugger",
+	}))
+
+
+func _thunder_selected_entity() -> void:
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before casting.")
+		return
+
+	_stack_action(_create_cast_action(_selected_entity_id, {
+		"type": CAST_TYPE_SUMMON_THUNDER,
+		"resource": SUMMON_THUNDER_FOCUS_COST,
+		"value": SUMMON_THUNDER_DAMAGE,
 		"source": "debugger",
 	}))
 

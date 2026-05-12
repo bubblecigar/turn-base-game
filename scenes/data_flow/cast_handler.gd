@@ -5,6 +5,7 @@ signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
 
 const CAST_TYPE_FOCUS := "focus"
 const CAST_TYPE_HEAL := "heal"
+const CAST_TYPE_SUMMON_THUNDER := "summon_thunder"
 const SCHEMAS := {
 	"focus": {
 		"required": ["type", "value"],
@@ -15,6 +16,15 @@ const SCHEMAS := {
 		},
 	},
 	"heal": {
+		"required": ["type", "resource", "value"],
+		"fields": {
+			"type": TYPE_STRING,
+			"resource": TYPE_INT,
+			"value": TYPE_INT,
+			"source": TYPE_STRING,
+		},
+	},
+	"summon_thunder": {
 		"required": ["type", "resource", "value"],
 		"fields": {
 			"type": TYPE_STRING,
@@ -48,6 +58,10 @@ func perform_cast(payload: Dictionary) -> void:
 			_state_store.start_entity_casting(caster_id, args)
 		CAST_TYPE_HEAL:
 			if not _perform_heal_cast(caster_id, args):
+				return
+			_state_store.start_entity_casting(caster_id, args)
+		CAST_TYPE_SUMMON_THUNDER:
+			if not _perform_summon_thunder_cast(caster_id, args):
 				return
 			_state_store.start_entity_casting(caster_id, args)
 		_:
@@ -88,6 +102,8 @@ func _apply_successful_cast_result(caster_id: StringName, args: Dictionary) -> b
 			return _apply_focus_cast_success(caster_id, args)
 		CAST_TYPE_HEAL:
 			return _apply_heal_cast_success(caster_id, args)
+		CAST_TYPE_SUMMON_THUNDER:
+			return _apply_summon_thunder_cast_success(caster_id, args)
 		_:
 			push_warning("Unsupported cast resolve type: %s." % args["type"])
 			return false
@@ -104,10 +120,52 @@ func _perform_heal_cast(caster_id: StringName, args: Dictionary) -> bool:
 	return _state_store.spend_entity_focus(caster_id, focus_cost)
 
 
+func _perform_summon_thunder_cast(caster_id: StringName, args: Dictionary) -> bool:
+	var focus_cost: int = max(int(args.get("resource", 0)), 0)
+	return _state_store.spend_entity_focus(caster_id, focus_cost)
+
+
 func _apply_heal_cast_success(caster_id: StringName, args: Dictionary) -> bool:
 	var heal_amount: int = max(int(args.get("value", 0)), 0)
 	_state_store.heal_entity(caster_id, heal_amount)
 	return true
+
+
+func _apply_summon_thunder_cast_success(caster_id: StringName, args: Dictionary) -> bool:
+	var target_entity_id: StringName = _get_first_other_board_entity_id(caster_id)
+	if target_entity_id == &"":
+		push_warning("Cannot resolve summon_thunder without a target entity.")
+		return false
+
+	var damage: int = max(int(args.get("value", 0)), 0)
+	_state_store.damage_entity(target_entity_id, damage)
+	print("summon_thunder damaged entity: %s -> %s -%d hp" % [caster_id, target_entity_id, damage])
+	return true
+
+
+func _get_first_other_board_entity_id(caster_id: StringName) -> StringName:
+	var board: Dictionary = _state_store.get_value(&"board", {})
+	var cells: Array = board.get(&"cells", [])
+	for col_cells: Array in cells:
+		for cell: Dictionary in col_cells:
+			var entity_id := _get_first_cell_entity_id(cell, caster_id)
+			if entity_id != &"":
+				return entity_id
+
+	return &""
+
+
+func _get_first_cell_entity_id(cell: Dictionary, excluded_entity_id: StringName) -> StringName:
+	for entity_id: Variant in cell.get(&"entity_ids", []):
+		var target_entity_id := StringName(str(entity_id))
+		if target_entity_id != excluded_entity_id:
+			return target_entity_id
+
+	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
+	if legacy_entity_id != &"" and legacy_entity_id != excluded_entity_id:
+		return legacy_entity_id
+
+	return &""
 
 
 func _get_cast_type(args: Dictionary) -> String:
