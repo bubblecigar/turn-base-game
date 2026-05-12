@@ -914,11 +914,7 @@ func _begin_projectile_attack_collision(args: Dictionary, start_position: Vector
 
 func _finish_projectile_attack_collision() -> void:
 	_finish_attack_collision()
-	if _projectile_collision:
-		_projectile_collision.disabled = true
-	if _projectile_area:
-		_projectile_area.monitoring = false
-		_projectile_area.monitorable = false
+	_remove_projectile_area()
 
 
 func _set_projectile_collision_position(projectile_position: Vector2) -> void:
@@ -956,6 +952,19 @@ func _ensure_projectile_area() -> void:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
 	_sync_projectile_collision_shape(cell_size)
+
+
+func _remove_projectile_area() -> void:
+	if _projectile_collision:
+		_projectile_collision.disabled = true
+	if _projectile_area:
+		_projectile_area.monitoring = false
+		_projectile_area.monitorable = false
+		_projectile_area.queue_free()
+
+	_projectile_area = null
+	_projectile_collision = null
+	_projectile_collision_shape = null
 
 
 func _sync_projectile_collision_shape(cell_size: Vector2) -> void:
