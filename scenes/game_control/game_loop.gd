@@ -5,6 +5,9 @@ signal status_changed(status: String)
 const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
 const ATTACK_TYPE_BUMP := "bump"
+const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
+const STRONG_BUMP_FOCUS_COST := 3
+const STRONG_BUMP_VECTOR_LENGTH := 3
 const ACTION_CATEGORY_CAST := &"cast"
 const ACTION_CATEGORY_MOVE := &"move"
 const ACTION_CATEGORY_ATTACK := &"attack"
@@ -128,24 +131,44 @@ func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 	if own_cell == Vector2i(-1, -1):
 		return {}
 
+	var attack_type := ATTACK_TYPE_BUMP
+	var attack_vector_length := 1
+	var resource := 0
+	if _get_entity_focus(entity_id) >= STRONG_BUMP_FOCUS_COST:
+		attack_type = ATTACK_TYPE_STRONG_BUMP
+		attack_vector_length = STRONG_BUMP_VECTOR_LENGTH
+		resource = STRONG_BUMP_FOCUS_COST
+
 	var valid_vectors: Array[Vector2i] = []
 	for vector: Vector2i in ATTACK_VECTORS:
-		if _has_board_cell(board, own_cell + vector):
-			valid_vectors.append(vector)
+		var attack_vector := vector * attack_vector_length
+		if _has_board_cell(board, own_cell + attack_vector):
+			valid_vectors.append(attack_vector)
+
+	if valid_vectors.is_empty() and attack_type == ATTACK_TYPE_STRONG_BUMP:
+		attack_type = ATTACK_TYPE_BUMP
+		resource = 0
+		for vector: Vector2i in ATTACK_VECTORS:
+			if _has_board_cell(board, own_cell + vector):
+				valid_vectors.append(vector)
 
 	if valid_vectors.is_empty():
 		return {}
+
+	var args := {
+		"type": attack_type,
+		"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
+		"source": "game_loop",
+		"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],
+	}
+	if resource > 0:
+		args["resource"] = resource
 
 	return {
 		"eventName": "perform_attack",
 		"payload": {
 			"id": entity_id,
-			"args": {
-				"type": ATTACK_TYPE_BUMP,
-				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
-				"source": "game_loop",
-				"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],
-			},
+			"args": args,
 		},
 	}
 
@@ -328,6 +351,12 @@ func _get_casting_entity_ids() -> Array[StringName]:
 			entity_ids.append(StringName(str(entity_id)))
 
 	return entity_ids
+
+
+func _get_entity_focus(entity_id: StringName) -> int:
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	var entity: Dictionary = entities.get(entity_id, {})
+	return max(int(entity.get(&"focus", 0)), 0)
 
 
 func _get_entity_board_index(entity_id: StringName) -> Vector2i:
