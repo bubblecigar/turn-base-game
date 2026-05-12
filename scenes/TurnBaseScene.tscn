@@ -30,7 +30,6 @@ script = ExtResource("4_6wkyc")
 [node name="View" type="Node2D" parent="." unique_id=1761761113]
 
 [node name="BoardView" parent="View" unique_id=255841062 instance=ExtResource("6_vcus8")]
-position = Vector2(160, 80)
 
 [node name="EntitiesLayer" type="Node2D" parent="View" unique_id=301278140]
 script = ExtResource("7_l81iu")

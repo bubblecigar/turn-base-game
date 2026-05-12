@@ -15,7 +15,20 @@ func _ready() -> void:
 
 func _on_board_init(board: Dictionary, _previous_board: Variant) -> void:
 	_board = board
+	_center_on_viewport()
 	queue_redraw()
+
+
+func _center_on_viewport() -> void:
+	var cols := int(_board.get(&"cols", 0))
+	var rows := int(_board.get(&"rows", 0))
+	var cell_size: Vector2 = _board.get(&"cell_size", Vector2.ZERO)
+	if cols <= 0 or rows <= 0 or cell_size == Vector2.ZERO:
+		return
+
+	var board_size := Vector2(cols * cell_size.x, rows * cell_size.y)
+	var viewport_size := get_viewport_rect().size
+	position = ((viewport_size - board_size) / 2.0).floor()
 
 
 func index_to_position(i: int, j: int) -> Vector2:
