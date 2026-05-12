@@ -229,11 +229,11 @@ func _play_throw_projectile_attack_performed_visual(args: Dictionary) -> void:
 	if _projectile_node == null:
 		_projectile_node = Polygon2D.new()
 		_projectile_node.polygon = PackedVector2Array([
-			Vector2(-5.0, -4.0),
-			Vector2(4.0, -5.0),
-			Vector2(6.0, 2.0),
-			Vector2(1.0, 6.0),
-			Vector2(-6.0, 3.0),
+			Vector2(-9.0, -7.0),
+			Vector2(7.0, -9.0),
+			Vector2(11.0, 4.0),
+			Vector2(2.0, 11.0),
+			Vector2(-11.0, 5.0),
 		])
 		_projectile_node.color = PROJECTILE_ROCK_COLOR
 		get_parent().add_child(_projectile_node)
