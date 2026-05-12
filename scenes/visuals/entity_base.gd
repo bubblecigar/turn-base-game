@@ -57,6 +57,7 @@ const PROJECTILE_ATTACK_ANIMATION_NAME := &"entity_projectile_attack"
 const PROJECTILE_ATTACK_SECONDS := 0.55
 const PROJECTILE_ARC_HEIGHT := 52.0
 const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
+const PROJECTILE_ROCK_BOTTOM_OFFSET := 11.0
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -218,7 +219,7 @@ func _play_throw_projectile_attack_performed_visual(args: Dictionary) -> void:
 	if animation_tracker == null or board_view == null:
 		return
 
-	var target_position := _get_attack_target_cell_center(args)
+	var target_position := _get_attack_target_ground_position(args)
 	if target_position == Vector2.INF:
 		return
 
@@ -1058,6 +1059,25 @@ func _get_attack_target_cell_center(args: Dictionary) -> Vector2:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) - Vector2(0.0, cell_size.y / 2.0)
+
+
+func _get_attack_target_ground_position(args: Dictionary) -> Vector2:
+	if board_view == null:
+		return Vector2.INF
+
+	var target_cell: Variant = args.get("target_cell", {})
+	if target_cell is Dictionary and target_cell.has("i") and target_cell.has("j"):
+		var i := int(target_cell["i"])
+		var j := int(target_cell["j"])
+		return board_view.position + board_view.index_to_bottom_position(i, j) - Vector2(0.0, PROJECTILE_ROCK_BOTTOM_OFFSET)
+
+	var vector: Vector2i = args.get("vector", Vector2i.ZERO)
+	if vector == Vector2i.ZERO:
+		return Vector2.INF
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) + Vector2(0.0, cell_size.y / 2.0 - PROJECTILE_ROCK_BOTTOM_OFFSET)
 
 
 func _get_entity_board_position(entity_id: StringName) -> Vector2:
