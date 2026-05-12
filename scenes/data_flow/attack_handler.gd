@@ -4,6 +4,8 @@ signal attack_performed(attacker_id: StringName, args: Dictionary)
 signal attack_prepared(attacker_id: StringName, args: Dictionary)
 
 const ATTACK_TYPE_BUMP := &"bump"
+const ATTACK_TYPE_STRONG_BUMP := &"strong_bump"
+const STRONG_BUMP_FOCUS_COST := 3
 const SCHEMAS := {
 	"bump": {
 		"required": ["type", "vector", "damage"],
@@ -11,6 +13,16 @@ const SCHEMAS := {
 			"type": TYPE_STRING,
 			"vector": TYPE_VECTOR2I,
 			"damage": TYPE_INT,
+			"source": TYPE_STRING,
+		},
+	},
+	"strong_bump": {
+		"required": ["type", "vector", "damage", "resource"],
+		"fields": {
+			"type": TYPE_STRING,
+			"vector": TYPE_VECTOR2I,
+			"damage": TYPE_INT,
+			"resource": TYPE_INT,
 			"source": TYPE_STRING,
 		},
 	},
@@ -57,11 +69,23 @@ func perform_attack(payload: Dictionary) -> void:
 	match StringName(str(args["type"])):
 		ATTACK_TYPE_BUMP:
 			pass
+		ATTACK_TYPE_STRONG_BUMP:
+			if not _perform_strong_bump_attack(attacker_id, args):
+				return
 		_:
 			pass
 
 	attack_performed.emit(attacker_id, args)
 	print('performed attack: ', attacker_id, ' ', args)
+
+
+func _perform_strong_bump_attack(attacker_id: StringName, args: Dictionary) -> bool:
+	var focus_cost := int(args.get("resource", STRONG_BUMP_FOCUS_COST))
+	if focus_cost != STRONG_BUMP_FOCUS_COST:
+		push_warning("Invalid strong_bump resource cost: %d. Expected %d." % [focus_cost, STRONG_BUMP_FOCUS_COST])
+		return false
+
+	return _state_store.spend_entity_focus(attacker_id, focus_cost)
 
 
 func _get_attack_args_with_target_cell(attacker_id: StringName, source_args: Dictionary) -> Dictionary:

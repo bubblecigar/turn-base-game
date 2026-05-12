@@ -372,6 +372,14 @@ offset_right = 244.0
 offset_bottom = 75.0
 text = "attack =>"
 
+[node name="StrongBumpButton" type="Button" parent="EntityActionControls"]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 88.0
+offset_right = 420.0
+offset_bottom = 119.0
+text = "strong =>"
+
 [node name="CastButton" type="Button" parent="EntityActionControls" unique_id=1336948177]
 layout_mode = 0
 offset_left = 256.0

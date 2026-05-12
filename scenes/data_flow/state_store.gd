@@ -157,6 +157,29 @@ func increase_entity_focus(entity_id: StringName, amount: int = 1) -> void:
 	print("increased entity focus: %s +%d focus %d" % [entity_id, amount, next_focus])
 
 
+func spend_entity_focus(entity_id: StringName, amount: int) -> bool:
+	if amount <= 0:
+		return true
+
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot spend focus for missing entity: %s." % entity_id)
+		return false
+
+	var previous_focus: int = max(int(entity.get(&"focus", 0)), 0)
+	if previous_focus < amount:
+		push_warning("Cannot spend %d focus for %s with %d focus." % [amount, entity_id, previous_focus])
+		return false
+
+	var next_focus := previous_focus - amount
+	var next_entity := entity.duplicate(true)
+	next_entity[&"focus"] = next_focus
+	_set_entity(next_entity)
+	entity_focus_changed.emit(entity_id, next_focus, previous_focus)
+	print("spent entity focus: %s -%d focus %d" % [entity_id, amount, next_focus])
+	return true
+
+
 func start_entity_casting(entity_id: StringName, args: Dictionary) -> void:
 	var entity := _get_entity(entity_id)
 	if entity.is_empty():
