@@ -137,6 +137,27 @@ func damage_entity(entity_id: StringName, damage: int) -> void:
 	print("damaged entity: %s -%d hp %d/%d" % [entity_id, damage, next_hp, max_hp])
 
 
+func heal_entity(entity_id: StringName, amount: int) -> void:
+	if amount <= 0:
+		return
+
+	var entity := _get_entity(entity_id)
+	if entity.is_empty():
+		push_warning("Cannot heal missing entity: %s." % entity_id)
+		return
+
+	var max_hp: int = max(int(entity.get(&"max_hp", 0)), 0)
+	var current_hp: int = clamp(int(entity.get(&"current_hp", max_hp)), 0, max_hp)
+	var next_hp: int = clamp(current_hp + amount, 0, max_hp)
+	if next_hp == current_hp:
+		return
+
+	var next_entity := entity.duplicate(true)
+	next_entity[&"current_hp"] = next_hp
+	_set_entity(next_entity)
+	print("healed entity: %s +%d hp %d/%d" % [entity_id, amount, next_hp, max_hp])
+
+
 func increase_entity_focus(entity_id: StringName, amount: int = 1) -> void:
 	if amount <= 0:
 		return

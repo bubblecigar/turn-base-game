@@ -4,7 +4,9 @@ signal cast_performed(caster_id: StringName, args: Dictionary)
 signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
 
 const CAST_TYPE_FOCUS := "focus"
-const CAST_TYPE_SUMMON_THUNDER := "summon_thunder"
+const CAST_TYPE_HEAL := "heal"
+const HEAL_FOCUS_COST := 1
+const HEAL_HP_RESTORE := 3
 const SCHEMAS := {
 	"focus": {
 		"required": ["type", "value"],
@@ -14,7 +16,7 @@ const SCHEMAS := {
 			"source": TYPE_STRING,
 		},
 	},
-	"summon_thunder": {
+	"heal": {
 		"required": ["type"],
 		"fields": {
 			"type": TYPE_STRING,
@@ -42,7 +44,11 @@ func perform_cast(payload: Dictionary) -> void:
 
 	var args: Dictionary = payload["args"].duplicate(true)
 	match _get_cast_type(args):
-		CAST_TYPE_FOCUS, CAST_TYPE_SUMMON_THUNDER:
+		CAST_TYPE_FOCUS:
+			_state_store.start_entity_casting(caster_id, args)
+		CAST_TYPE_HEAL:
+			if not _perform_heal_cast(caster_id):
+				return
 			_state_store.start_entity_casting(caster_id, args)
 		_:
 			push_warning("Unsupported perform_cast type: %s." % args["type"])
@@ -69,7 +75,7 @@ func resolve_cast(payload: Dictionary) -> void:
 
 	var result := bool(payload["result"])
 	if result and not _apply_successful_cast_result(caster_id, cast_args):
-		return
+		result = false
 
 	_state_store.resolve_entity_cast(caster_id, result)
 	cast_resolved.emit(caster_id, cast_args, result)
@@ -80,8 +86,8 @@ func _apply_successful_cast_result(caster_id: StringName, args: Dictionary) -> b
 	match _get_cast_type(args):
 		CAST_TYPE_FOCUS:
 			return _apply_focus_cast_success(caster_id, args)
-		CAST_TYPE_SUMMON_THUNDER:
-			return _apply_summon_thunder_cast_success(caster_id, args)
+		CAST_TYPE_HEAL:
+			return _apply_heal_cast_success(caster_id, args)
 		_:
 			push_warning("Unsupported cast resolve type: %s." % args["type"])
 			return false
@@ -93,50 +99,13 @@ func _apply_focus_cast_success(caster_id: StringName, args: Dictionary) -> bool:
 	return true
 
 
-func _apply_summon_thunder_cast_success(caster_id: StringName, args: Dictionary) -> bool:
-	var target_entity_ids := _get_summon_thunder_target_entity_ids(caster_id, args)
-	print("summon_thunder cast success: %s targets=%s args=%s" % [caster_id, target_entity_ids, args])
+func _perform_heal_cast(caster_id: StringName) -> bool:
+	return _state_store.spend_entity_focus(caster_id, HEAL_FOCUS_COST)
+
+
+func _apply_heal_cast_success(caster_id: StringName, _args: Dictionary) -> bool:
+	_state_store.heal_entity(caster_id, HEAL_HP_RESTORE)
 	return true
-
-
-func _get_summon_thunder_target_entity_ids(caster_id: StringName, args: Dictionary) -> Array[StringName]:
-	var explicit_targets := _get_explicit_target_entity_ids(args)
-	if not explicit_targets.is_empty():
-		return explicit_targets
-
-	return _get_other_board_entity_ids(caster_id)
-
-
-func _get_explicit_target_entity_ids(args: Dictionary) -> Array[StringName]:
-	var result: Array[StringName] = []
-	for target_id: Variant in args.get("target_entity_ids", []):
-		var target_entity_id := StringName(str(target_id))
-		if target_entity_id != &"" and not result.has(target_entity_id):
-			result.append(target_entity_id)
-
-	return result
-
-
-func _get_other_board_entity_ids(caster_id: StringName) -> Array[StringName]:
-	var result: Array[StringName] = []
-	var board: Dictionary = _state_store.get_value(&"board", {})
-	var cells: Array = board.get(&"cells", [])
-	for col_cells: Array in cells:
-		for cell: Dictionary in col_cells:
-			_append_cell_entity_ids(result, cell, caster_id)
-
-	return result
-
-
-func _append_cell_entity_ids(result: Array[StringName], cell: Dictionary, excluded_entity_id: StringName) -> void:
-	for entity_id: Variant in cell.get(&"entity_ids", []):
-		var target_entity_id := StringName(str(entity_id))
-		if target_entity_id != excluded_entity_id and not result.has(target_entity_id):
-			result.append(target_entity_id)
-
-	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
-	if legacy_entity_id != &"" and legacy_entity_id != excluded_entity_id and not result.has(legacy_entity_id):
-		result.append(legacy_entity_id)
 
 
 func _get_cast_type(args: Dictionary) -> String:

@@ -396,13 +396,13 @@ offset_right = 340.0
 offset_bottom = 75.0
 text = "cast"
 
-[node name="SummonThunderButton" type="Button" parent="EntityActionControls"]
+[node name="HealButton" type="Button" parent="EntityActionControls"]
 layout_mode = 0
 offset_left = 352.0
 offset_top = 44.0
 offset_right = 500.0
 offset_bottom = 75.0
-text = "summon thunder"
+text = "heal"
 
 [node name="CastSuccessButton" type="Button" parent="EntityActionControls" unique_id=116822393]
 layout_mode = 0
