@@ -1079,13 +1079,7 @@ func _create_hp_bar() -> void:
 
 
 func _update_id_label() -> void:
-	if _id_label == null:
-		return
-
-	var visual_size := get_visual_size()
-	_id_label.text = str(_entity.get(&"id", ""))
-	_id_label.position = Vector2.ZERO
-	_id_label.size = Vector2(max(visual_size.x, 1.0), ID_LABEL_HEIGHT)
+	pass
 
 
 func _update_hp_bar() -> void:
