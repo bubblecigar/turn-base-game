@@ -132,25 +132,17 @@ func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 		return {}
 
 	var attack_type := ATTACK_TYPE_BUMP
-	var attack_vector_length := 1
 	var resource := 0
 	if _get_entity_focus(entity_id) >= STRONG_BUMP_FOCUS_COST:
 		attack_type = ATTACK_TYPE_STRONG_BUMP
-		attack_vector_length = STRONG_BUMP_VECTOR_LENGTH
 		resource = STRONG_BUMP_FOCUS_COST
 
 	var valid_vectors: Array[Vector2i] = []
 	for vector: Vector2i in ATTACK_VECTORS:
-		var attack_vector := vector * attack_vector_length
-		if _has_board_cell(board, own_cell + attack_vector):
-			valid_vectors.append(attack_vector)
-
-	if valid_vectors.is_empty() and attack_type == ATTACK_TYPE_STRONG_BUMP:
-		attack_type = ATTACK_TYPE_BUMP
-		resource = 0
-		for vector: Vector2i in ATTACK_VECTORS:
-			if _has_board_cell(board, own_cell + vector):
-				valid_vectors.append(vector)
+		if attack_type == ATTACK_TYPE_STRONG_BUMP:
+			valid_vectors.append(vector * STRONG_BUMP_VECTOR_LENGTH)
+		elif _has_board_cell(board, own_cell + vector):
+			valid_vectors.append(vector)
 
 	if valid_vectors.is_empty():
 		return {}
