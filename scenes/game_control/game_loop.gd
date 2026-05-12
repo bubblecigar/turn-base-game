@@ -10,6 +10,14 @@ const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
 const THROW_PROJECTILE_RESOURCE_COST := 0
+const CAST_TYPE_FOCUS := "focus"
+const CAST_TYPE_HEAL := "heal"
+const CAST_TYPE_SUMMON_THUNDER := "summon_thunder"
+const HEAL_FOCUS_COST := 1
+const HEAL_VALUE := 3
+const SUMMON_THUNDER_FOCUS_COST := 1
+const SUMMON_THUNDER_DAMAGE_MIN := 3
+const SUMMON_THUNDER_DAMAGE_MAX := 7
 const ACTION_CATEGORY_CAST := &"cast"
 const ACTION_CATEGORY_MOVE := &"move"
 const ACTION_CATEGORY_ATTACK := &"attack"
@@ -122,7 +130,7 @@ func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array
 	if not move_action.is_empty():
 		options.append(move_action)
 
-	options.append(_create_cast_action(entity_id))
+	options.append(_create_random_cast_action(entity_id, alive_entity_ids))
 	options.shuffle()
 	return options.front()
 
@@ -223,11 +231,46 @@ func _create_cast_action(entity_id: StringName) -> Dictionary:
 		"payload": {
 			"id": entity_id,
 			"args": {
-				"type": "focus",
+				"type": CAST_TYPE_FOCUS,
 				"value": 1,
 			},
 		},
 	}
+
+
+func _create_random_cast_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
+	var options: Array[Dictionary] = [_create_cast_action(entity_id)]
+
+	var focus := _get_entity_focus(entity_id)
+	if focus >= HEAL_FOCUS_COST:
+		options.append({
+			"eventName": "perform_cast",
+			"payload": {
+				"id": entity_id,
+				"args": {
+					"type": CAST_TYPE_HEAL,
+					"resource": HEAL_FOCUS_COST,
+					"value": HEAL_VALUE,
+				},
+			},
+		})
+
+	var other_entity_ids := alive_entity_ids.filter(func(id: StringName) -> bool: return id != entity_id)
+	if focus >= SUMMON_THUNDER_FOCUS_COST and not other_entity_ids.is_empty():
+		options.append({
+			"eventName": "perform_cast",
+			"payload": {
+				"id": entity_id,
+				"args": {
+					"type": CAST_TYPE_SUMMON_THUNDER,
+					"resource": SUMMON_THUNDER_FOCUS_COST,
+					"value": randi_range(SUMMON_THUNDER_DAMAGE_MIN, SUMMON_THUNDER_DAMAGE_MAX),
+				},
+			},
+		})
+
+	options.shuffle()
+	return options.front()
 
 
 func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Array]:
