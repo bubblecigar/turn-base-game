@@ -40,7 +40,7 @@ func _set_move_pose(direction: float) -> void:
 	right_leg.rotation_degrees = WALK_LEG_SWING_DEGREES * direction
 
 
-func _play_attack_performed_visual(args: Dictionary) -> void:
+func _play_bump_attack_performed_visual(args: Dictionary) -> void:
 	if animation_tracker == null:
 		return
 

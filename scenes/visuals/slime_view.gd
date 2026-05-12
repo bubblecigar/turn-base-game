@@ -29,7 +29,7 @@ func _set_move_pose(direction: float) -> void:
 	queue_redraw()
 
 
-func _play_attack_performed_visual(args: Dictionary) -> void:
+func _play_bump_attack_performed_visual(args: Dictionary) -> void:
 	if animation_tracker == null:
 		return
 

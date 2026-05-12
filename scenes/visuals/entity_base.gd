@@ -50,6 +50,8 @@ const ENTITY_COLLISION_NAME := "EntityCollision"
 const ENTITY_COLLISION_CELL_SCALE := 0.8
 const COLLISION_PAYLOAD_ATTACK := &"attack"
 const ENTITY_STATE_CASTING := &"casting"
+const ATTACK_TYPE_BUMP := &"bump"
+const ATTACK_TYPE_STRONG_BUMP := &"strong_bump"
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -185,8 +187,22 @@ func _set_move_pose(_direction: float) -> void:
 	pass
 
 
-func _play_attack_performed_visual(_args: Dictionary) -> void:
+func _play_bump_attack_performed_visual(_args: Dictionary) -> void:
 	pass
+
+
+func _play_attack_performed_visual_by_args(args: Dictionary) -> void:
+	var visual_callbacks := {
+		ATTACK_TYPE_BUMP: Callable(self, "_play_bump_attack_performed_visual"),
+		ATTACK_TYPE_STRONG_BUMP: Callable(self, "_play_bump_attack_performed_visual"),
+	}
+	var attack_type := StringName(str(args.get("type", &"")))
+	var callback: Callable = visual_callbacks.get(attack_type, Callable())
+	if not callback.is_valid():
+		push_warning("Unsupported attack performed visual type: %s." % attack_type)
+		return
+
+	callback.call(args)
 
 
 func _play_attack_prepared_visual(args: Dictionary) -> void:
@@ -322,7 +338,7 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 		return
 
 	print("attack performed by %s with args %s" % [attacker_id, _args])
-	_play_attack_performed_visual(_args)
+	_play_attack_performed_visual_by_args(_args)
 
 
 func _on_cast_resolved(caster_id: StringName, result: bool) -> void:
