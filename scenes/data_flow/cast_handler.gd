@@ -132,27 +132,38 @@ func _apply_heal_cast_success(caster_id: StringName, args: Dictionary) -> bool:
 
 
 func _apply_summon_thunder_cast_success(caster_id: StringName, args: Dictionary) -> bool:
-	var target_entity_id: StringName = _get_first_other_board_entity_id(caster_id)
+	var target := _get_first_other_board_target(caster_id)
+	var target_entity_id: StringName = target.get(&"entity_id", &"")
 	if target_entity_id == &"":
 		push_warning("Cannot resolve summon_thunder without a target entity.")
 		return false
 
 	var damage: int = max(int(args.get("value", 0)), 0)
+	args[&"target_entity_id"] = target_entity_id
+	args[&"target_cell"] = target.get(&"target_cell", {})
 	_state_store.damage_entity(target_entity_id, damage)
 	print("summon_thunder damaged entity: %s -> %s -%d hp" % [caster_id, target_entity_id, damage])
 	return true
 
 
-func _get_first_other_board_entity_id(caster_id: StringName) -> StringName:
+func _get_first_other_board_target(caster_id: StringName) -> Dictionary:
 	var board: Dictionary = _state_store.get_value(&"board", {})
 	var cells: Array = board.get(&"cells", [])
-	for col_cells: Array in cells:
-		for cell: Dictionary in col_cells:
-			var entity_id := _get_first_cell_entity_id(cell, caster_id)
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			var entity_id: StringName = _get_first_cell_entity_id(cell, caster_id)
 			if entity_id != &"":
-				return entity_id
+				return {
+					&"entity_id": entity_id,
+					&"target_cell": {
+						"i": int(cell.get(&"i", i)),
+						"j": int(cell.get(&"j", j)),
+					},
+				}
 
-	return &""
+	return {}
 
 
 func _get_first_cell_entity_id(cell: Dictionary, excluded_entity_id: StringName) -> StringName:
