@@ -4,6 +4,17 @@ signal attack_performed(attacker_id: StringName, args: Dictionary)
 signal attack_prepared(attacker_id: StringName, args: Dictionary)
 
 const ATTACK_TYPE_BUMP := &"bump"
+const SCHEMAS := {
+	"bump": {
+		"required": ["type", "vector", "damage"],
+		"fields": {
+			"type": TYPE_STRING,
+			"vector": TYPE_VECTOR2I,
+			"damage": TYPE_INT,
+			"source": TYPE_STRING,
+		},
+	},
+}
 
 var _state_store: Node
 
@@ -14,7 +25,7 @@ func _init(state_store: Node) -> void:
 
 func prepare_attack(payload: Dictionary) -> void:
 	if not _is_attack_payload(payload):
-		push_warning('Invalid prepare_attack payload. Expected { id: String, args: { type: "bump", vector: Vector2i } }.')
+		push_warning('Invalid prepare_attack payload. Check AttackHandler.SCHEMAS for supported attack args.')
 		return
 
 	var attacker_id := StringName(str(payload["id"]))
@@ -29,7 +40,7 @@ func prepare_attack(payload: Dictionary) -> void:
 
 func perform_attack(payload: Dictionary) -> void:
 	if not _is_attack_payload(payload):
-		push_warning('Invalid perform_attack payload. Expected { id: String, args: { type: "bump", vector: Vector2i } }.')
+		push_warning('Invalid perform_attack payload. Check AttackHandler.SCHEMAS for supported attack args.')
 		return
 
 	var attacker_id := StringName(str(payload["id"]))
@@ -74,26 +85,33 @@ func _is_attack_payload(payload: Dictionary) -> bool:
 		and payload.has("args")
 		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
 		and payload["args"] is Dictionary
-		and payload["args"].has("type")
-		and _is_attack_type(payload["args"]["type"])
-		and payload["args"].has("vector")
-		and _is_vector(payload["args"]["vector"])
+		and _is_attack_args(payload["args"])
 	)
 
 
-func _is_attack_type(value: Variant) -> bool:
-	if typeof(value) != TYPE_STRING and typeof(value) != TYPE_STRING_NAME:
+func _is_attack_args(args: Dictionary) -> bool:
+	if not args.has("type") or typeof(args["type"]) != TYPE_STRING:
 		return false
 
-	match StringName(str(value)):
-		ATTACK_TYPE_BUMP:
-			return true
-		_:
+	var attack_type := str(args["type"])
+	if not SCHEMAS.has(attack_type):
+		return false
+
+	var schema: Dictionary = SCHEMAS[attack_type]
+	var required_fields: Array = schema.get("required", [])
+	for field_name: String in required_fields:
+		if not args.has(field_name):
 			return false
 
+	var fields: Dictionary = schema.get("fields", {})
+	for field_name: String in fields:
+		if not args.has(field_name):
+			continue
 
-func _is_vector(value: Variant) -> bool:
-	return value is Vector2i or value is Vector2
+		if typeof(args[field_name]) != int(fields[field_name]):
+			return false
+
+	return true
 
 
 func _get_vector(value: Variant) -> Vector2i:
