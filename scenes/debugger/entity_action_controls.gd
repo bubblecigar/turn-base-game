@@ -2,6 +2,7 @@ extends Control
 
 const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
+const ATTACK_TYPE_BUMP := "bump"
 const RANDOM_MOVE_VECTORS := [
 	Vector2i.LEFT,
 	Vector2i.RIGHT,
@@ -181,6 +182,7 @@ func _attack_selected_cell(delta_i: int) -> void:
 		"payload": {
 			"id": _selected_entity_id,
 			"args": {
+				"type": ATTACK_TYPE_BUMP,
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "debugger",
 				"vector": Vector2i(delta_i, 0),

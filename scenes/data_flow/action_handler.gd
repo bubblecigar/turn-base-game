@@ -13,6 +13,7 @@ const MAX_HEAD_RADIUS := 14
 const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
 const CAST_TYPE_FOCUS := &"focus"
+const ATTACK_TYPE_BUMP := &"bump"
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
@@ -277,7 +278,7 @@ func _prepare_attack(payload: Dictionary) -> void:
 
 func _perform_attack(payload: Dictionary) -> void:
 	if not _is_perform_attack_payload(payload):
-		push_warning('Invalid perform_attack payload. Expected { id: String, args: { vector: Vector2i } }.')
+		push_warning('Invalid perform_attack payload. Expected { id: String, args: { type: "bump", vector: Vector2i } }.')
 		return
 
 	var attacker_id := StringName(str(payload["id"]))
@@ -307,9 +308,22 @@ func _is_perform_attack_payload(payload: Dictionary) -> bool:
 		and payload.has("args")
 		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
 		and payload["args"] is Dictionary
+		and payload["args"].has("type")
+		and _is_attack_type(payload["args"]["type"])
 		and payload["args"].has("vector")
 		and _is_move_vector(payload["args"]["vector"])
 	)
+
+
+func _is_attack_type(value: Variant) -> bool:
+	if typeof(value) != TYPE_STRING and typeof(value) != TYPE_STRING_NAME:
+		return false
+
+	match StringName(str(value)):
+		ATTACK_TYPE_BUMP:
+			return true
+		_:
+			return false
 
 
 func _get_entity_board_index(entity_id: StringName) -> Vector2i:

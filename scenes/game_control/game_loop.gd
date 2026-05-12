@@ -4,6 +4,7 @@ signal status_changed(status: String)
 
 const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
+const ATTACK_TYPE_BUMP := "bump"
 const ACTION_CATEGORY_CAST := &"cast"
 const ACTION_CATEGORY_MOVE := &"move"
 const ACTION_CATEGORY_ATTACK := &"attack"
@@ -140,6 +141,7 @@ func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 		"payload": {
 			"id": entity_id,
 			"args": {
+				"type": ATTACK_TYPE_BUMP,
 				"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 				"source": "game_loop",
 				"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],

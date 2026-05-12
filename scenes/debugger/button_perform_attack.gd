@@ -1,5 +1,7 @@
 extends Button
 
+const ATTACK_TYPE_BUMP := "bump"
+
 @onready var action_queue: Node = $"../../ActionQueue"
 @onready var state_store: Node = $"../../StateStore"
 
@@ -30,6 +32,7 @@ func _on_pressed() -> void:
 		"payload": {
 			"id": attacker_id,
 			"args": {
+				"type": ATTACK_TYPE_BUMP,
 				"damage": randi_range(1, 9),
 				"source": "debugger",
 				"vector": attack_vector,
