@@ -708,6 +708,20 @@ func _emit_active_collisions(collided_entity_ids: Array[StringName]) -> void:
 func _begin_collision(payload: Dictionary) -> void:
 	_active_collision_payload = payload
 	_active_collision_entity_ids.clear()
+	_emit_current_active_collisions()
+	call_deferred("_emit_current_active_collisions")
+
+
+func _emit_current_active_collisions() -> void:
+	if _active_collision_payload.is_empty() or _entity_area == null:
+		return
+
+	var collided_entity_ids := _get_collided_entity_ids()
+	if collided_entity_ids.is_empty():
+		return
+
+	print("entity collision list for %s: %s" % [_entity_id, collided_entity_ids])
+	_emit_active_collisions(collided_entity_ids)
 
 
 func _finish_collision() -> void:
