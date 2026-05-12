@@ -380,6 +380,14 @@ offset_right = 420.0
 offset_bottom = 119.0
 text = "strong =>"
 
+[node name="ThrowProjectileButton" type="Button" parent="EntityActionControls"]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 132.0
+offset_right = 420.0
+offset_bottom = 163.0
+text = "throw =>"
+
 [node name="CastButton" type="Button" parent="EntityActionControls" unique_id=1336948177]
 layout_mode = 0
 offset_left = 256.0

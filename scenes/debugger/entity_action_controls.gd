@@ -4,8 +4,10 @@ const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
 const ATTACK_TYPE_BUMP := "bump"
 const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
+const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
+const THROW_PROJECTILE_RESOURCE_COST := 0
 const RANDOM_MOVE_VECTORS := [
 	Vector2i.LEFT,
 	Vector2i.RIGHT,
@@ -29,6 +31,7 @@ const ACTION_CATEGORY_ORDER := [
 @onready var attack_left_button: Button = $AttackLeftButton
 @onready var attack_right_button: Button = $AttackRightButton
 @onready var strong_bump_button: Button = $StrongBumpButton
+@onready var throw_projectile_button: Button = $ThrowProjectileButton
 @onready var cast_button: Button = $CastButton
 @onready var cast_success_button: Button = $CastSuccessButton
 @onready var cast_interrupted_button: Button = $CastInterruptedButton
@@ -50,6 +53,7 @@ func _ready() -> void:
 	attack_left_button.pressed.connect(_on_attack_left_pressed)
 	attack_right_button.pressed.connect(_on_attack_right_pressed)
 	strong_bump_button.pressed.connect(_on_strong_bump_pressed)
+	throw_projectile_button.pressed.connect(_on_throw_projectile_pressed)
 	cast_button.pressed.connect(_on_cast_pressed)
 	cast_success_button.pressed.connect(_on_cast_success_pressed)
 	cast_interrupted_button.pressed.connect(_on_cast_interrupted_pressed)
@@ -89,6 +93,10 @@ func _on_attack_right_pressed() -> void:
 
 func _on_strong_bump_pressed() -> void:
 	_strong_bump_selected_cell(STRONG_BUMP_VECTOR_LENGTH)
+
+
+func _on_throw_projectile_pressed() -> void:
+	_throw_projectile_selected_cell(1)
 
 
 func _on_cast_pressed() -> void:
@@ -158,6 +166,7 @@ func _refresh_entity_options() -> void:
 	attack_left_button.disabled = not has_entity
 	attack_right_button.disabled = not has_entity
 	strong_bump_button.disabled = not has_entity
+	throw_projectile_button.disabled = not has_entity
 	cast_button.disabled = not has_entity
 	cast_success_button.disabled = not has_entity
 	cast_interrupted_button.disabled = not has_entity
@@ -198,14 +207,22 @@ func _strong_bump_selected_cell(delta_i: int) -> void:
 	_stack_action(_create_attack_action(_selected_entity_id, ATTACK_TYPE_STRONG_BUMP, Vector2i(delta_i, 0), randi_range(DAMAGE_MIN, DAMAGE_MAX), STRONG_BUMP_FOCUS_COST))
 
 
-func _create_attack_action(entity_id: StringName, attack_type: String, vector: Vector2i, damage: int, resource: int = 0) -> Dictionary:
+func _throw_projectile_selected_cell(delta_i: int) -> void:
+	if _selected_entity_id == &"":
+		push_warning("Select an entity before attacking.")
+		return
+
+	_stack_action(_create_attack_action(_selected_entity_id, ATTACK_TYPE_THROW_PROJECTILE, Vector2i(delta_i, 0), randi_range(DAMAGE_MIN, DAMAGE_MAX), THROW_PROJECTILE_RESOURCE_COST))
+
+
+func _create_attack_action(entity_id: StringName, attack_type: String, vector: Vector2i, damage: int, resource: Variant = null) -> Dictionary:
 	var args := {
 		"type": attack_type,
 		"damage": damage,
 		"source": "debugger",
 		"vector": vector,
 	}
-	if resource > 0:
+	if resource != null:
 		args["resource"] = resource
 
 	return {

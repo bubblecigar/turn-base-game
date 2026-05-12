@@ -52,6 +52,11 @@ const COLLISION_PAYLOAD_ATTACK := &"attack"
 const ENTITY_STATE_CASTING := &"casting"
 const ATTACK_TYPE_BUMP := &"bump"
 const ATTACK_TYPE_STRONG_BUMP := &"strong_bump"
+const ATTACK_TYPE_THROW_PROJECTILE := &"throw_projectile"
+const PROJECTILE_ATTACK_ANIMATION_NAME := &"entity_projectile_attack"
+const PROJECTILE_ATTACK_SECONDS := 0.55
+const PROJECTILE_ARC_HEIGHT := 52.0
+const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -74,8 +79,11 @@ var _focus_change_tween: Tween
 var _cast_tween: Tween
 var _cast_result_tween: Tween
 var _prepare_attack_tween: Tween
+var _projectile_tween: Tween
 var _prepare_attack_mark: Node2D
+var _projectile_node: Polygon2D
 var _prepare_attack_animation_id := &""
+var _projectile_animation_id := &""
 var _move_animation_id := &""
 var _hit_animation_id := &""
 var _focus_animation_id := &""
@@ -195,6 +203,7 @@ func _play_attack_performed_visual_by_args(args: Dictionary) -> void:
 	var visual_callbacks := {
 		ATTACK_TYPE_BUMP: Callable(self, "_play_bump_attack_performed_visual"),
 		ATTACK_TYPE_STRONG_BUMP: Callable(self, "_play_bump_attack_performed_visual"),
+		ATTACK_TYPE_THROW_PROJECTILE: Callable(self, "_play_throw_projectile_attack_performed_visual"),
 	}
 	var attack_type := StringName(str(args.get("type", &"")))
 	var callback: Callable = visual_callbacks.get(attack_type, Callable())
@@ -203,6 +212,45 @@ func _play_attack_performed_visual_by_args(args: Dictionary) -> void:
 		return
 
 	callback.call(args)
+
+
+func _play_throw_projectile_attack_performed_visual(args: Dictionary) -> void:
+	if animation_tracker == null or board_view == null:
+		return
+
+	var target_position := _get_attack_target_cell_center(args)
+	if target_position == Vector2.INF:
+		return
+
+	if _projectile_tween:
+		_projectile_tween.kill()
+		_consume_active_projectile_animation()
+
+	if _projectile_node == null:
+		_projectile_node = Polygon2D.new()
+		_projectile_node.polygon = PackedVector2Array([
+			Vector2(-5.0, -4.0),
+			Vector2(4.0, -5.0),
+			Vector2(6.0, 2.0),
+			Vector2(1.0, 6.0),
+			Vector2(-6.0, 3.0),
+		])
+		_projectile_node.color = PROJECTILE_ROCK_COLOR
+		get_parent().add_child(_projectile_node)
+
+	var visual_size := get_visual_size()
+	var start_position := position + Vector2(visual_size.x / 2.0, -visual_size.y / 2.0)
+	_projectile_node.position = start_position
+	_projectile_node.rotation = 0.0
+	_projectile_node.show()
+
+	var animation_id: StringName = animation_tracker.register_animation(PROJECTILE_ATTACK_ANIMATION_NAME)
+	_projectile_animation_id = animation_id
+	_projectile_tween = create_tween()
+	_projectile_tween.set_parallel(true)
+	_projectile_tween.tween_method(_set_projectile_position.bind(start_position, target_position), 0.0, 1.0, PROJECTILE_ATTACK_SECONDS)
+	_projectile_tween.tween_property(_projectile_node, "rotation", TAU * 1.5, PROJECTILE_ATTACK_SECONDS)
+	_projectile_tween.finished.connect(_on_projectile_attack_tween_finished.bind(animation_id, args))
 
 
 func _play_attack_prepared_visual(args: Dictionary) -> void:
@@ -424,6 +472,16 @@ func _consume_active_focus_animation() -> void:
 		_focus_label.scale = Vector2.ONE
 
 
+func _consume_active_projectile_animation() -> void:
+	if _projectile_animation_id == &"":
+		return
+
+	animation_tracker.consume_animation(_projectile_animation_id)
+	_projectile_animation_id = &""
+	if _projectile_node:
+		_projectile_node.hide()
+
+
 func _consume_active_cast_animation() -> void:
 	if _cast_tween:
 		_cast_tween.kill()
@@ -618,6 +676,28 @@ func _on_prepare_attack_tween_finished(animation_id: StringName) -> void:
 		_prepare_attack_animation_id = &""
 
 
+func _set_projectile_position(progress: float, start_position: Vector2, target_position: Vector2) -> void:
+	if _projectile_node == null:
+		return
+
+	var arc_offset := Vector2(0.0, -sin(progress * PI) * PROJECTILE_ARC_HEIGHT)
+	_projectile_node.position = start_position.lerp(target_position, progress) + arc_offset
+
+
+func _on_projectile_attack_tween_finished(animation_id: StringName, args: Dictionary) -> void:
+	if _projectile_node:
+		_projectile_node.hide()
+
+	_projectile_tween = null
+	_emit_attack_target_cell_collision(args)
+
+	if animation_tracker != null:
+		animation_tracker.consume_animation(animation_id)
+
+	if _projectile_animation_id == animation_id:
+		_projectile_animation_id = &""
+
+
 func _start_move_animation() -> void:
 	_stop_move_animation()
 	_is_moving = true
@@ -799,6 +879,48 @@ func _begin_attack_collision(args: Dictionary) -> void:
 
 func _finish_attack_collision() -> void:
 	_finish_collision()
+
+
+func _emit_attack_target_cell_collision(args: Dictionary) -> void:
+	var collided_entity_ids := _get_attack_target_cell_entity_ids(args)
+	if collided_entity_ids.is_empty():
+		return
+
+	print("projectile attack target collision for %s: %s" % [_entity_id, collided_entity_ids])
+	entities_collided.emit(_entity_id, collided_entity_ids, {
+		&"type": COLLISION_PAYLOAD_ATTACK,
+		&"args": args,
+	})
+
+
+func _get_attack_target_cell_entity_ids(args: Dictionary) -> Array[StringName]:
+	var target_cell: Variant = args.get("target_cell", {})
+	if not (target_cell is Dictionary and target_cell.has("i") and target_cell.has("j")):
+		return []
+
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cells: Array = board.get(&"cells", [])
+	var i := int(target_cell["i"])
+	var j := int(target_cell["j"])
+	if i < 0 or j < 0 or i >= cells.size():
+		return []
+
+	var col_cells: Array = cells[i]
+	if j >= col_cells.size():
+		return []
+
+	var cell: Dictionary = col_cells[j]
+	var result: Array[StringName] = []
+	for entity_id: Variant in cell.get(&"entity_ids", []):
+		var target_entity_id := StringName(str(entity_id))
+		if target_entity_id != _entity_id and not result.has(target_entity_id):
+			result.append(target_entity_id)
+
+	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
+	if legacy_entity_id != &"" and legacy_entity_id != _entity_id and not result.has(legacy_entity_id):
+		result.append(legacy_entity_id)
+
+	return result
 
 
 func _create_id_label() -> void:

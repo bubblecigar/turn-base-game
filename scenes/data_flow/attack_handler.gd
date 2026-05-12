@@ -26,6 +26,16 @@ const SCHEMAS := {
 			"source": TYPE_STRING,
 		},
 	},
+	"throw_projectile": {
+		"required": ["type", "vector", "damage", "resource"],
+		"fields": {
+			"type": TYPE_STRING,
+			"vector": TYPE_VECTOR2I,
+			"damage": TYPE_INT,
+			"resource": TYPE_INT,
+			"source": TYPE_STRING,
+		},
+	},
 }
 
 var _state_store: Node
