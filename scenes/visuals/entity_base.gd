@@ -85,7 +85,7 @@ var _prepare_attack_mark: Node2D
 var _projectile_node: Polygon2D
 var _projectile_area: Area2D
 var _projectile_collision: CollisionShape2D
-var _projectile_collision_shape: RectangleShape2D
+var _projectile_collision_shape: ConvexPolygonShape2D
 var _prepare_attack_animation_id := &""
 var _projectile_animation_id := &""
 var _move_animation_id := &""
@@ -795,7 +795,7 @@ func _update_entity_area() -> void:
 
 	_entity_collision.disabled = false
 	_entity_collision_shape.size = cell_size * ENTITY_COLLISION_CELL_SCALE
-	_sync_projectile_collision_shape(cell_size)
+	_sync_projectile_collision_shape()
 	var visual_size := get_visual_size()
 	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
 
@@ -942,16 +942,13 @@ func _ensure_projectile_area() -> void:
 	_projectile_area.area_entered.connect(_on_entity_area_entered)
 	add_child(_projectile_area)
 
-	_projectile_collision_shape = RectangleShape2D.new()
+	_projectile_collision_shape = ConvexPolygonShape2D.new()
 	_projectile_collision = CollisionShape2D.new()
 	_projectile_collision.name = "ProjectileCollision"
 	_projectile_collision.shape = _projectile_collision_shape
 	_projectile_collision.disabled = true
 	_projectile_area.add_child(_projectile_collision)
-
-	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
-	_sync_projectile_collision_shape(cell_size)
+	_sync_projectile_collision_shape()
 
 
 func _remove_projectile_area() -> void:
@@ -967,11 +964,11 @@ func _remove_projectile_area() -> void:
 	_projectile_collision_shape = null
 
 
-func _sync_projectile_collision_shape(cell_size: Vector2) -> void:
-	if _projectile_collision_shape == null:
+func _sync_projectile_collision_shape() -> void:
+	if _projectile_collision_shape == null or _projectile_node == null:
 		return
 
-	_projectile_collision_shape.size = cell_size * ENTITY_COLLISION_CELL_SCALE
+	_projectile_collision_shape.points = _projectile_node.polygon
 
 
 func _create_id_label() -> void:
