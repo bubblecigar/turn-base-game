@@ -6,8 +6,10 @@ const DAMAGE_MIN := 1
 const DAMAGE_MAX := 9
 const ATTACK_TYPE_BUMP := "bump"
 const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
+const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
+const THROW_PROJECTILE_RESOURCE_COST := 0
 const ACTION_CATEGORY_CAST := &"cast"
 const ACTION_CATEGORY_MOVE := &"move"
 const ACTION_CATEGORY_ATTACK := &"attack"
@@ -112,7 +114,7 @@ func _create_turn_actions() -> Array[Dictionary]:
 
 func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
 	var options: Array[Dictionary] = []
-	var attack_action := _create_random_attack_action(entity_id)
+	var attack_action := _create_random_attack_action(entity_id, alive_entity_ids)
 	if not attack_action.is_empty():
 		options.append(attack_action)
 
@@ -125,36 +127,25 @@ func _create_random_entity_action(entity_id: StringName, alive_entity_ids: Array
 	return options.front()
 
 
-func _create_random_attack_action(entity_id: StringName) -> Dictionary:
+func _create_random_attack_action(entity_id: StringName, alive_entity_ids: Array[StringName]) -> Dictionary:
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var own_cell := _get_entity_board_index(entity_id)
 	if own_cell == Vector2i(-1, -1):
 		return {}
 
-	var attack_type := ATTACK_TYPE_BUMP
-	var resource := 0
-	if _get_entity_focus(entity_id) >= STRONG_BUMP_FOCUS_COST:
-		attack_type = ATTACK_TYPE_STRONG_BUMP
-		resource = STRONG_BUMP_FOCUS_COST
-
-	var valid_vectors: Array[Vector2i] = []
-	for vector: Vector2i in ATTACK_VECTORS:
-		if attack_type == ATTACK_TYPE_STRONG_BUMP:
-			valid_vectors.append(vector * STRONG_BUMP_VECTOR_LENGTH)
-		elif _has_board_cell(board, own_cell + vector):
-			valid_vectors.append(vector)
-
-	if valid_vectors.is_empty():
+	var attack_options := _get_random_attack_options(entity_id, alive_entity_ids, board, own_cell)
+	if attack_options.is_empty():
 		return {}
 
+	var attack_option: Dictionary = attack_options[randi_range(0, attack_options.size() - 1)]
 	var args := {
-		"type": attack_type,
+		"type": attack_option["type"],
 		"damage": randi_range(DAMAGE_MIN, DAMAGE_MAX),
 		"source": "game_loop",
-		"vector": valid_vectors[randi_range(0, valid_vectors.size() - 1)],
+		"vector": attack_option["vector"],
 	}
-	if resource > 0:
-		args["resource"] = resource
+	if attack_option.has("resource"):
+		args["resource"] = attack_option["resource"]
 
 	return {
 		"eventName": "perform_attack",
@@ -163,6 +154,44 @@ func _create_random_attack_action(entity_id: StringName) -> Dictionary:
 			"args": args,
 		},
 	}
+
+
+func _get_random_attack_options(entity_id: StringName, alive_entity_ids: Array[StringName], board: Dictionary, own_cell: Vector2i) -> Array[Dictionary]:
+	var attack_options: Array[Dictionary] = []
+	var valid_vectors: Array[Vector2i] = []
+	for vector: Vector2i in ATTACK_VECTORS:
+		if _has_board_cell(board, own_cell + vector):
+			valid_vectors.append(vector)
+
+	for vector: Vector2i in valid_vectors:
+		attack_options.append({
+			"type": ATTACK_TYPE_BUMP,
+			"vector": vector,
+		})
+
+	for target_entity_id: StringName in alive_entity_ids:
+		if target_entity_id == entity_id:
+			continue
+
+		var target_cell := _get_entity_board_index(target_entity_id)
+		if target_cell == Vector2i(-1, -1):
+			continue
+
+		attack_options.append({
+			"type": ATTACK_TYPE_THROW_PROJECTILE,
+			"vector": target_cell - own_cell,
+			"resource": THROW_PROJECTILE_RESOURCE_COST,
+		})
+
+	if _get_entity_focus(entity_id) >= STRONG_BUMP_FOCUS_COST:
+		for vector: Vector2i in ATTACK_VECTORS:
+			attack_options.append({
+				"type": ATTACK_TYPE_STRONG_BUMP,
+				"vector": vector * STRONG_BUMP_VECTOR_LENGTH,
+				"resource": STRONG_BUMP_FOCUS_COST,
+			})
+
+	return attack_options
 
 
 func _create_random_move_action(entity_id: StringName) -> Dictionary:
