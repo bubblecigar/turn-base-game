@@ -12,7 +12,8 @@ const HIT_ANIMATION_NAME := &"entity_hit"
 const HIT_SHAKE_PIXELS := 7.0
 const DAMAGE_LABEL_FONT_SIZE := 14.0
 const DAMAGE_LABEL_HEIGHT := 18.0
-const DAMAGE_LABEL_RISE_PIXELS := 20.0
+const DAMAGE_LABEL_RISE_PIXELS := 36.0
+const DAMAGE_LABEL_ANIMATION_SECONDS := 1.0
 const HP_BAR_HEIGHT := 5.0
 const HP_BAR_MIN_WIDTH := 28.0
 const HP_BAR_TOP_OFFSET := 12.0
@@ -24,7 +25,8 @@ const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
 const FOCUS_CHANGE_LABEL_FONT_SIZE := 12.0
 const FOCUS_CHANGE_LABEL_HEIGHT := 16.0
-const FOCUS_CHANGE_LABEL_RISE_PIXELS := 18.0
+const FOCUS_CHANGE_LABEL_RISE_PIXELS := 32.0
+const FOCUS_CHANGE_LABEL_ANIMATION_SECONDS := 1.0
 const FOCUS_GAIN_COLOR := Color(1.0, 0.88, 0.2, 1.0)
 const FOCUS_SPEND_COLOR := Color(0.35, 0.75, 1.0, 1.0)
 const CAST_ANIMATION_SECONDS := 1.75
@@ -35,14 +37,14 @@ const CAST_BOUNCE_PIXELS := 14.0
 const CAST_GLOW_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const CAST_RESULT_LABEL_FONT_SIZE := 12.0
 const CAST_RESULT_LABEL_HEIGHT := 16.0
-const CAST_RESULT_LABEL_RISE_PIXELS := 18.0
-const CAST_RESULT_ANIMATION_SECONDS := 0.45
+const CAST_RESULT_LABEL_RISE_PIXELS := 32.0
+const CAST_RESULT_ANIMATION_SECONDS := 1.1
 const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
 const CAST_TYPE_LABEL_FONT_SIZE := 11.0
 const CAST_TYPE_LABEL_HEIGHT := 14.0
-const CAST_TYPE_LABEL_RISE_PIXELS := 16.0
-const CAST_TYPE_ANIMATION_SECONDS := 0.55
+const CAST_TYPE_LABEL_RISE_PIXELS := 30.0
+const CAST_TYPE_ANIMATION_SECONDS := 1.1
 const CAST_TYPE_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
 const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
@@ -578,8 +580,8 @@ func _show_damage_number(damage: Variant) -> void:
 
 	_damage_tween = create_tween()
 	_damage_tween.set_parallel(true)
-	_damage_tween.tween_property(_damage_label, "position", start_position - Vector2(0.0, DAMAGE_LABEL_RISE_PIXELS), HIT_ANIMATION_SECONDS)
-	_damage_tween.tween_property(_damage_label, "modulate", Color(1.0, 0.1, 0.1, 0.0), HIT_ANIMATION_SECONDS)
+	_damage_tween.tween_property(_damage_label, "position", start_position - Vector2(0.0, DAMAGE_LABEL_RISE_PIXELS), DAMAGE_LABEL_ANIMATION_SECONDS)
+	_damage_tween.tween_property(_damage_label, "modulate", Color(1.0, 0.1, 0.1, 0.0), DAMAGE_LABEL_ANIMATION_SECONDS)
 	_damage_tween.finished.connect(_on_damage_tween_finished)
 
 
@@ -608,8 +610,8 @@ func _show_focus_change_number(focus_delta: int) -> void:
 
 	_focus_change_tween = create_tween()
 	_focus_change_tween.set_parallel(true)
-	_focus_change_tween.tween_property(_focus_change_label, "position", start_position - Vector2(0.0, FOCUS_CHANGE_LABEL_RISE_PIXELS), FOCUS_ANIMATION_SECONDS)
-	_focus_change_tween.tween_property(_focus_change_label, "modulate:a", 0.0, FOCUS_ANIMATION_SECONDS)
+	_focus_change_tween.tween_property(_focus_change_label, "position", start_position - Vector2(0.0, FOCUS_CHANGE_LABEL_RISE_PIXELS), FOCUS_CHANGE_LABEL_ANIMATION_SECONDS)
+	_focus_change_tween.tween_property(_focus_change_label, "modulate:a", 0.0, FOCUS_CHANGE_LABEL_ANIMATION_SECONDS)
 	_focus_change_tween.finished.connect(_on_focus_change_tween_finished)
 
 
