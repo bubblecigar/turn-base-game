@@ -7,6 +7,8 @@ const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
 const ATTACK_TYPE_THROW_PROJECTILE := "throw_projectile"
 const CAST_TYPE_FOCUS := "focus"
 const CAST_TYPE_HEAL := "heal"
+const HEAL_FOCUS_COST := 1
+const HEAL_HP_RESTORE := 3
 const STRONG_BUMP_FOCUS_COST := 3
 const STRONG_BUMP_VECTOR_LENGTH := 3
 const THROW_PROJECTILE_RESOURCE_COST := 0
@@ -261,6 +263,8 @@ func _heal_selected_entity() -> void:
 
 	_stack_action(_create_cast_action(_selected_entity_id, {
 		"type": CAST_TYPE_HEAL,
+		"resource": HEAL_FOCUS_COST,
+		"value": HEAL_HP_RESTORE,
 		"source": "debugger",
 	}))
 
