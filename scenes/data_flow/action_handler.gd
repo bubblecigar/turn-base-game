@@ -12,12 +12,13 @@ const MIN_HEAD_RADIUS := 6
 const MAX_HEAD_RADIUS := 14
 const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
-const CAST_TYPE_FOCUS := &"focus"
 const AttackHandlerScript := preload("res://scenes/data_flow/attack_handler.gd")
+const CastHandlerScript := preload("res://scenes/data_flow/cast_handler.gd")
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
 var _attack_handler: RefCounted
+var _cast_handler: RefCounted
 
 @onready var state_store: Node = $"../StateStore"
 
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_attack_handler = AttackHandlerScript.new(state_store)
 	_attack_handler.attack_prepared.connect(_on_attack_prepared)
 	_attack_handler.attack_performed.connect(_on_attack_performed)
+	_cast_handler = CastHandlerScript.new(state_store)
 
 
 func consume(event: Dictionary) -> void:
@@ -61,9 +63,9 @@ func _handle_consumed_event(event: Dictionary) -> void:
 		'move_entity':
 			_move_entity(event['payload'])
 		'perform_cast':
-			_perform_cast(event['payload'])
+			_cast_handler.perform_cast(event['payload'])
 		'resolve_cast':
-			_resolve_cast(event['payload'])
+			_cast_handler.resolve_cast(event['payload'])
 		'prepare_attack':
 			_attack_handler.prepare_attack(event['payload'])
 		'perform_attack':
@@ -199,61 +201,6 @@ func _get_move_entity_vector(value: Variant) -> Vector2i:
 
 	var vector: Vector2 = value
 	return Vector2i(int(vector.x), int(vector.y))
-
-
-func _perform_cast(payload: Dictionary) -> void:
-	if not _is_perform_cast_payload(payload):
-		push_warning('Invalid perform_cast payload. Expected { id: String, args: { type: "focus", value: int } }.')
-		return
-
-	var performer_id := StringName(str(payload["id"]))
-	if not state_store.has_entity(performer_id):
-		push_warning("Cannot perform cast with missing entity: %s." % performer_id)
-		return
-
-	var args: Dictionary = payload["args"]
-	var cast_type := StringName(str(args["type"]))
-	match cast_type:
-		CAST_TYPE_FOCUS:
-			state_store.start_entity_casting(performer_id, args)
-			print('started focus cast: ', performer_id, ' ', args)
-		_:
-			push_warning("Unsupported perform_cast type: %s." % cast_type)
-
-
-func _is_perform_cast_payload(payload: Dictionary) -> bool:
-	return (
-		payload.has("id")
-		and payload.has("args")
-		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
-		and payload["args"] is Dictionary
-		and payload["args"].has("type")
-		and (typeof(payload["args"]["type"]) == TYPE_STRING or typeof(payload["args"]["type"]) == TYPE_STRING_NAME)
-		and payload["args"].has("value")
-		and (typeof(payload["args"]["value"]) == TYPE_INT or typeof(payload["args"]["value"]) == TYPE_FLOAT)
-	)
-
-
-func _resolve_cast(payload: Dictionary) -> void:
-	if not _is_resolve_cast_payload(payload):
-		push_warning('Invalid resolve_cast payload. Expected { entity_id: String, result: bool }.')
-		return
-
-	var entity_id := StringName(str(payload["entity_id"]))
-	if not state_store.has_entity(entity_id):
-		push_warning("Cannot resolve cast for missing entity: %s." % entity_id)
-		return
-
-	state_store.resolve_entity_cast(entity_id, bool(payload["result"]))
-
-
-func _is_resolve_cast_payload(payload: Dictionary) -> bool:
-	return (
-		payload.has("entity_id")
-		and payload.has("result")
-		and (typeof(payload["entity_id"]) == TYPE_STRING or typeof(payload["entity_id"]) == TYPE_STRING_NAME)
-		and typeof(payload["result"]) == TYPE_BOOL
-	)
 
 
 func _on_attack_prepared(attacker_id: StringName, args: Dictionary) -> void:
