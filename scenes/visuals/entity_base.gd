@@ -39,6 +39,11 @@ const CAST_RESULT_LABEL_RISE_PIXELS := 18.0
 const CAST_RESULT_ANIMATION_SECONDS := 0.45
 const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
+const CAST_TYPE_LABEL_FONT_SIZE := 11.0
+const CAST_TYPE_LABEL_HEIGHT := 14.0
+const CAST_TYPE_LABEL_RISE_PIXELS := 16.0
+const CAST_TYPE_ANIMATION_SECONDS := 0.55
+const CAST_TYPE_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
 const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
 const PREPARE_ATTACK_TRAVEL_SECONDS := 0.4
@@ -72,6 +77,7 @@ var _focus_change_label: Label
 var _id_label: Label
 var _damage_label: Label
 var _cast_result_label: Label
+var _cast_type_label: Label
 var _move_tween: Tween
 var _hit_tween: Tween
 var _damage_tween: Tween
@@ -79,6 +85,7 @@ var _focus_tween: Tween
 var _focus_change_tween: Tween
 var _cast_tween: Tween
 var _cast_result_tween: Tween
+var _cast_type_tween: Tween
 var _prepare_attack_tween: Tween
 var _projectile_tween: Tween
 var _prepare_attack_mark: Node2D
@@ -121,6 +128,7 @@ func _ready() -> void:
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
 	state_store.cast_resolved.connect(_on_cast_resolved)
+	action_handler.cast_performed.connect(_on_cast_performed)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	action_handler.attack_prepared.connect(_on_attack_prepared)
 	_refresh_from_state()
@@ -396,6 +404,13 @@ func _on_attack_performed(attacker_id: StringName, _args: Dictionary) -> void:
 	_play_attack_performed_visual_by_args(_args)
 
 
+func _on_cast_performed(caster_id: StringName, args: Dictionary) -> void:
+	if _entity_id == &"" or caster_id != _entity_id:
+		return
+
+	_show_cast_type_text(str(args.get("type", "")))
+
+
 func _on_cast_resolved(caster_id: StringName, result: bool) -> void:
 	if _entity_id == &"" or caster_id != _entity_id:
 		return
@@ -598,6 +613,36 @@ func _show_focus_change_number(focus_delta: int) -> void:
 	_focus_change_tween.finished.connect(_on_focus_change_tween_finished)
 
 
+func _show_cast_type_text(cast_type: String) -> void:
+	if cast_type == "":
+		return
+
+	if _cast_type_tween:
+		_cast_type_tween.kill()
+
+	if _cast_type_label == null:
+		_cast_type_label = Label.new()
+		_cast_type_label.layout_mode = 0
+		_cast_type_label.add_theme_font_size_override("font_size", CAST_TYPE_LABEL_FONT_SIZE)
+		_cast_type_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_cast_type_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		add_child(_cast_type_label)
+
+	var visual_size := get_visual_size()
+	var start_position := Vector2(0.0, -CAST_TYPE_LABEL_HEIGHT - HP_TEXT_HEIGHT - FOCUS_TEXT_HEIGHT)
+	_cast_type_label.text = cast_type.replace("_", " ")
+	_cast_type_label.position = start_position
+	_cast_type_label.size = Vector2(max(visual_size.x, HP_BAR_MIN_WIDTH), CAST_TYPE_LABEL_HEIGHT)
+	_cast_type_label.modulate = CAST_TYPE_COLOR
+	_cast_type_label.show()
+
+	_cast_type_tween = create_tween()
+	_cast_type_tween.set_parallel(true)
+	_cast_type_tween.tween_property(_cast_type_label, "position", start_position - Vector2(0.0, CAST_TYPE_LABEL_RISE_PIXELS), CAST_TYPE_ANIMATION_SECONDS)
+	_cast_type_tween.tween_property(_cast_type_label, "modulate:a", 0.0, CAST_TYPE_ANIMATION_SECONDS)
+	_cast_type_tween.finished.connect(_on_cast_type_tween_finished)
+
+
 func _show_cast_result_text(result: bool, pending_animation_id: StringName = &"") -> void:
 	if _cast_result_tween:
 		_cast_result_tween.kill()
@@ -656,6 +701,13 @@ func _on_focus_change_tween_finished() -> void:
 		_focus_change_label.hide()
 
 	_focus_change_tween = null
+
+
+func _on_cast_type_tween_finished() -> void:
+	if _cast_type_label:
+		_cast_type_label.hide()
+
+	_cast_type_tween = null
 
 
 func _on_cast_result_tween_finished(pending_animation_id: StringName = &"") -> void:

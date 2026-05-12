@@ -3,6 +3,7 @@ extends Node
 signal processing_status_changed(is_processing: bool, event: Dictionary)
 signal attack_performed(attacker_id: StringName, args: Dictionary)
 signal attack_prepared(attacker_id: StringName, args: Dictionary)
+signal cast_performed(caster_id: StringName, args: Dictionary)
 signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
 
 const MIN_CONSUME_SECONDS := 0.5
@@ -31,6 +32,7 @@ func _ready() -> void:
 	_attack_handler.attack_prepared.connect(_on_attack_prepared)
 	_attack_handler.attack_performed.connect(_on_attack_performed)
 	_cast_handler = CastHandlerScript.new(state_store)
+	_cast_handler.cast_performed.connect(_on_cast_performed)
 	_cast_handler.cast_resolved.connect(_on_cast_resolved)
 
 
@@ -211,6 +213,10 @@ func _on_attack_prepared(attacker_id: StringName, args: Dictionary) -> void:
 
 func _on_attack_performed(attacker_id: StringName, args: Dictionary) -> void:
 	attack_performed.emit(attacker_id, args)
+
+
+func _on_cast_performed(caster_id: StringName, args: Dictionary) -> void:
+	cast_performed.emit(caster_id, args)
 
 
 func _on_cast_resolved(caster_id: StringName, args: Dictionary, result: bool) -> void:
