@@ -5,6 +5,7 @@ const DAMAGE_MAX := 9
 const ATTACK_TYPE_BUMP := "bump"
 const ATTACK_TYPE_STRONG_BUMP := "strong_bump"
 const STRONG_BUMP_FOCUS_COST := 3
+const STRONG_BUMP_VECTOR_LENGTH := 3
 const RANDOM_MOVE_VECTORS := [
 	Vector2i.LEFT,
 	Vector2i.RIGHT,
@@ -87,7 +88,7 @@ func _on_attack_right_pressed() -> void:
 
 
 func _on_strong_bump_pressed() -> void:
-	_strong_bump_selected_cell(1)
+	_strong_bump_selected_cell(STRONG_BUMP_VECTOR_LENGTH)
 
 
 func _on_cast_pressed() -> void:
