@@ -55,7 +55,7 @@ const ATTACK_TYPE_STRONG_BUMP := &"strong_bump"
 const ATTACK_TYPE_THROW_PROJECTILE := &"throw_projectile"
 const PROJECTILE_ATTACK_ANIMATION_NAME := &"entity_projectile_attack"
 const PROJECTILE_ATTACK_SECONDS := 0.55
-const PROJECTILE_ARC_HEIGHT := 52.0
+const PROJECTILE_ARC_CELL_HEIGHT := 3.0
 const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
 const PROJECTILE_ROCK_BOTTOM_OFFSET := 11.0
 
@@ -83,6 +83,9 @@ var _prepare_attack_tween: Tween
 var _projectile_tween: Tween
 var _prepare_attack_mark: Node2D
 var _projectile_node: Polygon2D
+var _projectile_area: Area2D
+var _projectile_collision: CollisionShape2D
+var _projectile_collision_shape: ConvexPolygonShape2D
 var _prepare_attack_animation_id := &""
 var _projectile_animation_id := &""
 var _move_animation_id := &""
@@ -91,6 +94,7 @@ var _focus_animation_id := &""
 var _cast_animation_id := &""
 var _active_collision_payload: Dictionary = {}
 var _active_collision_entity_ids: Dictionary = {}
+var _active_collision_area: Area2D
 var _is_moving := false
 var _move_time := 0.0
 
@@ -239,11 +243,13 @@ func _play_throw_projectile_attack_performed_visual(args: Dictionary) -> void:
 		_projectile_node.color = PROJECTILE_ROCK_COLOR
 		get_parent().add_child(_projectile_node)
 
+	_ensure_projectile_area()
 	var visual_size := get_visual_size()
 	var start_position := position + Vector2(visual_size.x / 2.0, -visual_size.y / 2.0)
 	_projectile_node.position = start_position
 	_projectile_node.rotation = 0.0
 	_projectile_node.show()
+	_begin_projectile_attack_collision(args, start_position)
 
 	var animation_id: StringName = animation_tracker.register_animation(PROJECTILE_ATTACK_ANIMATION_NAME)
 	_projectile_animation_id = animation_id
@@ -481,6 +487,7 @@ func _consume_active_projectile_animation() -> void:
 	_projectile_animation_id = &""
 	if _projectile_node:
 		_projectile_node.hide()
+	_finish_projectile_attack_collision()
 
 
 func _consume_active_cast_animation() -> void:
@@ -681,16 +688,18 @@ func _set_projectile_position(progress: float, start_position: Vector2, target_p
 	if _projectile_node == null:
 		return
 
-	var arc_offset := Vector2(0.0, -sin(progress * PI) * PROJECTILE_ARC_HEIGHT)
-	_projectile_node.position = start_position.lerp(target_position, progress) + arc_offset
+	var arc_offset := Vector2(0.0, -sin(progress * PI) * _get_projectile_arc_height())
+	var projectile_position := start_position.lerp(target_position, progress) + arc_offset
+	_projectile_node.position = projectile_position
+	_set_projectile_collision_position(projectile_position)
 
 
-func _on_projectile_attack_tween_finished(animation_id: StringName, args: Dictionary) -> void:
+func _on_projectile_attack_tween_finished(animation_id: StringName, _args: Dictionary) -> void:
 	if _projectile_node:
 		_projectile_node.hide()
 
 	_projectile_tween = null
-	_emit_attack_target_cell_collision(args)
+	_finish_projectile_attack_collision()
 
 	if animation_tracker != null:
 		animation_tracker.consume_animation(animation_id)
@@ -786,6 +795,7 @@ func _update_entity_area() -> void:
 
 	_entity_collision.disabled = false
 	_entity_collision_shape.size = cell_size * ENTITY_COLLISION_CELL_SCALE
+	_sync_projectile_collision_shape()
 	var visual_size := get_visual_size()
 	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
 
@@ -811,7 +821,11 @@ func _on_entity_area_entered(area: Area2D) -> void:
 
 func _get_collided_entity_ids() -> Array[StringName]:
 	var collided_entity_ids: Array[StringName] = []
-	for overlapping_area: Area2D in _entity_area.get_overlapping_areas():
+	var collision_area := _get_collision_area()
+	if collision_area == null:
+		return collided_entity_ids
+
+	for overlapping_area: Area2D in collision_area.get_overlapping_areas():
 		var overlapping_entity_view := overlapping_area.get_parent() as EntityBoardView
 		if overlapping_entity_view == null:
 			continue
@@ -847,9 +861,10 @@ func _emit_active_collisions(collided_entity_ids: Array[StringName]) -> void:
 	entities_collided.emit(_entity_id, newly_collided_entity_ids, _active_collision_payload)
 
 
-func _begin_collision(payload: Dictionary) -> void:
+func _begin_collision(payload: Dictionary, collision_area: Area2D = null) -> void:
 	_active_collision_payload = payload
 	_active_collision_entity_ids.clear()
+	_active_collision_area = collision_area
 	_emit_current_active_collisions()
 	call_deferred("_emit_current_active_collisions")
 
@@ -869,6 +884,7 @@ func _emit_current_active_collisions() -> void:
 func _finish_collision() -> void:
 	_active_collision_payload = {}
 	_active_collision_entity_ids.clear()
+	_active_collision_area = null
 
 
 func _begin_attack_collision(args: Dictionary) -> void:
@@ -882,46 +898,83 @@ func _finish_attack_collision() -> void:
 	_finish_collision()
 
 
-func _emit_attack_target_cell_collision(args: Dictionary) -> void:
-	var collided_entity_ids := _get_attack_target_cell_entity_ids(args)
-	if collided_entity_ids.is_empty():
+func _begin_projectile_attack_collision(args: Dictionary, start_position: Vector2) -> void:
+	if _projectile_area == null or _projectile_collision == null:
 		return
 
-	print("projectile attack target collision for %s: %s" % [_entity_id, collided_entity_ids])
-	entities_collided.emit(_entity_id, collided_entity_ids, {
+	_set_projectile_collision_position(start_position)
+	_projectile_collision.disabled = false
+	_projectile_area.monitoring = true
+	_projectile_area.monitorable = true
+	_begin_collision({
 		&"type": COLLISION_PAYLOAD_ATTACK,
 		&"args": args,
-	})
+	}, _projectile_area)
 
 
-func _get_attack_target_cell_entity_ids(args: Dictionary) -> Array[StringName]:
-	var target_cell: Variant = args.get("target_cell", {})
-	if not (target_cell is Dictionary and target_cell.has("i") and target_cell.has("j")):
-		return []
+func _finish_projectile_attack_collision() -> void:
+	_finish_attack_collision()
+	_remove_projectile_area()
 
+
+func _set_projectile_collision_position(projectile_position: Vector2) -> void:
+	if _projectile_area == null or get_parent() == null:
+		return
+
+	_projectile_area.position = to_local(get_parent().to_global(projectile_position))
+
+
+func _get_projectile_arc_height() -> float:
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cells: Array = board.get(&"cells", [])
-	var i := int(target_cell["i"])
-	var j := int(target_cell["j"])
-	if i < 0 or j < 0 or i >= cells.size():
-		return []
+	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	return cell_size.y * PROJECTILE_ARC_CELL_HEIGHT
 
-	var col_cells: Array = cells[i]
-	if j >= col_cells.size():
-		return []
 
-	var cell: Dictionary = col_cells[j]
-	var result: Array[StringName] = []
-	for entity_id: Variant in cell.get(&"entity_ids", []):
-		var target_entity_id := StringName(str(entity_id))
-		if target_entity_id != _entity_id and not result.has(target_entity_id):
-			result.append(target_entity_id)
+func _get_collision_area() -> Area2D:
+	if _active_collision_area != null:
+		return _active_collision_area
 
-	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
-	if legacy_entity_id != &"" and legacy_entity_id != _entity_id and not result.has(legacy_entity_id):
-		result.append(legacy_entity_id)
+	return _entity_area
 
-	return result
+
+func _ensure_projectile_area() -> void:
+	if _projectile_area != null:
+		return
+
+	_projectile_area = Area2D.new()
+	_projectile_area.name = "ProjectileArea"
+	_projectile_area.monitoring = false
+	_projectile_area.monitorable = false
+	_projectile_area.area_entered.connect(_on_entity_area_entered)
+	add_child(_projectile_area)
+
+	_projectile_collision_shape = ConvexPolygonShape2D.new()
+	_projectile_collision = CollisionShape2D.new()
+	_projectile_collision.name = "ProjectileCollision"
+	_projectile_collision.shape = _projectile_collision_shape
+	_projectile_collision.disabled = true
+	_projectile_area.add_child(_projectile_collision)
+	_sync_projectile_collision_shape()
+
+
+func _remove_projectile_area() -> void:
+	if _projectile_collision:
+		_projectile_collision.disabled = true
+	if _projectile_area:
+		_projectile_area.monitoring = false
+		_projectile_area.monitorable = false
+		_projectile_area.queue_free()
+
+	_projectile_area = null
+	_projectile_collision = null
+	_projectile_collision_shape = null
+
+
+func _sync_projectile_collision_shape() -> void:
+	if _projectile_collision_shape == null or _projectile_node == null:
+		return
+
+	_projectile_collision_shape.points = _projectile_node.polygon
 
 
 func _create_id_label() -> void:
