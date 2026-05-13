@@ -55,7 +55,10 @@ game_loop_path = NodePath("../GameLoop")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 206.0
+offset_left = -1.0
+offset_top = -35.0
+offset_right = -1.0
+offset_bottom = 171.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -181,14 +184,15 @@ size_flags_vertical = 3
 [node name="CardStackAnchor" type="Control" parent="." unique_id=513299551]
 layout_mode = 1
 anchors_preset = 0
-offset_left = 491.0
-offset_top = 477.0
-offset_right = 491.0
-offset_bottom = 477.0
+offset_left = 489.0
+offset_top = 429.0
+offset_right = 489.0
+offset_bottom = 429.0
 mouse_filter = 2
 
 [node name="CardStack" type="Control" parent="CardStackAnchor" unique_id=1469212597]
 layout_mode = 1
+anchors_preset = 0
 mouse_filter = 2
 
 [node name="ConfirmButton" type="Button" parent="." unique_id=487215205]
@@ -198,10 +202,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 392.0
-offset_top = 337.0
-offset_right = 512.0
-offset_bottom = 369.0
+offset_left = -55.0
+offset_top = -218.0
+offset_right = 65.0
+offset_bottom = -186.0
 grow_horizontal = 2
 grow_vertical = 0
 disabled = true
