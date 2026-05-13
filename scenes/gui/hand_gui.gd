@@ -33,6 +33,7 @@ const CARD_COLORS := [
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
 var _card_tweens: Dictionary = {}
+var _card_nodes: Array[Control] = []
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
@@ -76,6 +77,8 @@ var _cards: Array[Dictionary] = [
 func _ready() -> void:
 	randomize()
 	resized.connect(_layout_cards)
+	if state_store != null:
+		state_store.entities_updated.connect(_on_entities_updated)
 	_rebuild_cards()
 
 
@@ -85,14 +88,17 @@ func set_cards(cards: Array[Dictionary]) -> void:
 
 
 func _rebuild_cards() -> void:
+	_card_nodes.clear()
 	for child: Node in card_stack.get_children():
 		child.queue_free()
 
 	for index in _cards.size():
 		var card := _create_card(_cards[index], index)
 		card_stack.add_child(card)
+		_card_nodes.append(card)
 
 	_layout_cards()
+	_update_card_enabled_states()
 
 
 func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
@@ -202,12 +208,40 @@ func _on_card_hover_tween_finished(card: Control, tween: Tween, target_z_index: 
 		card.z_index = target_z_index
 
 
+func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
+	_update_card_enabled_states()
+
+
+func _get_player_focus() -> int:
+	var entity_id := _get_first_board_entity_id()
+	if entity_id == &"" or state_store == null:
+		return 0
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	var entity: Dictionary = entities.get(entity_id, {})
+	return int(entity.get(&"focus", 0))
+
+
+func _update_card_enabled_states() -> void:
+	var focus := _get_player_focus()
+	for i in _card_nodes.size():
+		var card := _card_nodes[i]
+		if card == null:
+			continue
+		var args: Dictionary = _cards[i].get("args", {})
+		var cost := int(args.get("resource", 0))
+		card.modulate = Color.WHITE if focus >= cost else Color(0.45, 0.45, 0.45, 0.65)
+
+
 func _on_card_gui_input(event: InputEvent, card_data: Dictionary) -> void:
 	if not event is InputEventMouseButton:
 		return
 
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
+		return
+
+	var args: Dictionary = card_data.get("args", {})
+	if _get_player_focus() < int(args.get("resource", 0)):
 		return
 
 	_enqueue_card_action(card_data)
