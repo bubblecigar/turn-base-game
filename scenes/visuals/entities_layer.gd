@@ -88,11 +88,23 @@ func _apply_attack_collision(attacker_id: StringName, target_entity_ids: Array[S
 		entity_view.play_hit_visual(attacker_id, args)
 
 
-func _on_cast_resolved(_caster_id: StringName, args: Dictionary, result: bool) -> void:
+func _on_cast_resolved(caster_id: StringName, args: Dictionary, result: bool) -> void:
 	if not result or str(args.get("type", "")) != CAST_TYPE_SUMMON_THUNDER:
 		return
 
 	_play_thunder_strike_visual(args)
+	_play_summon_thunder_hit_visual(caster_id, args)
+
+
+func _play_summon_thunder_hit_visual(caster_id: StringName, args: Dictionary) -> void:
+	var target_entity_id := StringName(str(args.get(&"target_entity_id", &"")))
+	if target_entity_id == &"" or not _entity_views.has(target_entity_id):
+		return
+
+	var hit_args := args.duplicate(true)
+	hit_args["damage"] = int(args.get("value", 0))
+	var entity_view: EntityBoardView = _entity_views[target_entity_id]
+	entity_view.play_hit_visual(caster_id, hit_args)
 
 
 func _play_thunder_strike_visual(args: Dictionary) -> void:
