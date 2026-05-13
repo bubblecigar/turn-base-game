@@ -71,6 +71,18 @@ var _cards: Array[Dictionary] = [
 		"action_factory": "summon_thunder",
 		"args": { "resource": 3, "value": 5 },
 	},
+	{
+		"title": "Move Left",
+		"body": "Step left",
+		"action_factory": "move_left",
+		"args": {},
+	},
+	{
+		"title": "Move Right",
+		"body": "Step right",
+		"action_factory": "move_right",
+		"args": {},
+	},
 ]
 
 
@@ -324,6 +336,10 @@ func _create_action_from_factory(action_factory: String, entity_id: StringName, 
 			return _create_cast_action(entity_id, "heal", args)
 		"summon_thunder":
 			return _create_cast_action(entity_id, "summon_thunder", args)
+		"move_left":
+			return _create_move_action(entity_id, Vector2i.LEFT)
+		"move_right":
+			return _create_move_action(entity_id, Vector2i.RIGHT)
 		_:
 			push_warning("Unsupported card action factory: %s." % action_factory)
 			return {}
@@ -343,6 +359,16 @@ func _create_cast_action(entity_id: StringName, cast_type: String, args: Diction
 		"payload": {
 			"id": entity_id,
 			"args": cast_args,
+		},
+	}
+
+
+func _create_move_action(entity_id: StringName, vector: Vector2i) -> Dictionary:
+	return {
+		"eventName": "move_entity",
+		"payload": {
+			"id": entity_id,
+			"vector": vector,
 		},
 	}
 
