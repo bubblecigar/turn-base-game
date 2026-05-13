@@ -18,6 +18,8 @@ const THROW_PROJECTILE_RESOURCE_COST := 0
 const ENTITY_CARD_POOL_SIZE := 5
 const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
 const SELECTION_SLOT_CENTER_OFFSET := Vector2(0.0, -70.0)
+const SELECTION_SLOT_GAP := 14.0
+const SELECTION_SLOT_LABEL_NAME := "SlotLabel"
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -36,7 +38,7 @@ const CARD_COLORS := [
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
-var _selection_slot: PanelContainer
+var _selection_slots: Dictionary = {}
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
@@ -99,8 +101,8 @@ var _cards: Array[Dictionary] = [
 
 func _ready() -> void:
 	randomize()
-	_create_selection_slot()
-	resized.connect(_layout_selection_slot)
+	_sync_selection_slots()
+	resized.connect(_layout_selection_slots)
 	resized.connect(_layout_cards)
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
@@ -252,6 +254,7 @@ func _on_card_hover_tween_finished(card: Control, tween: Tween, target_z_index: 
 
 func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
 	_ensure_card_pools_for_entities(_entities, _previous)
+	_sync_selection_slots()
 	_refresh_cards_for_current_entity()
 	_update_card_enabled_states()
 
@@ -332,14 +335,23 @@ func _select_card(card_data: Dictionary) -> void:
 	if entity_id == &"":
 		return
 
+	_select_card_for_entity(entity_id, card_data)
+
+
+func _select_card_for_entity(entity_id: StringName, card_data: Dictionary) -> void:
+	if entity_id == &"":
+		return
+
 	var index := _active_cards.find(card_data)
-	_selected_card_index = index
+	if entity_id == _get_player_entity_id():
+		_selected_card_index = index
 
 	if state_store != null:
 		state_store.select_card(entity_id, card_data)
 
 	_layout_cards()
 	_update_card_enabled_states()
+	_update_selection_slot_state()
 
 
 func _on_confirm_pressed() -> void:
@@ -449,38 +461,73 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
-			_finish_card_drag(_is_mouse_over_selection_slot())
+			_finish_card_drag(_get_hovered_selection_slot_entity_id())
 
 
-func _create_selection_slot() -> void:
-	_selection_slot = PanelContainer.new()
-	_selection_slot.custom_minimum_size = SELECTION_SLOT_SIZE
-	_selection_slot.size = SELECTION_SLOT_SIZE
-	_selection_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_selection_slot)
+func _sync_selection_slots() -> void:
+	if state_store == null:
+		return
+
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	for raw_entity_id: Variant in entities:
+		var entity_id := StringName(str(raw_entity_id))
+		if entity_id == &"" or _selection_slots.has(entity_id):
+			continue
+		_selection_slots[entity_id] = _create_selection_slot(entity_id)
+
+	var removed_entity_ids: Array[StringName] = []
+	for raw_entity_id: Variant in _selection_slots:
+		var entity_id := StringName(str(raw_entity_id))
+		if not entities.has(entity_id):
+			removed_entity_ids.append(entity_id)
+
+	for entity_id: StringName in removed_entity_ids:
+		var slot := _selection_slots[entity_id] as PanelContainer
+		_selection_slots.erase(entity_id)
+		if slot != null:
+			slot.queue_free()
+
+	_layout_selection_slots()
+	_update_selection_slot_state()
+
+
+func _create_selection_slot(entity_id: StringName) -> PanelContainer:
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = SELECTION_SLOT_SIZE
+	slot.size = SELECTION_SLOT_SIZE
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(slot)
 
 	var content := CenterContainer.new()
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_selection_slot.add_child(content)
+	slot.add_child(content)
 
 	var label := Label.new()
-	label.text = "Drop"
+	label.name = SELECTION_SLOT_LABEL_NAME
+	label.text = str(entity_id)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 16)
 	content.add_child(label)
 
-	_layout_selection_slot()
-	_update_selection_slot_state()
+	return slot
 
 
-func _layout_selection_slot() -> void:
-	if _selection_slot == null:
+func _layout_selection_slots() -> void:
+	if _selection_slots.is_empty():
 		return
 
-	_selection_slot.size = SELECTION_SLOT_SIZE
-	_selection_slot.position = get_viewport_rect().size / 2.0 + SELECTION_SLOT_CENTER_OFFSET - SELECTION_SLOT_SIZE / 2.0
+	var entity_ids := _get_selection_slot_entity_ids()
+	var total_width: float = SELECTION_SLOT_SIZE.x * entity_ids.size() + SELECTION_SLOT_GAP * max(entity_ids.size() - 1, 0)
+	var start_position: Vector2 = get_viewport_rect().size / 2.0 + SELECTION_SLOT_CENTER_OFFSET - Vector2(total_width / 2.0, SELECTION_SLOT_SIZE.y / 2.0)
+	for index in entity_ids.size():
+		var entity_id := entity_ids[index]
+		var slot := _selection_slots.get(entity_id, null) as PanelContainer
+		if slot == null:
+			continue
+		slot.size = SELECTION_SLOT_SIZE
+		slot.position = start_position + Vector2((SELECTION_SLOT_SIZE.x + SELECTION_SLOT_GAP) * index, 0.0)
 
 
 func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
@@ -510,17 +557,17 @@ func _update_dragged_card_position() -> void:
 	_dragging_card.position = _get_card_stack_mouse_position() - _drag_offset
 
 
-func _finish_card_drag(dropped_on_slot: bool) -> void:
+func _finish_card_drag(target_entity_id: StringName) -> void:
 	var card := _dragging_card
 	var card_index := _dragging_card_index
 	var card_data := _dragging_card_data.duplicate(true)
 	_clear_card_drag()
 
-	if dropped_on_slot:
-		_select_card(card_data)
+	if target_entity_id != &"":
+		_select_card_for_entity(target_entity_id, card_data)
 	elif card != null and card_index >= 0:
 		if card_index == _selected_card_index:
-			_move_card_to_selection_slot(card, card_index, true)
+			_move_card_to_selection_slot(card, card_index, _get_player_entity_id(), true)
 		else:
 			_move_card_to_layout_position(card, card_index, true)
 
@@ -568,7 +615,7 @@ func _move_card_to_layout_position(card: Control, index: int, animated: bool) ->
 		card.z_index = target_z_index
 
 
-func _move_card_to_selection_slot(card: Control, index: int, animated: bool) -> void:
+func _move_card_to_selection_slot(card: Control, index: int, entity_id: StringName, animated: bool) -> void:
 	if card == null:
 		return
 
@@ -577,7 +624,7 @@ func _move_card_to_selection_slot(card: Control, index: int, animated: bool) -> 
 		if active_tween:
 			active_tween.kill()
 
-	var target_position := _get_selection_slot_card_position()
+	var target_position := _get_selection_slot_card_position(entity_id)
 	var target_z_index := 150 + index
 	card.pivot_offset = CARD_SIZE / 2.0
 	if animated:
@@ -602,35 +649,68 @@ func _get_card_stack_mouse_position() -> Vector2:
 	return card_stack.get_global_transform_with_canvas().affine_inverse() * get_global_mouse_position()
 
 
-func _get_selection_slot_card_position() -> Vector2:
-	if _selection_slot == null:
+func _get_selection_slot_card_position(entity_id: StringName) -> Vector2:
+	var slot := _selection_slots.get(entity_id, null) as PanelContainer
+	if slot == null:
 		return Vector2.ZERO
 
-	var slot_center := _selection_slot.get_global_rect().get_center()
+	var slot_center := slot.get_global_rect().get_center()
 	var local_center := card_stack.get_global_transform_with_canvas().affine_inverse() * slot_center
 	return local_center - CARD_SIZE / 2.0
 
 
-func _is_mouse_over_selection_slot() -> bool:
-	return _selection_slot != null and _selection_slot.get_global_rect().has_point(get_global_mouse_position())
+func _get_hovered_selection_slot_entity_id() -> StringName:
+	var mouse_position := get_global_mouse_position()
+	for raw_entity_id: Variant in _selection_slots:
+		var entity_id := StringName(str(raw_entity_id))
+		var slot := _selection_slots[raw_entity_id] as PanelContainer
+		if slot != null and slot.get_global_rect().has_point(mouse_position):
+			return entity_id
+
+	return &""
 
 
 func _update_selection_slot_state() -> void:
-	if _selection_slot == null:
+	if _selection_slots.is_empty():
 		return
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.14, 0.16, 0.38)
-	style.border_color = Color(0.72, 0.76, 0.72, 0.9)
-	if _dragging_card != null and _is_mouse_over_selection_slot():
-		style.bg_color = Color(0.18, 0.26, 0.20, 0.62)
-		style.border_color = Color(0.62, 0.95, 0.58, 1.0)
-	elif _selected_card_index >= 0:
-		style.bg_color = Color(0.22, 0.20, 0.10, 0.50)
-		style.border_color = Color(1.0, 0.92, 0.32, 1.0)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	_selection_slot.add_theme_stylebox_override("panel", style)
+	var hovered_entity_id := _get_hovered_selection_slot_entity_id() if _dragging_card != null else &""
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
+	for raw_entity_id: Variant in _selection_slots:
+		var entity_id := StringName(str(raw_entity_id))
+		var slot := _selection_slots[raw_entity_id] as PanelContainer
+		if slot == null:
+			continue
+
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.12, 0.14, 0.16, 0.38)
+		style.border_color = Color(0.72, 0.76, 0.72, 0.9)
+		if hovered_entity_id == entity_id:
+			style.bg_color = Color(0.18, 0.26, 0.20, 0.62)
+			style.border_color = Color(0.62, 0.95, 0.58, 1.0)
+		elif selected_cards.has(entity_id):
+			style.bg_color = Color(0.22, 0.20, 0.10, 0.50)
+			style.border_color = Color(1.0, 0.92, 0.32, 1.0)
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(8)
+		slot.add_theme_stylebox_override("panel", style)
+		_update_selection_slot_label(slot, entity_id, selected_cards.has(entity_id))
+
+
+func _get_selection_slot_entity_ids() -> Array[StringName]:
+	var entity_ids: Array[StringName] = []
+	for raw_entity_id: Variant in _selection_slots:
+		entity_ids.append(StringName(str(raw_entity_id)))
+	entity_ids.sort()
+	return entity_ids
+
+
+func _update_selection_slot_label(slot: PanelContainer, entity_id: StringName, has_selected_card: bool) -> void:
+	var label := slot.find_child(SELECTION_SLOT_LABEL_NAME, true, false) as Label
+	if label == null:
+		return
+
+	label.text = "%s\n%s" % [entity_id, "Ready" if has_selected_card else "Drop"]
 
 
 
@@ -886,7 +966,7 @@ func _layout_cards() -> void:
 		if index == _dragging_card_index:
 			continue
 		if index == _selected_card_index:
-			_move_card_to_selection_slot(card, index, false)
+			_move_card_to_selection_slot(card, index, _get_player_entity_id(), false)
 			continue
 
 		var centered_index := _get_card_centered_index(index, card_count)
