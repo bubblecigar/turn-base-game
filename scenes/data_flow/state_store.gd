@@ -11,6 +11,7 @@ signal entity_moved(entity_id: StringName, position: Vector2, previous_position:
 signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: int)
 signal cast_performed(caster_id: StringName, focus: int)
 signal cast_resolved(caster_id: StringName, result: bool)
+signal entity_selection_changed(entity_id: StringName, previous_entity_id: StringName)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -47,6 +48,18 @@ func set_value(key: StringName, value: Variant) -> void:
 	if key == &"entities" and value is Dictionary:
 		entities_updated.emit(value, previous_value)
 	state_changed.emit(get_state())
+
+
+func select_entity(entity_id: StringName) -> void:
+	var previous_id := StringName(str(_state.get(&"selected_entity_id", &"")))
+	if previous_id == entity_id:
+		return
+	_state[&"selected_entity_id"] = entity_id
+	entity_selection_changed.emit(entity_id, previous_id)
+
+
+func get_selected_entity_id() -> StringName:
+	return StringName(str(_state.get(&"selected_entity_id", &"")))
 
 
 func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> void:

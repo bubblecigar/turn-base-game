@@ -91,6 +91,7 @@ func _ready() -> void:
 	resized.connect(_layout_cards)
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
+		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 	_rebuild_cards()
 
 
@@ -224,13 +225,26 @@ func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
 	_update_card_enabled_states()
 
 
+func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName) -> void:
+	_update_card_enabled_states()
+
+
 func _get_player_focus() -> int:
-	var entity_id := _get_first_board_entity_id()
+	var entity_id := _get_player_entity_id()
 	if entity_id == &"" or state_store == null:
 		return 0
 	var entities: Dictionary = state_store.get_value(&"entities", {})
 	var entity: Dictionary = entities.get(entity_id, {})
 	return int(entity.get(&"focus", 0))
+
+
+func _get_player_entity_id() -> StringName:
+	if state_store == null:
+		return &""
+	var selected: StringName = state_store.get_selected_entity_id()
+	if selected != &"":
+		return selected
+	return _get_first_board_entity_id()
 
 
 func _update_card_enabled_states() -> void:
@@ -264,7 +278,7 @@ func _enqueue_card_action(card_data: Dictionary) -> void:
 		push_warning("Cannot enqueue card action without an ActionQueue.")
 		return
 
-	var entity_id := _get_first_board_entity_id()
+	var entity_id := _get_player_entity_id()
 	if entity_id == &"":
 		push_warning("Cannot enqueue card action before an entity is on the board.")
 		return

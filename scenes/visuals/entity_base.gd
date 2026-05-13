@@ -833,7 +833,9 @@ func _update_board_position() -> void:
 func _create_entity_area() -> void:
 	_entity_area = Area2D.new()
 	_entity_area.name = ENTITY_AREA_NAME
+	_entity_area.input_pickable = true
 	_entity_area.area_entered.connect(_on_entity_area_entered)
+	_entity_area.input_event.connect(_on_entity_area_input_event)
 	add_child(_entity_area)
 
 	_entity_collision_shape = RectangleShape2D.new()
@@ -858,6 +860,14 @@ func _update_entity_area() -> void:
 	_sync_projectile_collision_shape()
 	var visual_size := get_visual_size()
 	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
+
+
+func _on_entity_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+		state_store.select_entity(_entity_id)
 
 
 func _on_entity_area_entered(area: Area2D) -> void:
