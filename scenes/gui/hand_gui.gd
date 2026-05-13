@@ -24,7 +24,7 @@ const CARD_COLORS := [
 var _card_tweens: Dictionary = {}
 var _cards: Array[Dictionary] = [
 	{
-		"title": "Strike",
+		"title": "Bump",
 		"cost": "0",
 		"body": "Deal damage",
 		"action": {
@@ -40,7 +40,7 @@ var _cards: Array[Dictionary] = [
 		},
 	},
 	{
-		"title": "Guard",
+		"title": "Focus",
 		"cost": "0",
 		"body": "Gain focus",
 		"action": {
@@ -79,23 +79,8 @@ var _cards: Array[Dictionary] = [
 			"payload": {
 				"args": {
 					"type": "summon_thunder",
-					"resource": 1,
-					"value": 3,
-					"source": "hand_gui",
-				},
-			},
-		},
-	},
-	{
-		"title": "Focus",
-		"cost": "0",
-		"body": "Gain focus",
-		"action": {
-			"eventName": "perform_cast",
-			"payload": {
-				"args": {
-					"type": "focus",
-					"value": 1,
+					"resource": 3,
+					"value": 5,
 					"source": "hand_gui",
 				},
 			},
