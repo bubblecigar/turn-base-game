@@ -12,6 +12,7 @@ signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: i
 signal cast_performed(caster_id: StringName, focus: int)
 signal cast_resolved(caster_id: StringName, result: bool)
 signal entity_selection_changed(entity_id: StringName, previous_entity_id: StringName)
+signal selected_card_changed(entity_id: StringName, card_data: Dictionary)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -60,6 +61,19 @@ func select_entity(entity_id: StringName) -> void:
 
 func get_selected_entity_id() -> StringName:
 	return StringName(str(_state.get(&"selected_entity_id", &"")))
+
+
+func select_card(entity_id: StringName, card_data: Dictionary) -> void:
+	var selected_cards: Dictionary = _state.get(&"selected_cards", {})
+	selected_cards = selected_cards.duplicate()
+	selected_cards[entity_id] = card_data.duplicate(true)
+	_state[&"selected_cards"] = selected_cards
+	selected_card_changed.emit(entity_id, card_data)
+
+
+func get_selected_card(entity_id: StringName) -> Dictionary:
+	var selected_cards: Dictionary = _state.get(&"selected_cards", {})
+	return selected_cards.get(entity_id, {})
 
 
 func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> void:

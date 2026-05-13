@@ -28,12 +28,14 @@ const CARD_COLORS := [
 @export var game_loop_path: NodePath
 
 @onready var card_stack: Control = $CardStack
+@onready var confirm_button: Button = $ConfirmButton
 @onready var action_queue: Node = get_node_or_null(action_queue_path)
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
+var _selected_card_index: int = -1
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
@@ -92,6 +94,9 @@ func _ready() -> void:
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
 		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
+		state_store.selected_card_changed.connect(_on_selected_card_changed)
+	if confirm_button != null:
+		confirm_button.pressed.connect(_on_confirm_pressed)
 	_rebuild_cards()
 
 
@@ -226,6 +231,11 @@ func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
 
 
 func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName) -> void:
+	_selected_card_index = -1
+	_update_card_enabled_states()
+
+
+func _on_selected_card_changed(_entity_id: StringName, _card_data: Dictionary) -> void:
 	_update_card_enabled_states()
 
 
@@ -249,13 +259,23 @@ func _get_player_entity_id() -> StringName:
 
 func _update_card_enabled_states() -> void:
 	var focus := _get_player_focus()
+	if confirm_button != null:
+		var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
+		confirm_button.disabled = selected_cards.is_empty()
 	for i in _card_nodes.size():
 		var card := _card_nodes[i]
 		if card == null:
 			continue
 		var args: Dictionary = _cards[i].get("args", {})
 		var cost := int(args.get("resource", 0))
-		card.modulate = Color.WHITE if focus >= cost else Color(0.45, 0.45, 0.45, 0.65)
+		var is_selected := i == _selected_card_index
+		var is_affordable := focus >= cost
+		if is_selected:
+			card.modulate = Color(1.0, 0.95, 0.55, 1.0)
+		elif is_affordable:
+			card.modulate = Color.WHITE
+		else:
+			card.modulate = Color(0.45, 0.45, 0.45, 0.65)
 
 
 func _on_card_gui_input(event: InputEvent, card_data: Dictionary) -> void:
@@ -270,17 +290,67 @@ func _on_card_gui_input(event: InputEvent, card_data: Dictionary) -> void:
 	if _get_player_focus() < int(args.get("resource", 0)):
 		return
 
-	_enqueue_card_action(card_data)
+	_select_card(card_data)
+
+
+func _select_card(card_data: Dictionary) -> void:
+	var entity_id := _get_player_entity_id()
+	if entity_id == &"":
+		return
+
+	var index := _cards.find(card_data)
+	_selected_card_index = index
+
+	if state_store != null:
+		state_store.select_card(entity_id, card_data)
+
+	_update_card_enabled_states()
+
+
+func _on_confirm_pressed() -> void:
+	if state_store == null:
+		return
+
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
+	if selected_cards.is_empty():
+		return
+
+	var action_stack: Array[Dictionary] = []
+	for raw_id: Variant in selected_cards:
+		var entity_id := StringName(str(raw_id))
+		var card_data: Dictionary = selected_cards[raw_id]
+		if card_data.is_empty():
+			continue
+		var action := _create_card_action(card_data, entity_id)
+		if action.is_empty():
+			push_warning("Cannot enqueue card without action data: %s." % card_data)
+			continue
+		action_stack.append(action)
+
+	if not action_stack.is_empty():
+		if action_queue == null:
+			push_warning("Cannot enqueue card action without an ActionQueue.")
+		else:
+			var batches := _create_ordered_action_batches_from_stack(action_stack)
+			for batch: Array in batches:
+				action_queue.enQueue(batch)
+
+	state_store.set_value(&"selected_cards", {})
+	_selected_card_index = -1
+	_update_card_enabled_states()
 
 
 func _enqueue_card_action(card_data: Dictionary) -> void:
-	if action_queue == null:
-		push_warning("Cannot enqueue card action without an ActionQueue.")
-		return
-
 	var entity_id := _get_player_entity_id()
 	if entity_id == &"":
 		push_warning("Cannot enqueue card action before an entity is on the board.")
+		return
+	_enqueue_card_action_for(card_data, entity_id)
+
+
+func _enqueue_card_action_for(card_data: Dictionary, entity_id: StringName) -> void:
+	if action_queue == null:
+		push_warning("Cannot enqueue card action without an ActionQueue.")
 		return
 
 	var action := _create_card_action(card_data, entity_id)
@@ -288,19 +358,18 @@ func _enqueue_card_action(card_data: Dictionary) -> void:
 		push_warning("Cannot enqueue card without action data: %s." % card_data)
 		return
 
-	var batches := _create_ordered_action_batches(action, entity_id)
+	var batches := _create_ordered_action_batches_from_stack([action])
 	for batch: Array in batches:
 		action_queue.enQueue(batch)
 
 
-func _create_ordered_action_batches(action: Dictionary, _entity_id: StringName) -> Array[Array]:
+func _create_ordered_action_batches_from_stack(action_stack: Array[Dictionary]) -> Array[Array]:
 	if game_loop != null:
-		var action_stack: Array[Dictionary] = [action]
 		return game_loop.create_ordered_action_batches(action_stack)
 
 	# fallback: single batch
 	var batches: Array[Array] = []
-	batches.append([action])
+	batches.append(action_stack.duplicate())
 	return batches
 
 
