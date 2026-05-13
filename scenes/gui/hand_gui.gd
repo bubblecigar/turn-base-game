@@ -660,9 +660,16 @@ func _get_selection_slot_card_position(entity_id: StringName) -> Vector2:
 
 
 func _get_hovered_selection_slot_entity_id() -> StringName:
+	var selected_entity_id := _get_player_entity_id()
+	if selected_entity_id == &"":
+		return &""
+
 	var mouse_position := get_global_mouse_position()
 	for raw_entity_id: Variant in _selection_slots:
 		var entity_id := StringName(str(raw_entity_id))
+		if entity_id != selected_entity_id:
+			continue
+
 		var slot := _selection_slots[raw_entity_id] as PanelContainer
 		if slot != null and slot.get_global_rect().has_point(mouse_position):
 			return entity_id
@@ -688,6 +695,9 @@ func _update_selection_slot_state() -> void:
 		if hovered_entity_id == entity_id:
 			style.bg_color = Color(0.18, 0.26, 0.20, 0.62)
 			style.border_color = Color(0.62, 0.95, 0.58, 1.0)
+		elif _dragging_card != null and entity_id != _get_player_entity_id():
+			style.bg_color = Color(0.10, 0.10, 0.10, 0.24)
+			style.border_color = Color(0.42, 0.42, 0.42, 0.65)
 		elif selected_cards.has(entity_id):
 			style.bg_color = Color(0.22, 0.20, 0.10, 0.50)
 			style.border_color = Color(1.0, 0.92, 0.32, 1.0)
