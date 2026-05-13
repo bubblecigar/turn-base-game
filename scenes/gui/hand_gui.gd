@@ -19,6 +19,10 @@ const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
 const SELECTION_SLOT_TOP_MARGIN := 16.0
 const SELECTION_SLOT_GAP := 14.0
 const SELECTION_SLOT_LABEL_NAME := "SlotLabel"
+const CARD_TITLE_LABEL_NAME := "TitleLabel"
+const CARD_COST_LABEL_NAME := "CostLabel"
+const CARD_BODY_LABEL_NAME := "BodyLabel"
+const CARD_BACK_ENTITY_LABEL_NAME := "EntityLabel"
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -35,6 +39,9 @@ const CARD_COLORS := [
 @onready var confirm_button: Button = $ConfirmButton
 @onready var selection_slots_root: Control = $SelectionSlots
 @onready var selection_slot_template: PanelContainer = $SelectionSlots/DropZoneTemplate
+@onready var card_templates_root: Control = $CardTemplates
+@onready var card_face_template: Panel = $CardTemplates/CardFaceTemplate
+@onready var card_back_template: Panel = $CardTemplates/CardBackTemplate
 @onready var action_queue: Node = get_node_or_null(action_queue_path)
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
@@ -105,6 +112,8 @@ func _ready() -> void:
 	randomize()
 	if selection_slot_template != null:
 		selection_slot_template.visible = false
+	if card_templates_root != null:
+		card_templates_root.visible = false
 	_sync_selection_slots()
 	resized.connect(_layout_selection_slots)
 	resized.connect(_layout_cards)
@@ -149,50 +158,24 @@ func _rebuild_cards() -> void:
 
 
 func _create_card(card_data: Dictionary, index: int) -> Panel:
-	var card := Panel.new()
+	var card := card_face_template.duplicate() as Panel if card_face_template != null else Panel.new()
+	card.name = "Card_%d" % index
 	_apply_fixed_card_size(card)
+	card.visible = true
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.z_index = index
 	card.gui_input.connect(_on_card_gui_input.bind(card_data, index, card))
 	card.mouse_entered.connect(_on_card_mouse_entered.bind(card, index))
 	card.mouse_exited.connect(_on_card_mouse_exited.bind(card, index))
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = CARD_COLORS[index % CARD_COLORS.size()]
-	style.border_color = Color(0.86, 0.88, 0.82, 1.0)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 10.0
-	style.content_margin_top = 10.0
-	style.content_margin_right = 10.0
-	style.content_margin_bottom = 10.0
-	card.add_theme_stylebox_override("panel", style)
+	var style := card.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+	if style != null:
+		style.bg_color = CARD_COLORS[index % CARD_COLORS.size()]
+		card.add_theme_stylebox_override("panel", style)
 
-	var content := _create_card_content_container()
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(content)
-
-	var header := HBoxContainer.new()
-	content.add_child(header)
-
-	var title := Label.new()
-	title.text = str(card_data.get("title", "Card"))
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 14)
-	header.add_child(title)
-
-	var cost := Label.new()
-	cost.text = _get_card_cost_text(card_data)
-	cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	cost.add_theme_font_size_override("font_size", 14)
-	header.add_child(cost)
-
-	var body := Label.new()
-	body.text = str(card_data.get("body", ""))
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_font_size_override("font_size", 11)
-	content.add_child(body)
+	_set_label_text(card, CARD_TITLE_LABEL_NAME, str(card_data.get("title", "Card")))
+	_set_label_text(card, CARD_COST_LABEL_NAME, _get_card_cost_text(card_data))
+	_set_label_text(card, CARD_BODY_LABEL_NAME, str(card_data.get("body", "")))
 
 	return card
 
@@ -774,46 +757,13 @@ func _remove_slot_card_preview(entity_id: StringName) -> void:
 
 
 func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> Panel:
-	var card := Panel.new()
+	var card := card_back_template.duplicate() as Panel if card_back_template != null else Panel.new()
+	card.name = "CardBack_%s" % entity_id
 	_apply_fixed_card_size(card)
+	card.visible = true
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.z_index = 140
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.16, 0.24, 0.96)
-	style.border_color = Color(0.70, 0.78, 0.90, 1.0)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 10.0
-	style.content_margin_top = 10.0
-	style.content_margin_right = 10.0
-	style.content_margin_bottom = 10.0
-	card.add_theme_stylebox_override("panel", style)
-
-	var content := _create_card_content_container()
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(content)
-
-	var entity_label := Label.new()
-	entity_label.text = str(entity_id)
-	entity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	entity_label.add_theme_font_size_override("font_size", 10)
-	content.add_child(entity_label)
-
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(spacer)
-
-	var back_label := Label.new()
-	back_label.text = "CARD\nBACK"
-	back_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	back_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	back_label.add_theme_font_size_override("font_size", 16)
-	content.add_child(back_label)
-
-	var bottom_spacer := Control.new()
-	bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(bottom_spacer)
+	_set_label_text(card, CARD_BACK_ENTITY_LABEL_NAME, str(entity_id))
 
 	return card
 
@@ -1114,14 +1064,12 @@ func _apply_fixed_card_size(card: Control) -> void:
 	card.scale = Vector2.ONE
 
 
-func _create_card_content_container() -> VBoxContainer:
-	var content := VBoxContainer.new()
-	content.set_anchors_preset(Control.PRESET_FULL_RECT)
-	content.offset_left = 10.0
-	content.offset_top = 10.0
-	content.offset_right = -10.0
-	content.offset_bottom = -10.0
-	return content
+func _set_label_text(root: Node, label_name: String, text: String) -> void:
+	var label := root.find_child(label_name, true, false) as Label
+	if label == null:
+		return
+
+	label.text = text
 
 
 func _get_card_base_position(index: int, card_count: int) -> Vector2:
