@@ -36,25 +36,24 @@ var _card_tweens: Dictionary = {}
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
-		"cost": "0",
 		"body": "Deal damage",
 		"action_factory": "bump",
+		"args": { "damage_min": 1, "damage_max": 9 },
 	},
 	{
 		"title": "Strong Bump",
-		"cost": "3",
 		"body": "Heavy hit",
 		"action_factory": "strong_bump",
+		"args": { "resource": 3, "damage_min": 4, "damage_max": 9 },
 	},
 	{
 		"title": "Throw",
-		"cost": "0",
 		"body": "Ranged hit",
 		"action_factory": "throw_projectile",
+		"args": { "damage_min": 1, "damage_max": 9 },
 	},
 	{
 		"title": "Focus",
-		"cost": "0",
 		"body": "Gain focus",
 		"action": {
 			"eventName": "perform_cast",
@@ -69,7 +68,6 @@ var _cards: Array[Dictionary] = [
 	},
 	{
 		"title": "Heal",
-		"cost": "1",
 		"body": "Restore HP",
 		"action": {
 			"eventName": "perform_cast",
@@ -85,7 +83,6 @@ var _cards: Array[Dictionary] = [
 	},
 	{
 		"title": "Thunder",
-		"cost": "1",
 		"body": "Hit target",
 		"action": {
 			"eventName": "perform_cast",
@@ -159,7 +156,7 @@ func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
 	header.add_child(title)
 
 	var cost := Label.new()
-	cost.text = str(card_data.get("cost", "0"))
+	cost.text = _get_card_cost_text(card_data)
 	cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	cost.add_theme_font_size_override("font_size", 14)
 	header.add_child(cost)
@@ -172,6 +169,12 @@ func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
 	content.add_child(body)
 
 	return card
+
+
+func _get_card_cost_text(card_data: Dictionary) -> String:
+	var args: Dictionary = card_data.get("args", card_data.get("action", {}).get("payload", {}).get("args", {}))
+	var resource := int(args.get("resource", 0))
+	return str(resource) if resource > 0 else ""
 
 
 func _on_card_mouse_entered(card: Control, index: int) -> void:
@@ -270,7 +273,7 @@ func _create_ordered_action_batches(action: Dictionary, _entity_id: StringName) 
 func _create_card_action(card_data: Dictionary, entity_id: StringName) -> Dictionary:
 	var action_factory := str(card_data.get("action_factory", ""))
 	if action_factory != "":
-		return _create_action_from_factory(action_factory, entity_id)
+		return _create_action_from_factory(action_factory, entity_id, card_data.get("args", {}))
 
 	var action: Dictionary = card_data.get("action", {}).duplicate(true)
 	if action.is_empty():
@@ -282,22 +285,22 @@ func _create_card_action(card_data: Dictionary, entity_id: StringName) -> Dictio
 	return action
 
 
-func _create_action_from_factory(action_factory: String, entity_id: StringName) -> Dictionary:
+func _create_action_from_factory(action_factory: String, entity_id: StringName, args: Dictionary = {}) -> Dictionary:
 	match action_factory:
 		"bump":
 			return _create_attack_action(
 				entity_id,
 				"bump",
 				_get_vector_to_target(entity_id, 1),
-				randi_range(BUMP_DAMAGE_MIN, BUMP_DAMAGE_MAX)
+				randi_range(int(args.get("damage_min", BUMP_DAMAGE_MIN)), int(args.get("damage_max", BUMP_DAMAGE_MAX)))
 			)
 		"strong_bump":
 			return _create_attack_action(
 				entity_id,
 				"strong_bump",
-				_get_vector_to_target(entity_id, STRONG_BUMP_VECTOR_LENGTH),
-				randi_range(STRONG_BUMP_DAMAGE_MIN, STRONG_BUMP_DAMAGE_MAX),
-				STRONG_BUMP_FOCUS_COST
+				_get_vector_to_target(entity_id, int(args.get("vector_length", STRONG_BUMP_VECTOR_LENGTH))),
+				randi_range(int(args.get("damage_min", STRONG_BUMP_DAMAGE_MIN)), int(args.get("damage_max", STRONG_BUMP_DAMAGE_MAX))),
+				int(args.get("resource", STRONG_BUMP_FOCUS_COST))
 			)
 		"throw_projectile":
 			var source_cell := _get_entity_board_cell(entity_id)
@@ -310,8 +313,8 @@ func _create_action_from_factory(action_factory: String, entity_id: StringName) 
 				entity_id,
 				"throw_projectile",
 				_get_vector_to_target(entity_id, actual_length),
-				randi_range(THROW_PROJECTILE_DAMAGE_MIN, THROW_PROJECTILE_DAMAGE_MAX),
-				THROW_PROJECTILE_RESOURCE_COST
+				randi_range(int(args.get("damage_min", THROW_PROJECTILE_DAMAGE_MIN)), int(args.get("damage_max", THROW_PROJECTILE_DAMAGE_MAX))),
+				int(args.get("resource", THROW_PROJECTILE_RESOURCE_COST))
 			)
 		_:
 			push_warning("Unsupported card action factory: %s." % action_factory)
