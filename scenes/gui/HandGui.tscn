@@ -13,6 +13,7 @@ mouse_filter = 2
 script = ExtResource("1_hand")
 action_queue_path = NodePath("../ActionQueue")
 state_store_path = NodePath("../StateStore")
+game_loop_path = NodePath("../GameLoop")
 
 [node name="CardStack" type="Control" parent="." unique_id=1469212597]
 anchors_preset = 0

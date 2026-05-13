@@ -91,7 +91,7 @@ func _maybe_start_next_turn() -> void:
 		return
 
 	var action_stack := _create_turn_actions()
-	var action_batches := _create_ordered_action_batches(action_stack)
+	var action_batches := create_ordered_action_batches(action_stack)
 	if action_batches.is_empty():
 		return
 
@@ -273,7 +273,7 @@ func _create_random_cast_action(entity_id: StringName, alive_entity_ids: Array[S
 	return options.front()
 
 
-func _create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Array]:
+func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Array]:
 	var actions_by_category := {
 		ACTION_CATEGORY_CAST: [],
 		ACTION_CATEGORY_MOVE: [],

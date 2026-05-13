@@ -25,10 +25,12 @@ const CARD_COLORS := [
 
 @export var action_queue_path: NodePath
 @export var state_store_path: NodePath
+@export var game_loop_path: NodePath
 
 @onready var card_stack: Control = $CardStack
 @onready var action_queue: Node = get_node_or_null(action_queue_path)
 @onready var state_store: Node = get_node_or_null(state_store_path)
+@onready var game_loop: Node = get_node_or_null(game_loop_path)
 
 var _card_tweens: Dictionary = {}
 var _cards: Array[Dictionary] = [
@@ -249,7 +251,20 @@ func _enqueue_card_action(card_data: Dictionary) -> void:
 		push_warning("Cannot enqueue card without action data: %s." % card_data)
 		return
 
-	action_queue.enQueue([action])
+	var batches := _create_ordered_action_batches(action, entity_id)
+	for batch: Array in batches:
+		action_queue.enQueue(batch)
+
+
+func _create_ordered_action_batches(action: Dictionary, _entity_id: StringName) -> Array[Array]:
+	if game_loop != null:
+		var action_stack: Array[Dictionary] = [action]
+		return game_loop.create_ordered_action_batches(action_stack)
+
+	# fallback: single batch
+	var batches: Array[Array] = []
+	batches.append([action])
+	return batches
 
 
 func _create_card_action(card_data: Dictionary, entity_id: StringName) -> Dictionary:
