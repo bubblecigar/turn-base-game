@@ -6,6 +6,15 @@ const CARD_RAISE_PIXELS := 14.0
 const CARD_HOVER_RAISE_PIXELS := 28.0
 const CARD_HOVER_SCALE := Vector2(1.08, 1.08)
 const CARD_HOVER_SECONDS := 0.12
+const BUMP_DAMAGE_MIN := 1
+const BUMP_DAMAGE_MAX := 9
+const STRONG_BUMP_DAMAGE_MIN := 4
+const STRONG_BUMP_DAMAGE_MAX := 9
+const STRONG_BUMP_FOCUS_COST := 3
+const STRONG_BUMP_VECTOR_LENGTH := 3
+const THROW_PROJECTILE_DAMAGE_MIN := 1
+const THROW_PROJECTILE_DAMAGE_MAX := 9
+const THROW_PROJECTILE_RESOURCE_COST := 0
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -27,51 +36,19 @@ var _cards: Array[Dictionary] = [
 		"title": "Bump",
 		"cost": "0",
 		"body": "Deal damage",
-		"action": {
-			"eventName": "perform_attack",
-			"payload": {
-				"args": {
-					"type": "bump",
-					"damage": 3,
-					"source": "hand_gui",
-					"vector": Vector2i.RIGHT,
-				},
-			},
-		},
+		"action_factory": "bump",
 	},
 	{
 		"title": "Strong Bump",
 		"cost": "3",
 		"body": "Heavy hit",
-		"action": {
-			"eventName": "perform_attack",
-			"payload": {
-				"args": {
-					"type": "strong_bump",
-					"damage": 6,
-					"resource": 3,
-					"source": "hand_gui",
-					"vector": Vector2i.RIGHT * 3,
-				},
-			},
-		},
+		"action_factory": "strong_bump",
 	},
 	{
 		"title": "Throw",
 		"cost": "0",
 		"body": "Ranged hit",
-		"action": {
-			"eventName": "perform_attack",
-			"payload": {
-				"args": {
-					"type": "throw_projectile",
-					"damage": 4,
-					"resource": 0,
-					"source": "hand_gui",
-					"vector": Vector2i.RIGHT,
-				},
-			},
-		},
+		"action_factory": "throw_projectile",
 	},
 	{
 		"title": "Focus",
@@ -124,7 +101,7 @@ var _cards: Array[Dictionary] = [
 
 
 func _ready() -> void:
-	# set_anchors_preset(Control.PRESET_FULL_RECT)
+	randomize()
 	resized.connect(_layout_cards)
 	_rebuild_cards()
 
@@ -267,15 +244,105 @@ func _enqueue_card_action(card_data: Dictionary) -> void:
 		push_warning("Cannot enqueue card action before an entity is on the board.")
 		return
 
-	var action: Dictionary = card_data.get("action", {}).duplicate(true)
+	var action := _create_card_action(card_data, entity_id)
 	if action.is_empty():
 		push_warning("Cannot enqueue card without action data: %s." % card_data)
 		return
 
+	action_queue.enQueue([action])
+
+
+func _create_card_action(card_data: Dictionary, entity_id: StringName) -> Dictionary:
+	var action_factory := str(card_data.get("action_factory", ""))
+	if action_factory != "":
+		return _create_action_from_factory(action_factory, entity_id)
+
+	var action: Dictionary = card_data.get("action", {}).duplicate(true)
+	if action.is_empty():
+		return {}
+
 	var payload: Dictionary = action.get("payload", {})
 	payload["id"] = entity_id
 	action["payload"] = payload
-	action_queue.enQueue([action])
+	return action
+
+
+func _create_action_from_factory(action_factory: String, entity_id: StringName) -> Dictionary:
+	match action_factory:
+		"bump":
+			return _create_attack_action(
+				entity_id,
+				"bump",
+				_get_vector_to_target(entity_id, 1),
+				randi_range(BUMP_DAMAGE_MIN, BUMP_DAMAGE_MAX)
+			)
+		"strong_bump":
+			return _create_attack_action(
+				entity_id,
+				"strong_bump",
+				_get_vector_to_target(entity_id, STRONG_BUMP_VECTOR_LENGTH),
+				randi_range(STRONG_BUMP_DAMAGE_MIN, STRONG_BUMP_DAMAGE_MAX),
+				STRONG_BUMP_FOCUS_COST
+			)
+		"throw_projectile":
+			return _create_attack_action(
+				entity_id,
+				"throw_projectile",
+				_get_vector_to_target(entity_id, 1),
+				randi_range(THROW_PROJECTILE_DAMAGE_MIN, THROW_PROJECTILE_DAMAGE_MAX),
+				THROW_PROJECTILE_RESOURCE_COST
+			)
+		_:
+			push_warning("Unsupported card action factory: %s." % action_factory)
+			return {}
+
+
+func _create_attack_action(entity_id: StringName, attack_type: String, vector: Vector2i, damage: int, resource: Variant = null) -> Dictionary:
+	var args := {
+		"type": attack_type,
+		"damage": damage,
+		"source": "hand_gui",
+		"vector": vector,
+	}
+	if resource != null:
+		args["resource"] = resource
+
+	return {
+		"eventName": "perform_attack",
+		"payload": {
+			"id": entity_id,
+			"args": args,
+		},
+	}
+
+
+func _get_vector_to_target(entity_id: StringName, vector_length: int) -> Vector2i:
+	var source_cell := _get_entity_board_cell(entity_id)
+	var target_cell := _get_first_other_board_cell(entity_id)
+	if source_cell == Vector2i(-1, -1) or target_cell == Vector2i(-1, -1):
+		return Vector2i.RIGHT * vector_length
+
+	var delta := target_cell - source_cell
+	if delta == Vector2i.ZERO:
+		return _get_random_horizontal_direction() * vector_length
+
+	var axis_direction := Vector2i.ZERO
+	if abs(delta.x) >= abs(delta.y):
+		axis_direction.x = signi(delta.x)
+	else:
+		axis_direction.y = signi(delta.y)
+
+	if axis_direction == Vector2i.ZERO:
+		axis_direction = _get_random_horizontal_direction()
+
+	return axis_direction * vector_length
+
+
+func _get_random_horizontal_direction() -> Vector2i:
+	if randi_range(0, 1) == 0:
+		return Vector2i.LEFT
+
+	return Vector2i.RIGHT
 
 
 func _get_first_board_entity_id() -> StringName:
@@ -294,6 +361,58 @@ func _get_first_board_entity_id() -> StringName:
 				return legacy_entity_id
 
 	return &""
+
+
+func _get_entity_board_cell(entity_id: StringName) -> Vector2i:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cells: Array = board.get(&"cells", [])
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			if _cell_has_entity(cell, entity_id):
+				return Vector2i(int(cell.get(&"i", i)), int(cell.get(&"j", j)))
+
+	return Vector2i(-1, -1)
+
+
+func _get_first_other_board_cell(entity_id: StringName) -> Vector2i:
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cells: Array = board.get(&"cells", [])
+	for i in cells.size():
+		var col_cells: Array = cells[i]
+		for j in col_cells.size():
+			var cell: Dictionary = col_cells[j]
+			if _cell_has_other_entity(cell, entity_id):
+				return Vector2i(int(cell.get(&"i", i)), int(cell.get(&"j", j)))
+
+	return Vector2i(-1, -1)
+
+
+func _cell_has_entity(cell: Dictionary, entity_id: StringName) -> bool:
+	for cell_entity_id: Variant in cell.get(&"entity_ids", []):
+		if StringName(str(cell_entity_id)) == entity_id:
+			return true
+
+	return StringName(str(cell.get(&"entity_id", &""))) == entity_id
+
+
+func _cell_has_other_entity(cell: Dictionary, entity_id: StringName) -> bool:
+	for cell_entity_id: Variant in cell.get(&"entity_ids", []):
+		var cell_entity_string_name := StringName(str(cell_entity_id))
+		if cell_entity_string_name != &"" and cell_entity_string_name != entity_id:
+			return true
+
+	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
+	return legacy_entity_id != &"" and legacy_entity_id != entity_id
+
+
+func signi(value: int) -> int:
+	if value < 0:
+		return -1
+	if value > 0:
+		return 1
+	return 0
 
 
 func _layout_cards() -> void:
