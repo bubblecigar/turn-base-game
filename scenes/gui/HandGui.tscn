@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://c0p0u578w30f"]
+
+[ext_resource type="Script" uid="uid://kxmemaoxaa83" path="res://scenes/gui/hand_gui.gd" id="1_hand"]
+
+[node name="HandGui" type="Control" unique_id=1799552942]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hand")
+
+[node name="CardStack" type="Control" parent="." unique_id=1469212597]
+anchors_preset = 0
+offset_left = 491.0
+offset_top = 476.0
+offset_right = 491.0
+offset_bottom = 476.0
+mouse_filter = 2

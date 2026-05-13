@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://qp77q15dyk78" path="res://scenes/main.gd" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://cp2a0hdjgho1v" path="res://scenes/TurnBaseScene.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://c0p0u578w30f" path="res://scenes/gui/HandGui.tscn" id="2_hand"]
 
 [sub_resource type="Gradient" id="Gradient_bg"]
 colors = PackedColorArray(0.055, 0.075, 0.105, 1, 0.02, 0.13, 0.17, 1)
@@ -22,3 +23,5 @@ position = Vector2(480, 270)
 texture = SubResource("GradientTexture2D_bg")
 
 [node name="TurnBaseScene" parent="." unique_id=521488771 instance=ExtResource("1_o5qli")]
+
+[node name="HandGui" parent="TurnBaseScene" unique_id=137130917 instance=ExtResource("2_hand")]
