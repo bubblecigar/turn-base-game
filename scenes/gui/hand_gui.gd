@@ -40,6 +40,40 @@ var _cards: Array[Dictionary] = [
 		},
 	},
 	{
+		"title": "Strong Bump",
+		"cost": "3",
+		"body": "Heavy hit",
+		"action": {
+			"eventName": "perform_attack",
+			"payload": {
+				"args": {
+					"type": "strong_bump",
+					"damage": 6,
+					"resource": 3,
+					"source": "hand_gui",
+					"vector": Vector2i.RIGHT * 3,
+				},
+			},
+		},
+	},
+	{
+		"title": "Throw",
+		"cost": "0",
+		"body": "Ranged hit",
+		"action": {
+			"eventName": "perform_attack",
+			"payload": {
+				"args": {
+					"type": "throw_projectile",
+					"damage": 4,
+					"resource": 0,
+					"source": "hand_gui",
+					"vector": Vector2i.RIGHT,
+				},
+			},
+		},
+	},
+	{
 		"title": "Focus",
 		"cost": "0",
 		"body": "Gain focus",
