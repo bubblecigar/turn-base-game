@@ -39,6 +39,7 @@ const CARD_COLORS := [
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
 var _selection_slots: Dictionary = {}
+var _slot_card_nodes: Dictionary = {}
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
@@ -141,6 +142,7 @@ func _rebuild_cards() -> void:
 	_layout_cards()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
+	_update_slot_card_previews()
 
 
 func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
@@ -269,6 +271,7 @@ func _on_selected_card_changed(entity_id: StringName, _card_data: Dictionary) ->
 		_update_selected_card_index()
 		_layout_cards()
 		_update_selection_slot_state()
+		_update_slot_card_previews()
 	_update_card_enabled_states()
 
 
@@ -352,6 +355,7 @@ func _select_card_for_entity(entity_id: StringName, card_data: Dictionary) -> vo
 	_layout_cards()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
+	_update_slot_card_previews()
 
 
 func _on_confirm_pressed() -> void:
@@ -387,6 +391,7 @@ func _on_confirm_pressed() -> void:
 	_layout_cards()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
+	_update_slot_card_previews()
 
 
 func _ensure_card_pools_for_entities(entities: Dictionary, _previous_entities: Variant) -> void:
@@ -486,9 +491,11 @@ func _sync_selection_slots() -> void:
 		_selection_slots.erase(entity_id)
 		if slot != null:
 			slot.queue_free()
+		_remove_slot_card_preview(entity_id)
 
 	_layout_selection_slots()
 	_update_selection_slot_state()
+	_update_slot_card_previews()
 
 
 func _create_selection_slot(entity_id: StringName) -> PanelContainer:
@@ -532,6 +539,7 @@ func _layout_selection_slots() -> void:
 			continue
 		slot.size = SELECTION_SLOT_SIZE
 		slot.position = start_position + Vector2((SELECTION_SLOT_SIZE.x + SELECTION_SLOT_GAP) * index, 0.0)
+	_update_slot_card_preview_positions()
 
 
 func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
@@ -576,6 +584,7 @@ func _finish_card_drag(target_entity_id: StringName) -> void:
 			_move_card_to_layout_position(card, card_index, true)
 
 	_update_selection_slot_state()
+	_update_slot_card_previews()
 
 
 func _clear_card_drag() -> void:
@@ -725,6 +734,125 @@ func _update_selection_slot_label(slot: PanelContainer, entity_id: StringName, h
 		return
 
 	label.text = "%s\n%s" % [entity_id, "Ready" if has_selected_card else "Drop"]
+
+
+func _update_slot_card_previews() -> void:
+	if state_store == null:
+		return
+
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
+	var current_entity_id := _get_player_entity_id()
+	for raw_entity_id: Variant in _selection_slots:
+		var entity_id := StringName(str(raw_entity_id))
+		if entity_id == current_entity_id:
+			_remove_slot_card_preview(entity_id)
+			continue
+
+		var card_data: Dictionary = selected_cards.get(entity_id, {})
+		if card_data.is_empty():
+			_remove_slot_card_preview(entity_id)
+			continue
+
+		_set_slot_card_preview(entity_id, card_data)
+
+	var removed_entity_ids: Array[StringName] = []
+	for raw_entity_id: Variant in _slot_card_nodes:
+		var entity_id := StringName(str(raw_entity_id))
+		if not _selection_slots.has(entity_id) or not selected_cards.has(entity_id):
+			removed_entity_ids.append(entity_id)
+
+	for entity_id: StringName in removed_entity_ids:
+		_remove_slot_card_preview(entity_id)
+
+	_update_slot_card_preview_positions()
+
+
+func _set_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> void:
+	var preview := _slot_card_nodes.get(entity_id, null) as Control
+	if preview != null and preview.get_meta(&"card_data", {}) == card_data:
+		return
+
+	_remove_slot_card_preview(entity_id)
+	preview = _create_slot_card_preview(entity_id, card_data)
+	preview.set_meta(&"card_data", card_data.duplicate(true))
+	add_child(preview)
+	_slot_card_nodes[entity_id] = preview
+
+
+func _remove_slot_card_preview(entity_id: StringName) -> void:
+	var preview := _slot_card_nodes.get(entity_id, null) as Control
+	_slot_card_nodes.erase(entity_id)
+	if preview != null:
+		preview.queue_free()
+
+
+func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.custom_minimum_size = CARD_SIZE
+	card.size = CARD_SIZE
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.z_index = 140
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.18, 0.20, 0.22, 0.94)
+	style.border_color = Color(1.0, 0.92, 0.32, 1.0)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 10.0
+	style.content_margin_top = 10.0
+	style.content_margin_right = 10.0
+	style.content_margin_bottom = 10.0
+	card.add_theme_stylebox_override("panel", style)
+
+	var content := VBoxContainer.new()
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(content)
+
+	var entity_label := Label.new()
+	entity_label.text = str(entity_id)
+	entity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	entity_label.add_theme_font_size_override("font_size", 10)
+	content.add_child(entity_label)
+
+	var title := Label.new()
+	title.text = str(card_data.get("title", "Card"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 14)
+	content.add_child(title)
+
+	var body := Label.new()
+	body.text = str(card_data.get("body", ""))
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_font_size_override("font_size", 11)
+	content.add_child(body)
+
+	return card
+
+
+func _update_slot_card_preview_positions() -> void:
+	for raw_entity_id: Variant in _slot_card_nodes:
+		var entity_id := StringName(str(raw_entity_id))
+		var preview := _slot_card_nodes[raw_entity_id] as Control
+		if preview == null:
+			continue
+
+		preview.position = _get_selection_slot_card_preview_position(entity_id)
+		preview.size = CARD_SIZE
+		preview.rotation_degrees = 0.0
+		preview.scale = Vector2.ONE
+		preview.z_index = 140
+
+
+func _get_selection_slot_card_preview_position(entity_id: StringName) -> Vector2:
+	var slot := _selection_slots.get(entity_id, null) as PanelContainer
+	if slot == null:
+		return Vector2.ZERO
+
+	var slot_center := slot.get_global_rect().get_center()
+	var local_center := get_global_transform_with_canvas().affine_inverse() * slot_center
+	return local_center - CARD_SIZE / 2.0
 
 
 
