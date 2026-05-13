@@ -17,7 +17,7 @@ const THROW_PROJECTILE_DAMAGE_MAX := 9
 const THROW_PROJECTILE_RESOURCE_COST := 0
 const ENTITY_CARD_POOL_SIZE := 5
 const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
-const SELECTION_SLOT_CENTER_OFFSET := Vector2(0.0, -70.0)
+const SELECTION_SLOT_TOP_MARGIN := 16.0
 const SELECTION_SLOT_GAP := 14.0
 const SELECTION_SLOT_LABEL_NAME := "SlotLabel"
 const CARD_COLORS := [
@@ -520,7 +520,11 @@ func _layout_selection_slots() -> void:
 
 	var entity_ids := _get_selection_slot_entity_ids()
 	var total_width: float = SELECTION_SLOT_SIZE.x * entity_ids.size() + SELECTION_SLOT_GAP * max(entity_ids.size() - 1, 0)
-	var start_position: Vector2 = get_viewport_rect().size / 2.0 + SELECTION_SLOT_CENTER_OFFSET - Vector2(total_width / 2.0, SELECTION_SLOT_SIZE.y / 2.0)
+	var viewport_size := get_viewport_rect().size
+	var start_position := Vector2(
+		(viewport_size.x - total_width) / 2.0,
+		SELECTION_SLOT_TOP_MARGIN
+	)
 	for index in entity_ids.size():
 		var entity_id := entity_ids[index]
 		var slot := _selection_slots.get(entity_id, null) as PanelContainer
