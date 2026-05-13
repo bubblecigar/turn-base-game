@@ -4,7 +4,6 @@ const CARD_SIZE := Vector2(116.0, 158.0)
 const CARD_OVERLAP_PIXELS := 34.0
 const CARD_RAISE_PIXELS := 14.0
 const CARD_HOVER_RAISE_PIXELS := 28.0
-const CARD_HOVER_SCALE := Vector2(1.08, 1.08)
 const CARD_HOVER_SECONDS := 0.12
 const BUMP_DAMAGE_MIN := 1
 const BUMP_DAMAGE_MAX := 9
@@ -145,10 +144,9 @@ func _rebuild_cards() -> void:
 	_update_slot_card_previews()
 
 
-func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
-	var card := PanelContainer.new()
-	card.custom_minimum_size = CARD_SIZE
-	card.size = CARD_SIZE
+func _create_card(card_data: Dictionary, index: int) -> Panel:
+	var card := Panel.new()
+	_apply_fixed_card_size(card)
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.z_index = index
 	card.gui_input.connect(_on_card_gui_input.bind(card_data, index, card))
@@ -166,7 +164,7 @@ func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
 	style.content_margin_bottom = 10.0
 	card.add_theme_stylebox_override("panel", style)
 
-	var content := VBoxContainer.new()
+	var content := _create_card_content_container()
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(content)
 
@@ -230,9 +228,9 @@ func _tween_card_hover(card: Control, index: int, is_hovered: bool) -> void:
 	if is_hovered:
 		target_position.y -= CARD_HOVER_RAISE_PIXELS
 		target_rotation = 0.0
-		target_scale = CARD_HOVER_SCALE
 		target_z_index = 100 + index
 
+	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
 	card.z_index = target_z_index
 	var tween := create_tween()
@@ -555,8 +553,9 @@ func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
 	_dragging_card = card
 	_dragging_card_data = card_data
 	_drag_offset = _get_card_stack_mouse_position() - card.position
+	_apply_fixed_card_size(card)
 	card.rotation_degrees = 0.0
-	card.scale = CARD_HOVER_SCALE
+	card.scale = Vector2.ONE
 	card.z_index = 300 + index
 	_update_dragged_card_position()
 	_update_selection_slot_state()
@@ -609,6 +608,7 @@ func _move_card_to_layout_position(card: Control, index: int, animated: bool) ->
 	var target_rotation := centered_index * 4.0
 	var target_z_index := index
 
+	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
 	if animated:
 		card.z_index = target_z_index
@@ -639,6 +639,7 @@ func _move_card_to_selection_slot(card: Control, index: int, entity_id: StringNa
 
 	var target_position := _get_selection_slot_card_position(entity_id)
 	var target_z_index := 150 + index
+	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
 	if animated:
 		card.z_index = target_z_index
@@ -786,10 +787,9 @@ func _remove_slot_card_preview(entity_id: StringName) -> void:
 		preview.queue_free()
 
 
-func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> PanelContainer:
-	var card := PanelContainer.new()
-	card.custom_minimum_size = CARD_SIZE
-	card.size = CARD_SIZE
+func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> Panel:
+	var card := Panel.new()
+	_apply_fixed_card_size(card)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.z_index = 140
 
@@ -804,7 +804,7 @@ func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> 
 	style.content_margin_bottom = 10.0
 	card.add_theme_stylebox_override("panel", style)
 
-	var content := VBoxContainer.new()
+	var content := _create_card_content_container()
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(content)
 
@@ -838,8 +838,8 @@ func _update_slot_card_preview_positions() -> void:
 		if preview == null:
 			continue
 
+		_apply_fixed_card_size(preview)
 		preview.position = _get_selection_slot_card_preview_position(entity_id)
-		preview.size = CARD_SIZE
 		preview.rotation_degrees = 0.0
 		preview.scale = Vector2.ONE
 		preview.z_index = 140
@@ -1112,10 +1112,29 @@ func _layout_cards() -> void:
 			continue
 
 		var centered_index := _get_card_centered_index(index, card_count)
-		card.size = CARD_SIZE
+		_apply_fixed_card_size(card)
 		card.pivot_offset = CARD_SIZE / 2.0
 		card.position = _get_card_base_position(index, card_count)
 		card.rotation_degrees = centered_index * 4.0
+
+
+func _apply_fixed_card_size(card: Control) -> void:
+	if card == null:
+		return
+
+	card.custom_minimum_size = CARD_SIZE
+	card.size = CARD_SIZE
+	card.scale = Vector2.ONE
+
+
+func _create_card_content_container() -> VBoxContainer:
+	var content := VBoxContainer.new()
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 10.0
+	content.offset_top = 10.0
+	content.offset_right = -10.0
+	content.offset_bottom = -10.0
+	return content
 
 
 func _get_card_base_position(index: int, card_count: int) -> Vector2:
