@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://c0p0u578w30f"]
+
+[ext_resource type="Script" uid="uid://kxmemaoxaa83" path="res://scenes/gui/hand_gui.gd" id="1_hand"]
+
+[node name="HandGui" type="Control" unique_id=1799552942]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hand")
+action_queue_path = NodePath("../ActionQueue")
+state_store_path = NodePath("../StateStore")
+game_loop_path = NodePath("../GameLoop")
+
+[node name="CardStack" type="Control" parent="." unique_id=1469212597]
+anchors_preset = 0
+offset_left = 491.0
+offset_top = 477.0
+offset_right = 491.0
+offset_bottom = 477.0
+mouse_filter = 2
+
+[node name="ConfirmButton" type="Button" parent="." unique_id=487215205]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 392.0
+offset_top = 337.0
+offset_right = 512.0
+offset_bottom = 369.0
+grow_horizontal = 2
+grow_vertical = 0
+disabled = true
+text = "Confirm"

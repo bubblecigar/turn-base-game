@@ -11,6 +11,9 @@ signal entity_moved(entity_id: StringName, position: Vector2, previous_position:
 signal entity_focus_changed(entity_id: StringName, focus: int, previous_focus: int)
 signal cast_performed(caster_id: StringName, focus: int)
 signal cast_resolved(caster_id: StringName, result: bool)
+signal entity_selection_changed(entity_id: StringName, previous_entity_id: StringName)
+signal selected_card_changed(entity_id: StringName, card_data: Dictionary)
+signal entity_card_pools_changed(entity_card_pools: Dictionary, previous_entity_card_pools: Variant)
 
 const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
 
@@ -46,7 +49,60 @@ func set_value(key: StringName, value: Variant) -> void:
 	value_changed.emit(key, value, previous_value)
 	if key == &"entities" and value is Dictionary:
 		entities_updated.emit(value, previous_value)
+	if key == &"entity_card_pools" and value is Dictionary:
+		entity_card_pools_changed.emit(value, previous_value)
 	state_changed.emit(get_state())
+
+
+func select_entity(entity_id: StringName) -> void:
+	var previous_id := StringName(str(_state.get(&"selected_entity_id", &"")))
+	if previous_id == entity_id:
+		return
+	_state[&"selected_entity_id"] = entity_id
+	entity_selection_changed.emit(entity_id, previous_id)
+
+
+func get_selected_entity_id() -> StringName:
+	return StringName(str(_state.get(&"selected_entity_id", &"")))
+
+
+func select_card(entity_id: StringName, card_data: Dictionary) -> void:
+	var selected_cards: Dictionary = _state.get(&"selected_cards", {})
+	selected_cards = selected_cards.duplicate()
+	selected_cards[entity_id] = card_data.duplicate(true)
+	_state[&"selected_cards"] = selected_cards
+	selected_card_changed.emit(entity_id, card_data)
+
+
+func get_selected_card(entity_id: StringName) -> Dictionary:
+	var selected_cards: Dictionary = _state.get(&"selected_cards", {})
+	return selected_cards.get(entity_id, {})
+
+
+func set_entity_card_pool(entity_id: StringName, cards: Array[Dictionary]) -> void:
+	if entity_id == &"":
+		return
+
+	var previous_card_pools: Dictionary = _state.get(&"entity_card_pools", {})
+	var next_card_pools := previous_card_pools.duplicate(true)
+	next_card_pools[entity_id] = cards.duplicate(true)
+	set_value(&"entity_card_pools", next_card_pools)
+
+
+func has_entity_card_pool(entity_id: StringName) -> bool:
+	var card_pools: Dictionary = _state.get(&"entity_card_pools", {})
+	return card_pools.has(entity_id)
+
+
+func get_entity_card_pool(entity_id: StringName) -> Array[Dictionary]:
+	var card_pools: Dictionary = _state.get(&"entity_card_pools", {})
+	var raw_cards: Array = card_pools.get(entity_id, [])
+	var cards: Array[Dictionary] = []
+	for raw_card: Variant in raw_cards:
+		if raw_card is Dictionary:
+			cards.append(raw_card.duplicate(true))
+
+	return cards
 
 
 func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> void:
@@ -66,6 +122,7 @@ func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int 
 	}
 	_set_entity(next_entity)
 	_place_entity_on_board(next_entity, i, j)
+	select_entity(next_entity[&"id"])
 	character_initialized.emit(next_entity, previous_character)
 
 
@@ -250,6 +307,8 @@ func patch(values: Dictionary) -> void:
 		value_changed.emit(state_key, next_value, previous_value)
 		if state_key == &"entities" and next_value is Dictionary:
 			entities_updated.emit(next_value, previous_value)
+		if state_key == &"entity_card_pools" and next_value is Dictionary:
+			entity_card_pools_changed.emit(next_value, previous_value)
 		changed = true
 
 	if changed:
@@ -280,6 +339,9 @@ func _get_default_state() -> Dictionary:
 	return {
 		&"board": {},
 		&"entities": {},
+		&"selected_entity_id": &"",
+		&"selected_cards": {},
+		&"entity_card_pools": {},
 	}
 
 

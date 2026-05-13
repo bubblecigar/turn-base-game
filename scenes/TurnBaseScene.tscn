@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scenes/visuals/entities_layer.gd" id="7_l81iu"]
 [ext_resource type="Script" path="res://scenes/game_control/stage_controller.gd" id="8_stctl"]
 [ext_resource type="Script" path="res://scenes/game_control/game_loop.gd" id="9_game_loop"]
+[ext_resource type="PackedScene" uid="uid://c0p0u578w30f" path="res://scenes/gui/HandGui.tscn" id="10_hand"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
@@ -41,3 +42,5 @@ script = ExtResource("8_stctl")
 script = ExtResource("9_game_loop")
 
 [node name="Debugger" parent="." unique_id=1751775065 instance=ExtResource("4_g6g8p")]
+
+[node name="HandGui" parent="." instance=ExtResource("10_hand")]
