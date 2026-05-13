@@ -16,6 +16,8 @@ const THROW_PROJECTILE_DAMAGE_MIN := 1
 const THROW_PROJECTILE_DAMAGE_MAX := 9
 const THROW_PROJECTILE_RESOURCE_COST := 0
 const ENTITY_CARD_POOL_SIZE := 5
+const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
+const SELECTION_SLOT_CENTER_OFFSET := Vector2(0.0, -70.0)
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -34,9 +36,14 @@ const CARD_COLORS := [
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
+var _selection_slot: PanelContainer
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
+var _dragging_card_index: int = -1
+var _dragging_card: Control
+var _dragging_card_data: Dictionary = {}
+var _drag_offset := Vector2.ZERO
 var _active_cards: Array[Dictionary] = []
 var _cards: Array[Dictionary] = [
 	{
@@ -92,6 +99,8 @@ var _cards: Array[Dictionary] = [
 
 func _ready() -> void:
 	randomize()
+	_create_selection_slot()
+	resized.connect(_layout_selection_slot)
 	resized.connect(_layout_cards)
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
@@ -112,6 +121,7 @@ func set_cards(cards: Array[Dictionary]) -> void:
 
 func _rebuild_cards() -> void:
 	_card_nodes.clear()
+	_clear_card_drag()
 	for tween: Tween in _card_tweens.values():
 		if tween:
 			tween.kill()
@@ -128,6 +138,7 @@ func _rebuild_cards() -> void:
 
 	_layout_cards()
 	_update_card_enabled_states()
+	_update_selection_slot_state()
 
 
 func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
@@ -136,7 +147,7 @@ func _create_card(card_data: Dictionary, index: int) -> PanelContainer:
 	card.size = CARD_SIZE
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.z_index = index
-	card.gui_input.connect(_on_card_gui_input.bind(card_data))
+	card.gui_input.connect(_on_card_gui_input.bind(card_data, index, card))
 	card.mouse_entered.connect(_on_card_mouse_entered.bind(card, index))
 	card.mouse_exited.connect(_on_card_mouse_exited.bind(card, index))
 
@@ -197,6 +208,8 @@ func _on_card_mouse_exited(card: Control, index: int) -> void:
 func _tween_card_hover(card: Control, index: int, is_hovered: bool) -> void:
 	if card == null:
 		return
+	if index == _dragging_card_index or index == _selected_card_index:
+		return
 
 	if _card_tweens.has(card):
 		var active_tween: Tween = _card_tweens[card]
@@ -251,6 +264,8 @@ func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName)
 func _on_selected_card_changed(entity_id: StringName, _card_data: Dictionary) -> void:
 	if entity_id == _get_player_entity_id():
 		_update_selected_card_index()
+		_layout_cards()
+		_update_selection_slot_state()
 	_update_card_enabled_states()
 
 
@@ -297,7 +312,7 @@ func _update_card_enabled_states() -> void:
 			card.modulate = Color(0.45, 0.45, 0.45, 0.65)
 
 
-func _on_card_gui_input(event: InputEvent, card_data: Dictionary) -> void:
+func _on_card_gui_input(event: InputEvent, card_data: Dictionary, index: int, card: Control) -> void:
 	if not event is InputEventMouseButton:
 		return
 
@@ -309,7 +324,7 @@ func _on_card_gui_input(event: InputEvent, card_data: Dictionary) -> void:
 	if _get_player_focus() < int(args.get("resource", 0)):
 		return
 
-	_select_card(card_data)
+	_start_card_drag(card_data, index, card)
 
 
 func _select_card(card_data: Dictionary) -> void:
@@ -323,6 +338,7 @@ func _select_card(card_data: Dictionary) -> void:
 	if state_store != null:
 		state_store.select_card(entity_id, card_data)
 
+	_layout_cards()
 	_update_card_enabled_states()
 
 
@@ -356,7 +372,9 @@ func _on_confirm_pressed() -> void:
 
 	state_store.set_value(&"selected_cards", {})
 	_selected_card_index = -1
+	_layout_cards()
 	_update_card_enabled_states()
+	_update_selection_slot_state()
 
 
 func _ensure_card_pools_for_entities(entities: Dictionary, _previous_entities: Variant) -> void:
@@ -385,6 +403,7 @@ func _create_random_card_pool() -> Array[Dictionary]:
 
 
 func _refresh_cards_for_current_entity() -> void:
+	_clear_card_drag()
 	_active_cards = _get_current_entity_cards()
 	_update_selected_card_index()
 	_rebuild_cards()
@@ -418,6 +437,201 @@ func _update_selected_card_index() -> void:
 		if _active_cards[index] == selected_card:
 			_selected_card_index = index
 			return
+
+
+func _input(event: InputEvent) -> void:
+	if _dragging_card == null:
+		return
+
+	if event is InputEventMouseMotion:
+		_update_dragged_card_position()
+		_update_selection_slot_state()
+	elif event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
+			_finish_card_drag(_is_mouse_over_selection_slot())
+
+
+func _create_selection_slot() -> void:
+	_selection_slot = PanelContainer.new()
+	_selection_slot.custom_minimum_size = SELECTION_SLOT_SIZE
+	_selection_slot.size = SELECTION_SLOT_SIZE
+	_selection_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_selection_slot)
+
+	var content := CenterContainer.new()
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selection_slot.add_child(content)
+
+	var label := Label.new()
+	label.text = "Drop"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 16)
+	content.add_child(label)
+
+	_layout_selection_slot()
+	_update_selection_slot_state()
+
+
+func _layout_selection_slot() -> void:
+	if _selection_slot == null:
+		return
+
+	_selection_slot.size = SELECTION_SLOT_SIZE
+	_selection_slot.position = get_viewport_rect().size / 2.0 + SELECTION_SLOT_CENTER_OFFSET - SELECTION_SLOT_SIZE / 2.0
+
+
+func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
+	if card == null:
+		return
+
+	if _card_tweens.has(card):
+		var active_tween: Tween = _card_tweens[card]
+		if active_tween:
+			active_tween.kill()
+
+	_dragging_card_index = index
+	_dragging_card = card
+	_dragging_card_data = card_data
+	_drag_offset = _get_card_stack_mouse_position() - card.position
+	card.rotation_degrees = 0.0
+	card.scale = CARD_HOVER_SCALE
+	card.z_index = 300 + index
+	_update_dragged_card_position()
+	_update_selection_slot_state()
+
+
+func _update_dragged_card_position() -> void:
+	if _dragging_card == null:
+		return
+
+	_dragging_card.position = _get_card_stack_mouse_position() - _drag_offset
+
+
+func _finish_card_drag(dropped_on_slot: bool) -> void:
+	var card := _dragging_card
+	var card_index := _dragging_card_index
+	var card_data := _dragging_card_data.duplicate(true)
+	_clear_card_drag()
+
+	if dropped_on_slot:
+		_select_card(card_data)
+	elif card != null and card_index >= 0:
+		if card_index == _selected_card_index:
+			_move_card_to_selection_slot(card, card_index, true)
+		else:
+			_move_card_to_layout_position(card, card_index, true)
+
+	_update_selection_slot_state()
+
+
+func _clear_card_drag() -> void:
+	_dragging_card_index = -1
+	_dragging_card = null
+	_dragging_card_data = {}
+	_drag_offset = Vector2.ZERO
+
+
+func _move_card_to_layout_position(card: Control, index: int, animated: bool) -> void:
+	if card == null:
+		return
+
+	if _card_tweens.has(card):
+		var active_tween: Tween = _card_tweens[card]
+		if active_tween:
+			active_tween.kill()
+
+	var card_count := _card_nodes.size()
+	var centered_index := _get_card_centered_index(index, card_count)
+	var target_position := _get_card_base_position(index, card_count)
+	var target_rotation := centered_index * 4.0
+	var target_z_index := index
+
+	card.pivot_offset = CARD_SIZE / 2.0
+	if animated:
+		card.z_index = target_z_index
+		var tween := create_tween()
+		_card_tweens[card] = tween
+		tween.set_parallel(true)
+		tween.set_trans(Tween.TRANS_QUAD)
+		tween.set_ease(Tween.EASE_OUT)
+		tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
+		tween.tween_property(card, "rotation_degrees", target_rotation, CARD_HOVER_SECONDS)
+		tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
+		tween.finished.connect(_on_card_hover_tween_finished.bind(card, tween, target_z_index))
+	else:
+		card.position = target_position
+		card.rotation_degrees = target_rotation
+		card.scale = Vector2.ONE
+		card.z_index = target_z_index
+
+
+func _move_card_to_selection_slot(card: Control, index: int, animated: bool) -> void:
+	if card == null:
+		return
+
+	if _card_tweens.has(card):
+		var active_tween: Tween = _card_tweens[card]
+		if active_tween:
+			active_tween.kill()
+
+	var target_position := _get_selection_slot_card_position()
+	var target_z_index := 150 + index
+	card.pivot_offset = CARD_SIZE / 2.0
+	if animated:
+		card.z_index = target_z_index
+		var tween := create_tween()
+		_card_tweens[card] = tween
+		tween.set_parallel(true)
+		tween.set_trans(Tween.TRANS_QUAD)
+		tween.set_ease(Tween.EASE_OUT)
+		tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
+		tween.tween_property(card, "rotation_degrees", 0.0, CARD_HOVER_SECONDS)
+		tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
+		tween.finished.connect(_on_card_hover_tween_finished.bind(card, tween, target_z_index))
+	else:
+		card.position = target_position
+		card.rotation_degrees = 0.0
+		card.scale = Vector2.ONE
+		card.z_index = target_z_index
+
+
+func _get_card_stack_mouse_position() -> Vector2:
+	return card_stack.get_global_transform_with_canvas().affine_inverse() * get_global_mouse_position()
+
+
+func _get_selection_slot_card_position() -> Vector2:
+	if _selection_slot == null:
+		return Vector2.ZERO
+
+	var slot_center := _selection_slot.get_global_rect().get_center()
+	var local_center := card_stack.get_global_transform_with_canvas().affine_inverse() * slot_center
+	return local_center - CARD_SIZE / 2.0
+
+
+func _is_mouse_over_selection_slot() -> bool:
+	return _selection_slot != null and _selection_slot.get_global_rect().has_point(get_global_mouse_position())
+
+
+func _update_selection_slot_state() -> void:
+	if _selection_slot == null:
+		return
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.14, 0.16, 0.38)
+	style.border_color = Color(0.72, 0.76, 0.72, 0.9)
+	if _dragging_card != null and _is_mouse_over_selection_slot():
+		style.bg_color = Color(0.18, 0.26, 0.20, 0.62)
+		style.border_color = Color(0.62, 0.95, 0.58, 1.0)
+	elif _selected_card_index >= 0:
+		style.bg_color = Color(0.22, 0.20, 0.10, 0.50)
+		style.border_color = Color(1.0, 0.92, 0.32, 1.0)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(8)
+	_selection_slot.add_theme_stylebox_override("panel", style)
+
 
 
 func _enqueue_card_action(card_data: Dictionary) -> void:
@@ -669,6 +883,12 @@ func _layout_cards() -> void:
 
 	for index in card_count:
 		var card := card_stack.get_child(index) as Control
+		if index == _dragging_card_index:
+			continue
+		if index == _selected_card_index:
+			_move_card_to_selection_slot(card, index, false)
+			continue
+
 		var centered_index := _get_card_centered_index(index, card_count)
 		card.size = CARD_SIZE
 		card.pivot_offset = CARD_SIZE / 2.0
