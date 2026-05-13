@@ -794,8 +794,8 @@ func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> 
 	card.z_index = 140
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.18, 0.20, 0.22, 0.94)
-	style.border_color = Color(1.0, 0.92, 0.32, 1.0)
+	style.bg_color = Color(0.12, 0.16, 0.24, 0.96)
+	style.border_color = Color(0.70, 0.78, 0.90, 1.0)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(8)
 	style.content_margin_left = 10.0
@@ -814,19 +814,20 @@ func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> 
 	entity_label.add_theme_font_size_override("font_size", 10)
 	content.add_child(entity_label)
 
-	var title := Label.new()
-	title.text = str(card_data.get("title", "Card"))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 14)
-	content.add_child(title)
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(spacer)
 
-	var body := Label.new()
-	body.text = str(card_data.get("body", ""))
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_font_size_override("font_size", 11)
-	content.add_child(body)
+	var back_label := Label.new()
+	back_label.text = "CARD\nBACK"
+	back_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	back_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	back_label.add_theme_font_size_override("font_size", 16)
+	content.add_child(back_label)
+
+	var bottom_spacer := Control.new()
+	bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(bottom_spacer)
 
 	return card
 
