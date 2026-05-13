@@ -15,6 +15,7 @@ const STRONG_BUMP_VECTOR_LENGTH := 3
 const THROW_PROJECTILE_DAMAGE_MIN := 1
 const THROW_PROJECTILE_DAMAGE_MAX := 9
 const THROW_PROJECTILE_RESOURCE_COST := 0
+const ENTITY_CARD_POOL_SIZE := 5
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -36,6 +37,7 @@ const CARD_COLORS := [
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
+var _active_cards: Array[Dictionary] = []
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
@@ -95,23 +97,32 @@ func _ready() -> void:
 		state_store.entities_updated.connect(_on_entities_updated)
 		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 		state_store.selected_card_changed.connect(_on_selected_card_changed)
+		state_store.entity_card_pools_changed.connect(_on_entity_card_pools_changed)
 	if confirm_button != null:
 		confirm_button.pressed.connect(_on_confirm_pressed)
-	_rebuild_cards()
+	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
+	_refresh_cards_for_current_entity()
 
 
 func set_cards(cards: Array[Dictionary]) -> void:
 	_cards = cards.duplicate(true)
-	_rebuild_cards()
+	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
+	_refresh_cards_for_current_entity()
 
 
 func _rebuild_cards() -> void:
 	_card_nodes.clear()
+	for tween: Tween in _card_tweens.values():
+		if tween:
+			tween.kill()
+	_card_tweens.clear()
+
 	for child: Node in card_stack.get_children():
+		card_stack.remove_child(child)
 		child.queue_free()
 
-	for index in _cards.size():
-		var card := _create_card(_cards[index], index)
+	for index in _active_cards.size():
+		var card := _create_card(_active_cards[index], index)
 		card_stack.add_child(card)
 		_card_nodes.append(card)
 
@@ -227,16 +238,24 @@ func _on_card_hover_tween_finished(card: Control, tween: Tween, target_z_index: 
 
 
 func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
+	_ensure_card_pools_for_entities(_entities, _previous)
+	_refresh_cards_for_current_entity()
 	_update_card_enabled_states()
 
 
 func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName) -> void:
-	_selected_card_index = -1
+	_refresh_cards_for_current_entity()
 	_update_card_enabled_states()
 
 
-func _on_selected_card_changed(_entity_id: StringName, _card_data: Dictionary) -> void:
+func _on_selected_card_changed(entity_id: StringName, _card_data: Dictionary) -> void:
+	if entity_id == _get_player_entity_id():
+		_update_selected_card_index()
 	_update_card_enabled_states()
+
+
+func _on_entity_card_pools_changed(_entity_card_pools: Dictionary, _previous: Variant) -> void:
+	_refresh_cards_for_current_entity()
 
 
 func _get_player_focus() -> int:
@@ -266,7 +285,7 @@ func _update_card_enabled_states() -> void:
 		var card := _card_nodes[i]
 		if card == null:
 			continue
-		var args: Dictionary = _cards[i].get("args", {})
+		var args: Dictionary = _active_cards[i].get("args", {})
 		var cost := int(args.get("resource", 0))
 		var is_selected := i == _selected_card_index
 		var is_affordable := focus >= cost
@@ -298,7 +317,7 @@ func _select_card(card_data: Dictionary) -> void:
 	if entity_id == &"":
 		return
 
-	var index := _cards.find(card_data)
+	var index := _active_cards.find(card_data)
 	_selected_card_index = index
 
 	if state_store != null:
@@ -338,6 +357,67 @@ func _on_confirm_pressed() -> void:
 	state_store.set_value(&"selected_cards", {})
 	_selected_card_index = -1
 	_update_card_enabled_states()
+
+
+func _ensure_card_pools_for_entities(entities: Dictionary, _previous_entities: Variant) -> void:
+	if state_store == null:
+		return
+
+	for raw_entity_id: Variant in entities:
+		var entity_id := StringName(str(raw_entity_id))
+		if entity_id == &"" or state_store.has_entity_card_pool(entity_id):
+			continue
+
+		state_store.set_entity_card_pool(entity_id, _create_random_card_pool())
+
+
+func _create_random_card_pool() -> Array[Dictionary]:
+	var card_pool: Array[Dictionary] = []
+	var available_cards := _cards.duplicate(true)
+	available_cards.shuffle()
+
+	var count := mini(ENTITY_CARD_POOL_SIZE, available_cards.size())
+	for index in count:
+		var card: Dictionary = available_cards[index]
+		card_pool.append(card.duplicate(true))
+
+	return card_pool
+
+
+func _refresh_cards_for_current_entity() -> void:
+	_active_cards = _get_current_entity_cards()
+	_update_selected_card_index()
+	_rebuild_cards()
+
+
+func _get_current_entity_cards() -> Array[Dictionary]:
+	if state_store == null:
+		return _cards.duplicate(true)
+
+	var entity_id := _get_player_entity_id()
+	if entity_id == &"":
+		return []
+
+	return state_store.get_entity_card_pool(entity_id)
+
+
+func _update_selected_card_index() -> void:
+	_selected_card_index = -1
+	if state_store == null:
+		return
+
+	var entity_id := _get_player_entity_id()
+	if entity_id == &"":
+		return
+
+	var selected_card: Dictionary = state_store.get_selected_card(entity_id)
+	if selected_card.is_empty():
+		return
+
+	for index in _active_cards.size():
+		if _active_cards[index] == selected_card:
+			_selected_card_index = index
+			return
 
 
 func _enqueue_card_action(card_data: Dictionary) -> void:
