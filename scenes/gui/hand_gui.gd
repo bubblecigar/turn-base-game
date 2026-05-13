@@ -300,10 +300,16 @@ func _create_action_from_factory(action_factory: String, entity_id: StringName) 
 				STRONG_BUMP_FOCUS_COST
 			)
 		"throw_projectile":
+			var source_cell := _get_entity_board_cell(entity_id)
+			var target_cell := _get_first_other_board_cell(entity_id)
+			var actual_length := 2
+			if source_cell != Vector2i(-1, -1) and target_cell != Vector2i(-1, -1):
+				var delta := target_cell - source_cell
+				actual_length = clampi(maxi(absi(delta.x), absi(delta.y)), 2, 5)
 			return _create_attack_action(
 				entity_id,
 				"throw_projectile",
-				_get_vector_to_target(entity_id, 1),
+				_get_vector_to_target(entity_id, actual_length),
 				randi_range(THROW_PROJECTILE_DAMAGE_MIN, THROW_PROJECTILE_DAMAGE_MAX),
 				THROW_PROJECTILE_RESOURCE_COST
 			)
