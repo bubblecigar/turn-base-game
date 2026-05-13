@@ -122,6 +122,7 @@ func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int 
 	}
 	_set_entity(next_entity)
 	_place_entity_on_board(next_entity, i, j)
+	select_entity(next_entity[&"id"])
 	character_initialized.emit(next_entity, previous_character)
 
 
@@ -338,6 +339,7 @@ func _get_default_state() -> Dictionary:
 	return {
 		&"board": {},
 		&"entities": {},
+		&"selected_entity_id": &"",
 		&"selected_cards": {},
 		&"entity_card_pools": {},
 	}
