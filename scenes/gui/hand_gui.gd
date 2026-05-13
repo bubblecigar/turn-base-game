@@ -55,46 +55,20 @@ var _cards: Array[Dictionary] = [
 	{
 		"title": "Focus",
 		"body": "Gain focus",
-		"action": {
-			"eventName": "perform_cast",
-			"payload": {
-				"args": {
-					"type": "focus",
-					"value": 1,
-					"source": "hand_gui",
-				},
-			},
-		},
+		"action_factory": "focus",
+		"args": { "value": 1 },
 	},
 	{
 		"title": "Heal",
 		"body": "Restore HP",
-		"action": {
-			"eventName": "perform_cast",
-			"payload": {
-				"args": {
-					"type": "heal",
-					"resource": 1,
-					"value": 3,
-					"source": "hand_gui",
-				},
-			},
-		},
+		"action_factory": "heal",
+		"args": { "resource": 1, "value": 3 },
 	},
 	{
 		"title": "Thunder",
 		"body": "Hit target",
-		"action": {
-			"eventName": "perform_cast",
-			"payload": {
-				"args": {
-					"type": "summon_thunder",
-					"resource": 3,
-					"value": 5,
-					"source": "hand_gui",
-				},
-			},
-		},
+		"action_factory": "summon_thunder",
+		"args": { "resource": 3, "value": 5 },
 	},
 ]
 
@@ -275,14 +249,8 @@ func _create_card_action(card_data: Dictionary, entity_id: StringName) -> Dictio
 	if action_factory != "":
 		return _create_action_from_factory(action_factory, entity_id, card_data.get("args", {}))
 
-	var action: Dictionary = card_data.get("action", {}).duplicate(true)
-	if action.is_empty():
-		return {}
-
-	var payload: Dictionary = action.get("payload", {})
-	payload["id"] = entity_id
-	action["payload"] = payload
-	return action
+	push_warning("Card has no action_factory: %s." % card_data)
+	return {}
 
 
 func _create_action_from_factory(action_factory: String, entity_id: StringName, args: Dictionary = {}) -> Dictionary:
@@ -316,9 +284,33 @@ func _create_action_from_factory(action_factory: String, entity_id: StringName, 
 				randi_range(int(args.get("damage_min", THROW_PROJECTILE_DAMAGE_MIN)), int(args.get("damage_max", THROW_PROJECTILE_DAMAGE_MAX))),
 				int(args.get("resource", THROW_PROJECTILE_RESOURCE_COST))
 			)
+		"focus":
+			return _create_cast_action(entity_id, "focus", args)
+		"heal":
+			return _create_cast_action(entity_id, "heal", args)
+		"summon_thunder":
+			return _create_cast_action(entity_id, "summon_thunder", args)
 		_:
 			push_warning("Unsupported card action factory: %s." % action_factory)
 			return {}
+
+
+func _create_cast_action(entity_id: StringName, cast_type: String, args: Dictionary) -> Dictionary:
+	var cast_args := {
+		"type": cast_type,
+		"source": "hand_gui",
+	}
+	if args.has("value"):
+		cast_args["value"] = int(args["value"])
+	if args.has("resource"):
+		cast_args["resource"] = int(args["resource"])
+	return {
+		"eventName": "perform_cast",
+		"payload": {
+			"id": entity_id,
+			"args": cast_args,
+		},
+	}
 
 
 func _create_attack_action(entity_id: StringName, attack_type: String, vector: Vector2i, damage: int, resource: Variant = null) -> Dictionary:
