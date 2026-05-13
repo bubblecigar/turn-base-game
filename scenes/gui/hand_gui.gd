@@ -33,6 +33,8 @@ const CARD_COLORS := [
 
 @onready var card_stack: Control = $CardStack
 @onready var confirm_button: Button = $ConfirmButton
+@onready var selection_slots_root: Control = $SelectionSlots
+@onready var selection_slot_template: PanelContainer = $SelectionSlots/DropZoneTemplate
 @onready var action_queue: Node = get_node_or_null(action_queue_path)
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
@@ -101,6 +103,8 @@ var _cards: Array[Dictionary] = [
 
 func _ready() -> void:
 	randomize()
+	if selection_slot_template != null:
+		selection_slot_template.visible = false
 	_sync_selection_slots()
 	resized.connect(_layout_selection_slots)
 	resized.connect(_layout_cards)
@@ -497,24 +501,14 @@ func _sync_selection_slots() -> void:
 
 
 func _create_selection_slot(entity_id: StringName) -> PanelContainer:
-	var slot := PanelContainer.new()
+	var slot := selection_slot_template.duplicate() as PanelContainer if selection_slot_template != null else PanelContainer.new()
+	slot.name = "DropZone_%s" % entity_id
 	slot.custom_minimum_size = SELECTION_SLOT_SIZE
 	slot.size = SELECTION_SLOT_SIZE
+	slot.visible = true
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(slot)
-
-	var content := CenterContainer.new()
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.add_child(content)
-
-	var label := Label.new()
-	label.name = SELECTION_SLOT_LABEL_NAME
-	label.text = str(entity_id)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 16)
-	content.add_child(label)
+	selection_slots_root.add_child(slot)
+	_update_selection_slot_label(slot, entity_id, false)
 
 	return slot
 
@@ -703,21 +697,13 @@ func _update_selection_slot_state() -> void:
 		if slot == null:
 			continue
 
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.12, 0.14, 0.16, 0.38)
-		style.border_color = Color(0.72, 0.76, 0.72, 0.9)
+		slot.modulate = Color.WHITE
 		if hovered_entity_id == entity_id:
-			style.bg_color = Color(0.18, 0.26, 0.20, 0.62)
-			style.border_color = Color(0.62, 0.95, 0.58, 1.0)
+			slot.modulate = Color(0.72, 1.0, 0.72, 1.0)
 		elif _dragging_card != null and entity_id != _get_player_entity_id():
-			style.bg_color = Color(0.10, 0.10, 0.10, 0.24)
-			style.border_color = Color(0.42, 0.42, 0.42, 0.65)
+			slot.modulate = Color(0.50, 0.50, 0.50, 0.65)
 		elif selected_cards.has(entity_id):
-			style.bg_color = Color(0.22, 0.20, 0.10, 0.50)
-			style.border_color = Color(1.0, 0.92, 0.32, 1.0)
-		style.set_border_width_all(2)
-		style.set_corner_radius_all(8)
-		slot.add_theme_stylebox_override("panel", style)
+			slot.modulate = Color(1.0, 0.94, 0.54, 1.0)
 		_update_selection_slot_label(slot, entity_id, selected_cards.has(entity_id))
 
 
