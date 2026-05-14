@@ -8,8 +8,8 @@ func _ready() -> void:
 	action_handler.processing_status_changed.connect(_on_processing_status_changed)
 
 
-func _on_processing_status_changed(is_processing: bool, event: Dictionary) -> void:
-	if is_processing:
+func _on_processing_status_changed(processing: bool, event: Dictionary) -> void:
+	if processing:
 		text = "Processing: %s" % event.get("eventName", "unknown")
 	else:
 		text = "Idle"

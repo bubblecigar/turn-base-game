@@ -26,8 +26,8 @@ func _on_queue_drained() -> void:
 	_push_log("Queue drained")
 
 
-func _on_processing_status_changed(is_processing: bool, event: Dictionary) -> void:
-	if is_processing:
+func _on_processing_status_changed(processing: bool, event: Dictionary) -> void:
+	if processing:
 		_push_log("Processing: %s" % event.get("eventName", "unknown"))
 
 

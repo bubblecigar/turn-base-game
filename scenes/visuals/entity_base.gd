@@ -589,7 +589,6 @@ func _show_damage_number(damage: Variant) -> void:
 
 	if _damage_label == null:
 		_damage_label = Label.new()
-		_damage_label.layout_mode = 0
 		_damage_label.add_theme_font_size_override("font_size", DAMAGE_LABEL_FONT_SIZE)
 		_damage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_damage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -619,7 +618,6 @@ func _show_focus_change_number(focus_delta: int) -> void:
 
 	if _focus_change_label == null:
 		_focus_change_label = Label.new()
-		_focus_change_label.layout_mode = 0
 		_focus_change_label.add_theme_font_size_override("font_size", FOCUS_CHANGE_LABEL_FONT_SIZE)
 		_focus_change_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_focus_change_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -649,7 +647,6 @@ func _show_cast_type_text(cast_type: String) -> void:
 
 	if _cast_type_label == null:
 		_cast_type_label = Label.new()
-		_cast_type_label.layout_mode = 0
 		_cast_type_label.add_theme_font_size_override("font_size", CAST_TYPE_LABEL_FONT_SIZE)
 		_cast_type_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_cast_type_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -676,7 +673,6 @@ func _show_cast_result_text(result: bool, pending_animation_id: StringName = &""
 
 	if _cast_result_label == null:
 		_cast_result_label = Label.new()
-		_cast_result_label.layout_mode = 0
 		_cast_result_label.add_theme_font_size_override("font_size", CAST_RESULT_LABEL_FONT_SIZE)
 		_cast_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_cast_result_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1073,7 +1069,6 @@ func _create_id_label() -> void:
 		_id_label.name = "IdLabel"
 		add_child(_id_label)
 
-	_id_label.layout_mode = 0
 	_id_label.add_theme_font_size_override("font_size", ID_LABEL_FONT_SIZE)
 	_id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_id_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1099,7 +1094,6 @@ func _create_hp_bar() -> void:
 		_hp_label = Label.new()
 		_hp_label.name = "HpLabel"
 		add_child(_hp_label)
-	_hp_label.layout_mode = 0
 	_hp_label.add_theme_font_size_override("font_size", HP_TEXT_FONT_SIZE)
 	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1123,7 +1117,6 @@ func _create_hp_bar() -> void:
 		_focus_label = Label.new()
 		_focus_label.name = "FocusLabel"
 		add_child(_focus_label)
-	_focus_label.layout_mode = 0
 	_focus_label.add_theme_font_size_override("font_size", FOCUS_TEXT_FONT_SIZE)
 	_focus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_focus_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
