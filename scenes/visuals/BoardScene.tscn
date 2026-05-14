@@ -3,10 +3,8 @@
 [ext_resource type="Script" uid="uid://d1xmlramflkvx" path="res://scenes/visuals/board_view.gd" id="1_5chx2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cell"]
-bg_color = Color(0.92, 0.94, 0.96, 1)
+bg_color = Color(0.362802, 0.6341839, 0.8224529, 0.3647059)
 border_width_left = 2
-border_width_top = 2
-border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.2, 0.2, 0.2, 1)
 
