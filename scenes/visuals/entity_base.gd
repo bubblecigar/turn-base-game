@@ -1212,20 +1212,19 @@ func _get_attack_target_cell_center(args: Dictionary) -> Vector2:
 		return Vector2.INF
 
 	var target_cell: Variant = args.get("target_cell", {})
+	var board: Dictionary = state_store.get_value(&"board", {})
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
+
 	if target_cell is Dictionary and target_cell.has("i") and target_cell.has("j"):
 		var i := int(target_cell["i"])
 		var j := int(target_cell["j"])
 		var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
-		var board: Dictionary = state_store.get_value(&"board", {})
-		var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 		return bottom_position - Vector2(0.0, cell_size.y / 2.0)
 
 	var vector: Vector2i = args.get("vector", Vector2i.ZERO)
 	if vector == Vector2i.ZERO:
 		return Vector2.INF
 
-	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) - Vector2(0.0, cell_size.y / 2.0)
 
 
