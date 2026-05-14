@@ -137,7 +137,6 @@ func move_entity_to(entity_id: StringName, i: int, j: int) -> void:
 		push_warning("Cannot move missing entity: %s." % entity_id)
 		return
 
-	var previous_board: Dictionary = _state.get(&"board", {})
 	var previous_position: Variant = _get_entity_position(entity)
 	var next_board := _move_entity_on_board(entity, i, j)
 	if next_board.is_empty():

@@ -20,6 +20,6 @@ func _fit_to_viewport() -> void:
 	position = (viewport_size - BASE_SIZE * fit_scale) / 2.0
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+# Called every frame. '_delta' is the elapsed time since the previous frame.
+func _process(_delta: float) -> void:
 	pass
