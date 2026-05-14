@@ -737,7 +737,7 @@ func _remove_slot_card_preview(entity_id: StringName) -> void:
 		preview.queue_free()
 
 
-func _create_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> Panel:
+func _create_slot_card_preview(entity_id: StringName, _card_data: Dictionary) -> Panel:
 	var card := card_back_template.duplicate() as Panel if card_back_template != null else Panel.new()
 	card.name = "CardBack_%s" % entity_id
 	_apply_fixed_card_size(card)
@@ -1016,9 +1016,6 @@ func _layout_cards() -> void:
 	if card_count == 0:
 		return
 
-	var step := CARD_SIZE.x - CARD_OVERLAP_PIXELS
-	var stack_width := CARD_SIZE.x + step * float(card_count - 1)
-	var stack_height := CARD_SIZE.y + CARD_RAISE_PIXELS
 	card_stack.size = Vector2.ZERO
 
 	for index in card_count:
