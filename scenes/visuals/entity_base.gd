@@ -71,6 +71,7 @@ const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
 const PROJECTILE_ROCK_BOTTOM_OFFSET := 11.0
 const SELECTION_RING_COLOR := Color(1.0, 0.9, 0.2, 1.0)
 const SELECTION_RING_THICKNESS := 2.0
+const HIT_PARTICLE_EFFECT_SCENE := preload("res://scenes/visuals/HitParticleEffect.tscn")
 
 var _entity_id := &""
 var _entity: Dictionary = {}
@@ -194,6 +195,8 @@ func play_hit_visual(attacker_id: StringName, args: Dictionary = {}) -> void:
 	if hit_direction == Vector2.ZERO or hit_direction == Vector2.INF:
 		hit_direction = Vector2.RIGHT
 
+	_spawn_hit_particle_effect(hit_direction)
+
 	var shake_offset := hit_direction.normalized() * HIT_SHAKE_PIXELS
 	var should_shake_position := not _is_position_animation_active()
 	var animation_id: StringName = animation_tracker.register_animation(HIT_ANIMATION_NAME)
@@ -210,6 +213,22 @@ func play_hit_visual(attacker_id: StringName, args: Dictionary = {}) -> void:
 
 func get_visual_size() -> Vector2:
 	return Vector2.ZERO
+
+
+func _spawn_hit_particle_effect(hit_direction: Vector2) -> void:
+	if get_parent() == null:
+		return
+
+	var effect := HIT_PARTICLE_EFFECT_SCENE.instantiate() as Node2D
+	if effect == null:
+		return
+
+	var visual_size := get_visual_size()
+	effect.position = position + visual_size / 2.0
+	if effect.has_method("set_hit_direction"):
+		effect.call("set_hit_direction", hit_direction.normalized())
+
+	get_parent().add_child(effect)
 
 
 func _on_entity_updated(_entity_state: Dictionary) -> void:
