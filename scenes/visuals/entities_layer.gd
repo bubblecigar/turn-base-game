@@ -116,7 +116,7 @@ func _play_thunder_strike_visual(args: Dictionary) -> void:
 		return
 
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	var strike_height := cell_size.y * 1.8
 	var half_width := cell_size.x * 0.28
 	var root := Node2D.new()

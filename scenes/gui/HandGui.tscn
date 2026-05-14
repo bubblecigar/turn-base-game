@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c0p0u578w30f"]
 
 [ext_resource type="Script" uid="uid://kxmemaoxaa83" path="res://scenes/gui/hand_gui.gd" id="1_hand"]
+[ext_resource type="Theme" uid="uid://dibalgjjuawli" path="res://scenes/gui/themes.tres" id="2_5lbe4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drop_zone"]
 bg_color = Color(0.12, 0.14, 0.16, 0.38)
@@ -13,6 +14,8 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="Theme" id="Theme_5lbe4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_face"]
 bg_color = Color(0.2, 0.28, 0.34, 1)
@@ -38,6 +41,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="Theme" id="Theme_l40gi"]
+
 [node name="HandGui" type="Control" unique_id=1799552942]
 layout_mode = 3
 anchors_preset = 15
@@ -46,6 +51,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("2_5lbe4")
 script = ExtResource("1_hand")
 action_queue_path = NodePath("../ActionQueue")
 state_store_path = NodePath("../StateStore")
@@ -55,26 +61,40 @@ game_loop_path = NodePath("../GameLoop")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 206.0
+offset_left = -1.0
+offset_top = -35.0
+offset_right = -1.0
+offset_bottom = 171.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="DropZoneTemplate" type="PanelContainer" parent="SelectionSlots" unique_id=623771212]
-custom_minimum_size = Vector2(150, 190)
-layout_mode = 0
-offset_left = -160.0
+[node name="DropZoneRow" type="HBoxContainer" parent="SelectionSlots" unique_id=376443293]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -157.0
 offset_top = 11.0
-offset_right = -10.0
+offset_right = 157.0
 offset_bottom = 201.0
+grow_horizontal = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="DropZoneTemplate" type="PanelContainer" parent="SelectionSlots/DropZoneRow" unique_id=623771212]
+custom_minimum_size = Vector2(150, 190)
+layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_drop_zone")
 
-[node name="Center" type="CenterContainer" parent="SelectionSlots/DropZoneTemplate" unique_id=1024074916]
+[node name="Center" type="CenterContainer" parent="SelectionSlots/DropZoneRow/DropZoneTemplate" unique_id=1024074916]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="SlotLabel" type="Label" parent="SelectionSlots/DropZoneTemplate/Center" unique_id=1092415632]
+[node name="SlotLabel" type="Label" parent="SelectionSlots/DropZoneRow/DropZoneTemplate/Center" unique_id=1092415632]
 layout_mode = 2
+theme = SubResource("Theme_5lbe4")
+theme_type_variation = &"HeaderSmall"
 text = "Drop Zone
 Drop"
 horizontal_alignment = 1
@@ -125,6 +145,7 @@ horizontal_alignment = 2
 [node name="BodyLabel" type="Label" parent="CardTemplates/CardFaceTemplate/Content" unique_id=1791336229]
 layout_mode = 2
 size_flags_vertical = 3
+theme = ExtResource("2_5lbe4")
 text = "Description"
 autowrap_mode = 3
 
@@ -135,6 +156,7 @@ offset_left = 132.0
 offset_right = 248.0
 offset_bottom = 158.0
 mouse_filter = 2
+theme = ExtResource("2_5lbe4")
 theme_override_styles/panel = SubResource("StyleBoxFlat_card_back")
 
 [node name="Content" type="VBoxContainer" parent="CardTemplates/CardBackTemplate" unique_id=224607315]
@@ -160,6 +182,7 @@ size_flags_vertical = 3
 
 [node name="BackLabel" type="Label" parent="CardTemplates/CardBackTemplate/Content" unique_id=680028569]
 layout_mode = 2
+theme = SubResource("Theme_l40gi")
 text = "CARD
 BACK"
 horizontal_alignment = 1
@@ -169,12 +192,22 @@ vertical_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardStack" type="Control" parent="." unique_id=1469212597]
+[node name="CardStackAnchor" type="Control" parent="." unique_id=513299551]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="CardStack" type="Control" parent="CardStackAnchor" unique_id=1469212597]
+layout_mode = 1
 anchors_preset = 0
-offset_left = 491.0
-offset_top = 477.0
-offset_right = 491.0
-offset_bottom = 477.0
 mouse_filter = 2
 
 [node name="ConfirmButton" type="Button" parent="." unique_id=487215205]
@@ -184,10 +217,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 392.0
-offset_top = 337.0
-offset_right = 512.0
-offset_bottom = 369.0
+offset_left = -56.0
+offset_top = -151.0
+offset_right = 64.0
+offset_bottom = -115.0
 grow_horizontal = 2
 grow_vertical = 0
 disabled = true

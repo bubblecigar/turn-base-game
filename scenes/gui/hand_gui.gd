@@ -16,8 +16,6 @@ const THROW_PROJECTILE_DAMAGE_MAX := 9
 const THROW_PROJECTILE_RESOURCE_COST := 0
 const ENTITY_CARD_POOL_SIZE := 5
 const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
-const SELECTION_SLOT_TOP_MARGIN := 16.0
-const SELECTION_SLOT_GAP := 14.0
 const SELECTION_SLOT_LABEL_NAME := "SlotLabel"
 const CARD_TITLE_LABEL_NAME := "TitleLabel"
 const CARD_COST_LABEL_NAME := "CostLabel"
@@ -35,10 +33,10 @@ const CARD_COLORS := [
 @export var state_store_path: NodePath
 @export var game_loop_path: NodePath
 
-@onready var card_stack: Control = $CardStack
+@onready var card_stack: Control = $CardStackAnchor/CardStack
 @onready var confirm_button: Button = $ConfirmButton
-@onready var selection_slots_root: Control = $SelectionSlots
-@onready var selection_slot_template: PanelContainer = $SelectionSlots/DropZoneTemplate
+@onready var selection_slot_row: HBoxContainer = $SelectionSlots/DropZoneRow
+@onready var selection_slot_template: PanelContainer = $SelectionSlots/DropZoneRow/DropZoneTemplate
 @onready var card_templates_root: Control = $CardTemplates
 @onready var card_face_template: Panel = $CardTemplates/CardFaceTemplate
 @onready var card_back_template: Panel = $CardTemplates/CardBackTemplate
@@ -115,7 +113,7 @@ func _ready() -> void:
 	if card_templates_root != null:
 		card_templates_root.visible = false
 	_sync_selection_slots()
-	resized.connect(_layout_selection_slots)
+	resized.connect(_update_slot_card_preview_positions)
 	resized.connect(_layout_cards)
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
@@ -478,7 +476,7 @@ func _sync_selection_slots() -> void:
 			slot.queue_free()
 		_remove_slot_card_preview(entity_id)
 
-	_layout_selection_slots()
+	_update_slot_card_preview_positions()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
 
@@ -490,30 +488,13 @@ func _create_selection_slot(entity_id: StringName) -> PanelContainer:
 	slot.size = SELECTION_SLOT_SIZE
 	slot.visible = true
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	selection_slots_root.add_child(slot)
+	selection_slot_row.add_child(slot)
 	_update_selection_slot_label(slot, entity_id, false)
 
 	return slot
 
 
 func _layout_selection_slots() -> void:
-	if _selection_slots.is_empty():
-		return
-
-	var entity_ids := _get_selection_slot_entity_ids()
-	var total_width: float = SELECTION_SLOT_SIZE.x * entity_ids.size() + SELECTION_SLOT_GAP * max(entity_ids.size() - 1, 0)
-	var viewport_size := get_viewport_rect().size
-	var start_position := Vector2(
-		(viewport_size.x - total_width) / 2.0,
-		SELECTION_SLOT_TOP_MARGIN
-	)
-	for index in entity_ids.size():
-		var entity_id := entity_ids[index]
-		var slot := _selection_slots.get(entity_id, null) as PanelContainer
-		if slot == null:
-			continue
-		slot.size = SELECTION_SLOT_SIZE
-		slot.position = start_position + Vector2((SELECTION_SLOT_SIZE.x + SELECTION_SLOT_GAP) * index, 0.0)
 	_update_slot_card_preview_positions()
 
 

@@ -1,40 +1,28 @@
 extends Node2D
 
-const GRID_COLOR := Color(0.2, 0.2, 0.2)
-const FILL_COLOR := Color(0.92, 0.94, 0.96)
-const LINE_WIDTH := 2.0
-
 var _board: Dictionary = {}
+var _cell_nodes: Array[Node] = []
 
 @onready var state_store: Node = $"../../StateStore"
+@onready var cell_anchor: Node2D = $CellAnchor
+@onready var cell_template: Control = $CellAnchor/CellTemplate
 
 
 func _ready() -> void:
+	cell_template.visible = false
 	state_store.board_init.connect(_on_board_init)
 
 
 func _on_board_init(board: Dictionary, _previous_board: Variant) -> void:
-	_board = board
-	_center_on_viewport()
-	queue_redraw()
-
-
-func _center_on_viewport() -> void:
-	var cols := int(_board.get(&"cols", 0))
-	var rows := int(_board.get(&"rows", 0))
-	var cell_size: Vector2 = _board.get(&"cell_size", Vector2.ZERO)
-	if cols <= 0 or rows <= 0 or cell_size == Vector2.ZERO:
-		return
-
-	var board_size := Vector2(cols * cell_size.x, rows * cell_size.y)
-	var viewport_size := get_viewport_rect().size
-	position = ((viewport_size - board_size) / 2.0).floor()
+	_board = _with_template_cell_size(board)
+	state_store.set_value(&"board", _board)
+	_rebuild_cells()
 
 
 func index_to_position(i: int, j: int) -> Vector2:
 	var cell_size := _get_cell_size()
 
-	return Vector2(
+	return cell_anchor.position + Vector2(
 		(float(i) + 0.5) * cell_size.x,
 		(float(j) + 0.5) * cell_size.y
 	)
@@ -43,34 +31,50 @@ func index_to_position(i: int, j: int) -> Vector2:
 func index_to_bottom_position(i: int, j: int) -> Vector2:
 	var cell_size := _get_cell_size()
 
-	return Vector2(
+	return cell_anchor.position + Vector2(
 		(float(i) + 0.5) * cell_size.x,
 		(float(j) + 1.0) * cell_size.y
 	)
 
 
-func _draw() -> void:
-	if _board.is_empty():
-		return
+func _rebuild_cells() -> void:
+	for cell_node: Node in _cell_nodes:
+		cell_node.queue_free()
+	_cell_nodes.clear()
 
 	var cols := int(_board.get(&"cols", 0))
 	var rows := int(_board.get(&"rows", 0))
-
 	if cols <= 0 or rows <= 0:
 		return
 
 	var cell_size := _get_cell_size()
-	var board_size := Vector2(cols * cell_size.x, rows * cell_size.y)
-	draw_rect(Rect2(Vector2.ZERO, board_size), FILL_COLOR, true)
+	if cell_size == Vector2.ZERO:
+		return
 
-	for i in cols + 1:
-		var x := i * cell_size.x
-		draw_line(Vector2(x, 0.0), Vector2(x, board_size.y), GRID_COLOR, LINE_WIDTH)
-
-	for j in rows + 1:
-		var y := j * cell_size.y
-		draw_line(Vector2(0.0, y), Vector2(board_size.x, y), GRID_COLOR, LINE_WIDTH)
+	for i in cols:
+		for j in rows:
+			var cell := cell_template.duplicate() as Control
+			cell.name = "Cell_%d_%d" % [i, j]
+			cell.visible = true
+			cell.position = Vector2(i * cell_size.x, j * cell_size.y)
+			cell.custom_minimum_size = cell_size
+			cell.size = cell_size
+			cell_anchor.add_child(cell)
+			_cell_nodes.append(cell)
 
 
 func _get_cell_size() -> Vector2:
-	return _board.get(&"cell_size", Vector2.ZERO)
+	return _get_template_cell_size()
+
+
+func _get_template_cell_size() -> Vector2:
+	if cell_template.size != Vector2.ZERO:
+		return cell_template.size
+
+	return cell_template.custom_minimum_size
+
+
+func _with_template_cell_size(board: Dictionary) -> Dictionary:
+	var next_board := board.duplicate(true)
+	next_board[&"cell_size"] = _get_template_cell_size()
+	return next_board

@@ -297,7 +297,7 @@ func _play_attack_prepared_visual(args: Dictionary) -> void:
 
 	var board: Dictionary = state_store.get_value(&"board", {})
 	var board_index := _get_entity_board_index(board, _entity_id)
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	var attacker_bottom: Vector2 = board_view.position + board_view.index_to_bottom_position(board_index.x, board_index.y)
 	var start_position := attacker_bottom - Vector2(0.0, cell_size.y / 2.0)
 
@@ -1005,7 +1005,7 @@ func _set_projectile_collision_position(projectile_position: Vector2) -> void:
 
 func _get_projectile_arc_height() -> float:
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	return cell_size.y * PROJECTILE_ARC_CELL_HEIGHT
 
 
@@ -1196,7 +1196,7 @@ func _get_attack_target_position(args: Dictionary) -> Vector2:
 		return Vector2.INF
 
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y)
 
 
@@ -1210,7 +1210,7 @@ func _get_attack_target_cell_center(args: Dictionary) -> Vector2:
 		var j := int(target_cell["j"])
 		var bottom_position: Vector2 = board_view.position + board_view.index_to_bottom_position(i, j)
 		var board: Dictionary = state_store.get_value(&"board", {})
-		var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+		var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 		return bottom_position - Vector2(0.0, cell_size.y / 2.0)
 
 	var vector: Vector2i = args.get("vector", Vector2i.ZERO)
@@ -1218,7 +1218,7 @@ func _get_attack_target_cell_center(args: Dictionary) -> Vector2:
 		return Vector2.INF
 
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) - Vector2(0.0, cell_size.y / 2.0)
 
 
@@ -1237,7 +1237,7 @@ func _get_attack_target_ground_position(args: Dictionary) -> Vector2:
 		return Vector2.INF
 
 	var board: Dictionary = state_store.get_value(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", StateStore.BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 	return position + Vector2(vector.x * cell_size.x, vector.y * cell_size.y) + Vector2(0.0, cell_size.y / 2.0 - PROJECTILE_ROCK_BOTTOM_OFFSET)
 
 
