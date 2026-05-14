@@ -15,8 +15,6 @@ signal entity_selection_changed(entity_id: StringName, previous_entity_id: Strin
 signal selected_card_changed(entity_id: StringName, card_data: Dictionary)
 signal entity_card_pools_changed(entity_card_pools: Dictionary, previous_entity_card_pools: Variant)
 
-const BOARD_CELL_SIZE := Vector2(72.0, 72.0)
-
 @export var initial_state: Dictionary = {}
 
 var _state: Dictionary = _get_default_state()
@@ -363,7 +361,6 @@ func _create_board(cols: int, rows: int) -> Dictionary:
 	return {
 		&"cols": cols,
 		&"rows": rows,
-		&"cell_size": BOARD_CELL_SIZE,
 		&"cells": cells,
 	}
 
@@ -504,7 +501,7 @@ func _has_board_cell(board: Dictionary, i: int, j: int) -> bool:
 
 func _board_index_to_position(i: int, j: int) -> Vector2:
 	var board: Dictionary = _state.get(&"board", {})
-	var cell_size: Vector2 = board.get(&"cell_size", BOARD_CELL_SIZE)
+	var cell_size: Vector2 = board.get(&"cell_size", Vector2.ZERO)
 
 	return Vector2(
 		(float(i) + 0.5) * cell_size.x,
