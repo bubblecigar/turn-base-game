@@ -69,8 +69,6 @@ const PROJECTILE_ATTACK_SECONDS := 0.55
 const PROJECTILE_ARC_CELL_HEIGHT := 3.0
 const PROJECTILE_ROCK_COLOR := Color(0.35, 0.32, 0.28, 1.0)
 const PROJECTILE_ROCK_BOTTOM_OFFSET := 11.0
-const SELECTION_RING_COLOR := Color(1.0, 0.9, 0.2, 1.0)
-const SELECTION_RING_THICKNESS := 2.0
 const HIT_PARTICLE_EFFECT_SCENE := preload("res://scenes/visuals/HitParticleEffect.tscn")
 
 var _entity_id := &""
@@ -89,7 +87,6 @@ var _id_label: Label
 var _damage_label: Label
 var _cast_result_label: Label
 var _cast_type_label: Label
-var _selection_ring: ReferenceRect
 var _move_tween: Tween
 var _hit_tween: Tween
 var _damage_tween: Tween
@@ -140,7 +137,6 @@ func _ready() -> void:
 	state_store.entity_moved.connect(_on_entity_moved)
 	state_store.entity_focus_changed.connect(_on_entity_focus_changed)
 	state_store.cast_resolved.connect(_on_cast_resolved)
-	state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 	action_handler.cast_performed.connect(_on_cast_performed)
 	action_handler.attack_performed.connect(_on_attack_performed)
 	action_handler.attack_prepared.connect(_on_attack_prepared)
@@ -447,10 +443,6 @@ func _on_cast_resolved(caster_id: StringName, result: bool) -> void:
 		return
 
 	_finish_cast_visual(result)
-
-
-func _on_entity_selection_changed(_entity_id_selected: StringName, _previous: StringName) -> void:
-	_update_selection_indicator()
 
 
 func _on_move_tween_finished(animation_id: StringName) -> void:
@@ -824,7 +816,6 @@ func _set_entity(entity_state: Dictionary) -> void:
 	_update_id_label()
 	_update_hp_bar()
 	_update_focus_label()
-	_update_selection_indicator()
 
 
 func _get_previous_entity(previous_entities: Variant) -> Dictionary:
@@ -868,8 +859,6 @@ func _create_entity_area() -> void:
 	_entity_area.input_pickable = true
 	if not _entity_area.area_entered.is_connected(_on_entity_area_entered):
 		_entity_area.area_entered.connect(_on_entity_area_entered)
-	if not _entity_area.input_event.is_connected(_on_entity_area_input_event):
-		_entity_area.input_event.connect(_on_entity_area_input_event)
 
 	_entity_collision = _entity_area.get_node_or_null(ENTITY_COLLISION_NAME) as CollisionShape2D
 	if _entity_collision == null:
@@ -898,14 +887,6 @@ func _update_entity_area() -> void:
 	_sync_projectile_collision_shape()
 	var visual_size := get_visual_size()
 	_entity_area.position = Vector2(visual_size.x / 2.0, visual_size.y - cell_size.y / 2.0)
-
-
-func _on_entity_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
-	if not event is InputEventMouseButton:
-		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-		state_store.select_entity(_entity_id)
 
 
 func _on_entity_area_entered(area: Area2D) -> void:
@@ -1147,31 +1128,9 @@ func _create_hp_bar() -> void:
 	_focus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_focus_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	_selection_ring = get_node_or_null("SelectionRing") as ReferenceRect
-	if _selection_ring == null:
-		_selection_ring = ReferenceRect.new()
-		_selection_ring.name = "SelectionRing"
-		add_child(_selection_ring)
-
-	_selection_ring.border_color = SELECTION_RING_COLOR
-	_selection_ring.border_width = SELECTION_RING_THICKNESS
-	_selection_ring.editor_only = false
-	_selection_ring.visible = false
-
 
 func _update_id_label() -> void:
 	pass
-
-
-func _update_selection_indicator() -> void:
-	if _selection_ring == null:
-		return
-	var is_selected: bool = state_store != null and state_store.get_selected_entity_id() == _entity_id
-	_selection_ring.visible = is_selected
-	if is_selected:
-		var visual_size := get_visual_size()
-		_selection_ring.position = Vector2.ZERO
-		_selection_ring.size = visual_size
 
 
 func _update_hp_bar() -> void:

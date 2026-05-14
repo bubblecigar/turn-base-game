@@ -56,6 +56,7 @@ func _ready() -> void:
 	randomize()
 	state_store.entities_updated.connect(_on_entities_updated)
 	state_store.board_init.connect(_on_board_init)
+	state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 	entity_select.item_selected.connect(_on_entity_selected)
 	move_left_button.pressed.connect(_on_move_left_pressed)
 	move_right_button.pressed.connect(_on_move_right_pressed)
@@ -84,6 +85,15 @@ func _on_board_init(_board: Dictionary, _previous_board: Variant) -> void:
 
 func _on_entity_selected(index: int) -> void:
 	_selected_entity_id = StringName(entity_select.get_item_text(index))
+	state_store.select_entity(_selected_entity_id)
+
+
+func _on_entity_selection_changed(entity_id: StringName, _previous_entity_id: StringName) -> void:
+	if _selected_entity_id == entity_id:
+		return
+
+	_selected_entity_id = entity_id
+	_select_entity_option(entity_id)
 
 
 func _on_move_left_pressed() -> void:
@@ -156,7 +166,9 @@ func _on_send_batch_pressed() -> void:
 
 
 func _refresh_entity_options() -> void:
-	var previous_selected_id := _selected_entity_id
+	var previous_selected_id: StringName = state_store.get_selected_entity_id()
+	if previous_selected_id == &"":
+		previous_selected_id = _selected_entity_id
 	var entity_ids := _get_board_entity_ids()
 	entity_select.clear()
 
@@ -177,6 +189,7 @@ func _refresh_entity_options() -> void:
 	else:
 		entity_select.select(selected_index)
 		_selected_entity_id = entity_ids[selected_index]
+		state_store.select_entity(_selected_entity_id)
 
 	var has_entity := _selected_entity_id != &""
 	entity_select.disabled = not has_entity
@@ -192,6 +205,13 @@ func _refresh_entity_options() -> void:
 	cast_success_button.disabled = not has_entity
 	cast_interrupted_button.disabled = not has_entity
 	batch_random_move_button.disabled = entity_ids.size() < 2
+
+
+func _select_entity_option(entity_id: StringName) -> void:
+	for index in entity_select.get_item_count():
+		if StringName(entity_select.get_item_text(index)) == entity_id:
+			entity_select.select(index)
+			return
 
 
 func _move_selected_entity(delta_i: int) -> void:
