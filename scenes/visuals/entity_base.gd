@@ -10,26 +10,26 @@ const WALK_STEP_SECONDS := 0.35
 const HIT_ANIMATION_SECONDS := 0.24
 const HIT_ANIMATION_NAME := &"entity_hit"
 const HIT_SHAKE_PIXELS := 7.0
-const DAMAGE_LABEL_FONT_SIZE := 14.0
-const DAMAGE_LABEL_HEIGHT := 18.0
-const DAMAGE_LABEL_RISE_PIXELS := 36.0
+const DAMAGE_LABEL_FONT_SIZE := 14
+const DAMAGE_LABEL_HEIGHT := 18
+const DAMAGE_LABEL_RISE_PIXELS := 36
 const DAMAGE_LABEL_ANIMATION_SECONDS := 1.0
 const HP_BAR_HEIGHT := 5.0
-const HP_BAR_MIN_WIDTH := 28.0
-const HP_BAR_TOP_OFFSET := 12.0
-const HP_TEXT_FONT_SIZE := 8.0
-const HP_TEXT_HEIGHT := 12.0
-const FOCUS_TEXT_FONT_SIZE := 8.0
-const FOCUS_TEXT_HEIGHT := 12.0
+const HP_BAR_MIN_WIDTH := 28
+const HP_BAR_TOP_OFFSET := 12
+const HP_TEXT_FONT_SIZE := 8
+const HP_TEXT_HEIGHT := 12
+const FOCUS_TEXT_FONT_SIZE := 8
+const FOCUS_TEXT_HEIGHT := 12
 const FOCUS_BAR_HEIGHT := HP_BAR_HEIGHT * 0.66
 const MAX_FOCUS := 5
 const FOCUS_BAR_COLOR := Color(0.25, 0.55, 1.0, 1.0)
 const FOCUS_BAR_EMPTY_COLOR := Color(0.12, 0.12, 0.12, 0.9)
 const FOCUS_ANIMATION_SECONDS := 0.28
 const FOCUS_ANIMATION_NAME := &"entity_focus"
-const FOCUS_CHANGE_LABEL_FONT_SIZE := 12.0
-const FOCUS_CHANGE_LABEL_HEIGHT := 16.0
-const FOCUS_CHANGE_LABEL_RISE_PIXELS := 32.0
+const FOCUS_CHANGE_LABEL_FONT_SIZE := 12
+const FOCUS_CHANGE_LABEL_HEIGHT := 16
+const FOCUS_CHANGE_LABEL_RISE_PIXELS := 32
 const FOCUS_CHANGE_LABEL_ANIMATION_SECONDS := 1.0
 const FOCUS_GAIN_COLOR := Color(1.0, 0.88, 0.2, 1.0)
 const FOCUS_SPEND_COLOR := Color(0.35, 0.75, 1.0, 1.0)
@@ -37,25 +37,25 @@ const CAST_ANIMATION_SECONDS := 1.75
 const CAST_ANIMATION_NAME := &"entity_cast"
 const CAST_FINISH_ANIMATION_SECONDS := 0.24
 const CAST_FINISH_ANIMATION_NAME := &"entity_cast_finish"
-const CAST_BOUNCE_PIXELS := 14.0
+const CAST_BOUNCE_PIXELS := 14
 const CAST_GLOW_COLOR := Color(0.9, 0.85, 0.2, 1.0)
-const CAST_RESULT_LABEL_FONT_SIZE := 12.0
-const CAST_RESULT_LABEL_HEIGHT := 16.0
+const CAST_RESULT_LABEL_FONT_SIZE := 12
+const CAST_RESULT_LABEL_HEIGHT := 16
 const CAST_RESULT_LABEL_RISE_PIXELS := 32.0
 const CAST_RESULT_ANIMATION_SECONDS := 1.1
 const CAST_RESULT_SUCCESS_COLOR := Color(0.25, 0.95, 0.45, 1.0)
 const CAST_RESULT_INTERRUPTED_COLOR := Color(1.0, 0.35, 0.2, 1.0)
-const CAST_TYPE_LABEL_FONT_SIZE := 11.0
-const CAST_TYPE_LABEL_HEIGHT := 14.0
-const CAST_TYPE_LABEL_RISE_PIXELS := 30.0
+const CAST_TYPE_LABEL_FONT_SIZE := 11
+const CAST_TYPE_LABEL_HEIGHT := 14
+const CAST_TYPE_LABEL_RISE_PIXELS := 30
 const CAST_TYPE_ANIMATION_SECONDS := 1.1
 const CAST_TYPE_COLOR := Color(0.9, 0.85, 0.2, 1.0)
 const PREPARE_ATTACK_ANIMATION_NAME := &"entity_prepare_attack"
 const PREPARE_ATTACK_ANIMATION_SECONDS := 1.0
 const PREPARE_ATTACK_TRAVEL_SECONDS := 0.4
 const PREPARE_ATTACK_DWELL_SECONDS := 0.75
-const ID_LABEL_FONT_SIZE := 8.0
-const ID_LABEL_HEIGHT := 16.0
+const ID_LABEL_FONT_SIZE := 8
+const ID_LABEL_HEIGHT := 16
 const ENTITY_AREA_NAME := "EntityArea"
 const ENTITY_COLLISION_NAME := "EntityCollision"
 const ENTITY_COLLISION_CELL_SCALE := 0.8
@@ -589,7 +589,7 @@ func _show_damage_number(damage: Variant) -> void:
 
 	if _damage_label == null:
 		_damage_label = Label.new()
-		_damage_label.add_theme_font_size_override("font_size", DAMAGE_LABEL_FONT_SIZE)
+		_damage_label.add_theme_font_size_override("font_size", int(DAMAGE_LABEL_FONT_SIZE))
 		_damage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_damage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		add_child(_damage_label)
@@ -618,7 +618,7 @@ func _show_focus_change_number(focus_delta: int) -> void:
 
 	if _focus_change_label == null:
 		_focus_change_label = Label.new()
-		_focus_change_label.add_theme_font_size_override("font_size", FOCUS_CHANGE_LABEL_FONT_SIZE)
+		_focus_change_label.add_theme_font_size_override("font_size", int(FOCUS_CHANGE_LABEL_FONT_SIZE))
 		_focus_change_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_focus_change_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		add_child(_focus_change_label)
