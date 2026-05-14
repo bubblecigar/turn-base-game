@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://c1f0wb4ui0bvy"]
+
+[ext_resource type="Script" path="res://scenes/visuals/entity_base.gd" id="1_entity_base"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_entity"]
+
+[node name="EntityBase" type="Node2D"]
+script = ExtResource("1_entity_base")
+
+[node name="EntityArea" type="Area2D" parent="."]
+input_pickable = true
+
+[node name="EntityCollision" type="CollisionShape2D" parent="EntityArea"]
+shape = SubResource("RectangleShape2D_entity")
+
+[node name="SelectionRing" type="ReferenceRect" parent="."]
+visible = false
+editor_only = false
+border_color = Color(1, 0.9, 0.2, 1)
+border_width = 2.0
+
+[node name="HpBarBackground" type="ColorRect" parent="."]
+color = Color(0.12, 0.12, 0.12, 0.9)
+
+[node name="HpBarFill" type="ColorRect" parent="."]
+color = Color(0.25, 0.9, 0.25, 1)
+
+[node name="HpLabel" type="Label" parent="."]
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FocusBarBackground" type="ColorRect" parent="."]
+color = Color(0.12, 0.12, 0.12, 0.9)
+
+[node name="FocusBarFill" type="ColorRect" parent="."]
+color = Color(0.25, 0.55, 1, 1)
+
+[node name="FocusLabel" type="Label" parent="."]
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IdLabel" type="Label" parent="."]
+horizontal_alignment = 1
+vertical_alignment = 1

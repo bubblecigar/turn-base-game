@@ -1,6 +1,7 @@
-[gd_scene format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/visuals/slime_view.gd" id="1_slime"]
+[ext_resource type="PackedScene" path="res://scenes/visuals/EntityBase.tscn" id="2_entity_base"]
 
-[node name="SlimeView" type="Node2D"]
+[node name="SlimeView" instance=ExtResource("2_entity_base")]
 script = ExtResource("1_slime")

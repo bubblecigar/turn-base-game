@@ -859,18 +859,28 @@ func _update_board_position() -> void:
 
 
 func _create_entity_area() -> void:
-	_entity_area = Area2D.new()
-	_entity_area.name = ENTITY_AREA_NAME
-	_entity_area.input_pickable = true
-	_entity_area.area_entered.connect(_on_entity_area_entered)
-	_entity_area.input_event.connect(_on_entity_area_input_event)
-	add_child(_entity_area)
+	_entity_area = get_node_or_null(ENTITY_AREA_NAME) as Area2D
+	if _entity_area == null:
+		_entity_area = Area2D.new()
+		_entity_area.name = ENTITY_AREA_NAME
+		add_child(_entity_area)
 
-	_entity_collision_shape = RectangleShape2D.new()
-	_entity_collision = CollisionShape2D.new()
-	_entity_collision.name = ENTITY_COLLISION_NAME
-	_entity_collision.shape = _entity_collision_shape
-	_entity_area.add_child(_entity_collision)
+	_entity_area.input_pickable = true
+	if not _entity_area.area_entered.is_connected(_on_entity_area_entered):
+		_entity_area.area_entered.connect(_on_entity_area_entered)
+	if not _entity_area.input_event.is_connected(_on_entity_area_input_event):
+		_entity_area.input_event.connect(_on_entity_area_input_event)
+
+	_entity_collision = _entity_area.get_node_or_null(ENTITY_COLLISION_NAME) as CollisionShape2D
+	if _entity_collision == null:
+		_entity_collision = CollisionShape2D.new()
+		_entity_collision.name = ENTITY_COLLISION_NAME
+		_entity_area.add_child(_entity_collision)
+
+	_entity_collision_shape = _entity_collision.shape as RectangleShape2D
+	if _entity_collision_shape == null:
+		_entity_collision_shape = RectangleShape2D.new()
+		_entity_collision.shape = _entity_collision_shape
 
 
 func _update_entity_area() -> void:
@@ -1076,51 +1086,77 @@ func _sync_projectile_collision_shape() -> void:
 
 
 func _create_id_label() -> void:
-	_id_label = Label.new()
+	_id_label = get_node_or_null("IdLabel") as Label
+	if _id_label == null:
+		_id_label = Label.new()
+		_id_label.name = "IdLabel"
+		add_child(_id_label)
+
 	_id_label.layout_mode = 0
 	_id_label.add_theme_font_size_override("font_size", ID_LABEL_FONT_SIZE)
 	_id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_id_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	add_child(_id_label)
 
 
 func _create_hp_bar() -> void:
-	_hp_bar_background = ColorRect.new()
+	_hp_bar_background = get_node_or_null("HpBarBackground") as ColorRect
+	if _hp_bar_background == null:
+		_hp_bar_background = ColorRect.new()
+		_hp_bar_background.name = "HpBarBackground"
+		add_child(_hp_bar_background)
 	_hp_bar_background.color = Color(0.12, 0.12, 0.12, 0.9)
-	add_child(_hp_bar_background)
 
-	_hp_bar_fill = ColorRect.new()
+	_hp_bar_fill = get_node_or_null("HpBarFill") as ColorRect
+	if _hp_bar_fill == null:
+		_hp_bar_fill = ColorRect.new()
+		_hp_bar_fill.name = "HpBarFill"
+		add_child(_hp_bar_fill)
 	_hp_bar_fill.color = Color(0.25, 0.9, 0.25, 1.0)
-	add_child(_hp_bar_fill)
 
-	_hp_label = Label.new()
+	_hp_label = get_node_or_null("HpLabel") as Label
+	if _hp_label == null:
+		_hp_label = Label.new()
+		_hp_label.name = "HpLabel"
+		add_child(_hp_label)
 	_hp_label.layout_mode = 0
 	_hp_label.add_theme_font_size_override("font_size", HP_TEXT_FONT_SIZE)
 	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	add_child(_hp_label)
 
-	_focus_bar_background = ColorRect.new()
+	_focus_bar_background = get_node_or_null("FocusBarBackground") as ColorRect
+	if _focus_bar_background == null:
+		_focus_bar_background = ColorRect.new()
+		_focus_bar_background.name = "FocusBarBackground"
+		add_child(_focus_bar_background)
 	_focus_bar_background.color = FOCUS_BAR_EMPTY_COLOR
-	add_child(_focus_bar_background)
 
-	_focus_bar_fill = ColorRect.new()
+	_focus_bar_fill = get_node_or_null("FocusBarFill") as ColorRect
+	if _focus_bar_fill == null:
+		_focus_bar_fill = ColorRect.new()
+		_focus_bar_fill.name = "FocusBarFill"
+		add_child(_focus_bar_fill)
 	_focus_bar_fill.color = FOCUS_BAR_COLOR
-	add_child(_focus_bar_fill)
 
-	_focus_label = Label.new()
+	_focus_label = get_node_or_null("FocusLabel") as Label
+	if _focus_label == null:
+		_focus_label = Label.new()
+		_focus_label.name = "FocusLabel"
+		add_child(_focus_label)
 	_focus_label.layout_mode = 0
 	_focus_label.add_theme_font_size_override("font_size", FOCUS_TEXT_FONT_SIZE)
 	_focus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_focus_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	add_child(_focus_label)
 
-	_selection_ring = ReferenceRect.new()
+	_selection_ring = get_node_or_null("SelectionRing") as ReferenceRect
+	if _selection_ring == null:
+		_selection_ring = ReferenceRect.new()
+		_selection_ring.name = "SelectionRing"
+		add_child(_selection_ring)
+
 	_selection_ring.border_color = SELECTION_RING_COLOR
 	_selection_ring.border_width = SELECTION_RING_THICKNESS
 	_selection_ring.editor_only = false
 	_selection_ring.visible = false
-	add_child(_selection_ring)
 
 
 func _update_id_label() -> void:

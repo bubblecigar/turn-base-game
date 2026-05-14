@@ -1,9 +1,10 @@
-[gd_scene format=3 uid="uid://w51f3o3ssfcn"]
+[gd_scene load_steps=4 format=3 uid="uid://w51f3o3ssfcn"]
 
 [ext_resource type="Script" uid="uid://sm4f3ybefwlw" path="res://scenes/visuals/character_view.gd" id="1_hk1h1"]
 [ext_resource type="Script" uid="uid://crwsvtheqgu52" path="res://scenes/visuals/character_part_view.gd" id="2_2c04o"]
+[ext_resource type="PackedScene" path="res://scenes/visuals/EntityBase.tscn" id="3_entity_base"]
 
-[node name="CharacterView" type="Node2D" unique_id=2042754942]
+[node name="CharacterView" unique_id=2042754942 instance=ExtResource("3_entity_base")]
 script = ExtResource("1_hk1h1")
 
 [node name="Head" type="Node2D" parent="." unique_id=78084500]
