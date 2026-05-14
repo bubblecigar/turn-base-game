@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c0p0u578w30f"]
 
 [ext_resource type="Script" uid="uid://kxmemaoxaa83" path="res://scenes/gui/hand_gui.gd" id="1_hand"]
-[ext_resource type="Theme" path="res://scenes/gui/themes.tres" id="2_5lbe4"]
+[ext_resource type="Theme" uid="uid://dibalgjjuawli" path="res://scenes/gui/themes.tres" id="2_5lbe4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drop_zone"]
 bg_color = Color(0.12, 0.14, 0.16, 0.38)
@@ -194,11 +194,15 @@ size_flags_vertical = 3
 
 [node name="CardStackAnchor" type="Control" parent="." unique_id=513299551]
 layout_mode = 1
-anchors_preset = 0
-offset_left = 489.0
-offset_top = 429.0
-offset_right = 489.0
-offset_bottom = 429.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 0
 mouse_filter = 2
 
 [node name="CardStack" type="Control" parent="CardStackAnchor" unique_id=1469212597]
@@ -213,10 +217,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -55.0
-offset_top = -218.0
-offset_right = 65.0
-offset_bottom = -186.0
+offset_left = -56.0
+offset_top = -151.0
+offset_right = 64.0
+offset_bottom = -115.0
 grow_horizontal = 2
 grow_vertical = 0
 disabled = true
