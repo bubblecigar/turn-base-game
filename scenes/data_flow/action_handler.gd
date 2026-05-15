@@ -6,6 +6,7 @@ signal attack_prepared(attacker_id: StringName, args: Dictionary)
 signal cast_performed(caster_id: StringName, args: Dictionary)
 signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
 signal event_performed(event: Dictionary)
+signal turn_end(event: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -76,6 +77,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_attack_handler.prepare_attack(event['payload'])
 		'perform_attack':
 			_attack_handler.perform_attack(event['payload'])
+		'turn_end':
+			turn_end.emit(event)
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:

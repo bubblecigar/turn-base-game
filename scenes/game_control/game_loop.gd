@@ -307,7 +307,15 @@ func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Arr
 	if not cast_success_batch.is_empty():
 		action_batches.append(cast_success_batch)
 
+	action_batches.append([_create_turn_end_action()])
 	return action_batches
+
+
+func _create_turn_end_action() -> Dictionary:
+	return {
+		"eventName": "turn_end",
+		"payload": {},
+	}
 
 
 func _create_prepare_attack_batch(attack_actions: Array) -> Array[Dictionary]:

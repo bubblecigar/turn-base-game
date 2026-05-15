@@ -123,12 +123,11 @@ func _ready() -> void:
 		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 		state_store.selected_card_changed.connect(_on_selected_card_changed)
 		state_store.entity_card_pools_changed.connect(_on_entity_card_pools_changed)
-		state_store.cast_resolved.connect(_on_state_store_cast_resolved)
 	if confirm_button != null:
 		confirm_button.pressed.connect(_on_confirm_pressed)
 
 	if action_handler != null:
-		action_handler.event_performed.connect(_on_action_handler_event_performed)
+		action_handler.turn_end.connect(_on_action_handler_turn_end)
 	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
 	_refresh_cards_for_current_entity()
 
@@ -404,43 +403,13 @@ func _has_unconfirmed_selected_card(selected_cards: Dictionary) -> bool:
 	return false
 
 
-func _on_action_handler_event_performed(event: Dictionary) -> void:
-	if not _is_confirmed_card_completion_event(event):
+func _on_action_handler_turn_end(_event: Dictionary) -> void:
+	if _pending_confirmed_card_actions.is_empty():
 		return
 
-	var entity_id := _get_event_entity_id(event)
-	if entity_id == &"" or not _pending_confirmed_card_actions.has(entity_id):
-		return
-
-	_clear_pending_confirmed_card_for_entity(entity_id)
-
-
-func _is_confirmed_card_completion_event(event: Dictionary) -> bool:
-	return event.get("eventName", "") in ["perform_attack", "move_entity", "resolve_cast"]
-
-
-func _get_event_entity_id(event: Dictionary) -> StringName:
-	var payload: Dictionary = event.get("payload", {})
-	if payload.has("entity_id"):
-		return StringName(str(payload.get("entity_id", &"")))
-	return StringName(str(payload.get("id", &"")))
-
-
-func _on_state_store_cast_resolved(caster_id: StringName, _result: bool) -> void:
-	if not _is_pending_confirmed_cast(caster_id):
-		return
-
-	_clear_pending_confirmed_card_for_entity(caster_id)
-
-
-func _is_pending_confirmed_cast(entity_id: StringName) -> bool:
-	var pending_action: Dictionary = _pending_confirmed_card_actions.get(entity_id, {})
-	return pending_action.get("eventName", "") == "perform_cast"
-
-
-func _clear_pending_confirmed_card_for_entity(entity_id: StringName) -> void:
-	_pending_confirmed_card_actions.erase(entity_id)
-	_clear_selected_card_for_entity(entity_id)
+	for raw_entity_id: Variant in _pending_confirmed_card_actions.keys():
+		_clear_selected_card_for_entity(StringName(str(raw_entity_id)))
+	_pending_confirmed_card_actions.clear()
 	_update_selected_card_index()
 	_layout_cards()
 	_update_card_enabled_states()
