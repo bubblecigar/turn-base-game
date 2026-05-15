@@ -123,6 +123,7 @@ func _ready() -> void:
 		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
 		state_store.selected_card_changed.connect(_on_selected_card_changed)
 		state_store.entity_card_pools_changed.connect(_on_entity_card_pools_changed)
+		state_store.cast_resolved.connect(_on_state_store_cast_resolved)
 	if confirm_button != null:
 		confirm_button.pressed.connect(_on_confirm_pressed)
 
@@ -411,6 +412,33 @@ func _on_action_handler_event_performed(event: Dictionary) -> void:
 	if entity_id == &"" or not _pending_confirmed_card_actions.has(entity_id):
 		return
 
+	_clear_pending_confirmed_card_for_entity(entity_id)
+
+
+func _is_confirmed_card_completion_event(event: Dictionary) -> bool:
+	return event.get("eventName", "") in ["perform_attack", "move_entity", "resolve_cast"]
+
+
+func _get_event_entity_id(event: Dictionary) -> StringName:
+	var payload: Dictionary = event.get("payload", {})
+	if payload.has("entity_id"):
+		return StringName(str(payload.get("entity_id", &"")))
+	return StringName(str(payload.get("id", &"")))
+
+
+func _on_state_store_cast_resolved(caster_id: StringName, _result: bool) -> void:
+	if not _is_pending_confirmed_cast(caster_id):
+		return
+
+	_clear_pending_confirmed_card_for_entity(caster_id)
+
+
+func _is_pending_confirmed_cast(entity_id: StringName) -> bool:
+	var pending_action: Dictionary = _pending_confirmed_card_actions.get(entity_id, {})
+	return pending_action.get("eventName", "") == "perform_cast"
+
+
+func _clear_pending_confirmed_card_for_entity(entity_id: StringName) -> void:
 	_pending_confirmed_card_actions.erase(entity_id)
 	_clear_selected_card_for_entity(entity_id)
 	_update_selected_card_index()
@@ -418,15 +446,6 @@ func _on_action_handler_event_performed(event: Dictionary) -> void:
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
-
-
-func _is_confirmed_card_completion_event(event: Dictionary) -> bool:
-	return event.get("eventName", "") in ["perform_attack", "perform_cast", "move_entity"]
-
-
-func _get_event_entity_id(event: Dictionary) -> StringName:
-	var payload: Dictionary = event.get("payload", {})
-	return StringName(str(payload.get("id", &"")))
 
 
 func _clear_selected_card_for_entity(entity_id: StringName) -> void:
