@@ -5,6 +5,7 @@ signal attack_performed(attacker_id: StringName, args: Dictionary)
 signal attack_prepared(attacker_id: StringName, args: Dictionary)
 signal cast_performed(caster_id: StringName, args: Dictionary)
 signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
+signal event_performed(event: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -49,6 +50,7 @@ func consume(event: Dictionary) -> void:
 
 	print('action consumed: ', _current_event)
 	_handle_consumed_event(_current_event)
+	event_performed.emit(_current_event)
 	_current_event = {}
 	_is_consuming = false
 	processing_status_changed.emit(false, {})

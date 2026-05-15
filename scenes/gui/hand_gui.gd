@@ -30,6 +30,7 @@ const CARD_COLORS := [
 ]
 
 @export var action_queue_path: NodePath
+@export var action_handler_path: NodePath
 @export var state_store_path: NodePath
 @export var game_loop_path: NodePath
 
@@ -41,6 +42,7 @@ const CARD_COLORS := [
 @onready var card_face_template: Panel = $CardTemplates/CardFaceTemplate
 @onready var card_back_template: Panel = $CardTemplates/CardBackTemplate
 @onready var action_queue: Node = get_node_or_null(action_queue_path)
+@onready var action_handler: Node = get_node_or_null(action_handler_path)
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
@@ -54,6 +56,7 @@ var _dragging_card: Control
 var _dragging_card_data: Dictionary = {}
 var _drag_offset := Vector2.ZERO
 var _active_cards: Array[Dictionary] = []
+var _pending_confirmed_card_actions: Dictionary = {}
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
@@ -122,6 +125,9 @@ func _ready() -> void:
 		state_store.entity_card_pools_changed.connect(_on_entity_card_pools_changed)
 	if confirm_button != null:
 		confirm_button.pressed.connect(_on_confirm_pressed)
+
+	if action_handler != null:
+		action_handler.event_performed.connect(_on_action_handler_event_performed)
 	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
 	_refresh_cards_for_current_entity()
 
@@ -284,7 +290,7 @@ func _update_card_enabled_states() -> void:
 	var focus := _get_player_focus()
 	if confirm_button != null:
 		var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
-		confirm_button.disabled = selected_cards.is_empty()
+		confirm_button.disabled = not _has_unconfirmed_selected_card(selected_cards)
 	for i in _card_nodes.size():
 		var card := _card_nodes[i]
 		if card == null:
@@ -293,7 +299,10 @@ func _update_card_enabled_states() -> void:
 		var cost := int(args.get("resource", 0))
 		var is_selected := i == _selected_card_index
 		var is_affordable := focus >= cost
-		if is_selected:
+		var is_pending := _pending_confirmed_card_actions.has(_get_player_entity_id()) and is_selected
+		if is_pending:
+			card.modulate = Color(0.70, 0.70, 0.70, 0.85)
+		elif is_selected:
 			card.modulate = Color(1.0, 0.95, 0.55, 1.0)
 		elif is_affordable:
 			card.modulate = Color.WHITE
@@ -312,6 +321,8 @@ func _on_card_gui_input(event: InputEvent, card_data: Dictionary, index: int, ca
 	var args: Dictionary = card_data.get("args", {})
 	if _get_player_focus() < int(args.get("resource", 0)):
 		return
+	if _pending_confirmed_card_actions.has(_get_player_entity_id()):
+		return
 
 	_start_card_drag(card_data, index, card)
 
@@ -326,6 +337,8 @@ func _select_card(card_data: Dictionary) -> void:
 
 func _select_card_for_entity(entity_id: StringName, card_data: Dictionary) -> void:
 	if entity_id == &"":
+		return
+	if _pending_confirmed_card_actions.has(entity_id):
 		return
 
 	var index := _active_cards.find(card_data)
@@ -350,8 +363,11 @@ func _on_confirm_pressed() -> void:
 		return
 
 	var action_stack: Array[Dictionary] = []
+	var confirmed_actions: Dictionary = {}
 	for raw_id: Variant in selected_cards:
 		var entity_id := StringName(str(raw_id))
+		if _pending_confirmed_card_actions.has(entity_id):
+			continue
 		var card_data: Dictionary = selected_cards[raw_id]
 		if card_data.is_empty():
 			continue
@@ -360,21 +376,70 @@ func _on_confirm_pressed() -> void:
 			push_warning("Cannot enqueue card without action data: %s." % card_data)
 			continue
 		action_stack.append(action)
+		confirmed_actions[entity_id] = action.duplicate(true)
 
 	if not action_stack.is_empty():
 		if action_queue == null:
 			push_warning("Cannot enqueue card action without an ActionQueue.")
 		else:
+			for entity_id: Variant in confirmed_actions:
+				_pending_confirmed_card_actions[entity_id] = confirmed_actions[entity_id]
 			var batches := _create_ordered_action_batches_from_stack(action_stack)
 			for batch: Array in batches:
 				action_queue.enQueue(batch)
 
-	state_store.set_value(&"selected_cards", {})
-	_selected_card_index = -1
 	_layout_cards()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
+
+
+func _has_unconfirmed_selected_card(selected_cards: Dictionary) -> bool:
+	for raw_id: Variant in selected_cards:
+		var entity_id := StringName(str(raw_id))
+		if not _pending_confirmed_card_actions.has(entity_id):
+			return true
+
+	return false
+
+
+func _on_action_handler_event_performed(event: Dictionary) -> void:
+	if not _is_confirmed_card_completion_event(event):
+		return
+
+	var entity_id := _get_event_entity_id(event)
+	if entity_id == &"" or not _pending_confirmed_card_actions.has(entity_id):
+		return
+
+	_pending_confirmed_card_actions.erase(entity_id)
+	_clear_selected_card_for_entity(entity_id)
+	_update_selected_card_index()
+	_layout_cards()
+	_update_card_enabled_states()
+	_update_selection_slot_state()
+	_update_slot_card_previews()
+
+
+func _is_confirmed_card_completion_event(event: Dictionary) -> bool:
+	return event.get("eventName", "") in ["perform_attack", "perform_cast", "move_entity"]
+
+
+func _get_event_entity_id(event: Dictionary) -> StringName:
+	var payload: Dictionary = event.get("payload", {})
+	return StringName(str(payload.get("id", &"")))
+
+
+func _clear_selected_card_for_entity(entity_id: StringName) -> void:
+	if state_store == null:
+		return
+
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
+	if not selected_cards.has(entity_id):
+		return
+
+	var next_selected_cards := selected_cards.duplicate(true)
+	next_selected_cards.erase(entity_id)
+	state_store.set_value(&"selected_cards", next_selected_cards)
 
 
 func _ensure_card_pools_for_entities(entities: Dictionary, _previous_entities: Variant) -> void:
