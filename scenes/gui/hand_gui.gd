@@ -259,7 +259,7 @@ func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName)
 func _on_selected_card_changed(entity_id: StringName, _card_data: Dictionary) -> void:
 	if entity_id == _get_player_entity_id():
 		_update_selected_card_index()
-		_layout_cards()
+		_layout_cards(true)
 		_update_selection_slot_state()
 		_update_slot_card_previews()
 	_update_card_enabled_states()
@@ -354,7 +354,7 @@ func _select_card_for_entity(entity_id: StringName, card_data: Dictionary) -> vo
 	if state_store != null:
 		state_store.select_card(entity_id, card_data)
 
-	_layout_cards()
+	_layout_cards(true)
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -1137,7 +1137,7 @@ func signi(value: int) -> int:
 	return 0
 
 
-func _layout_cards() -> void:
+func _layout_cards(animate_selected: bool = false) -> void:
 	if card_stack == null:
 		return
 
@@ -1152,7 +1152,7 @@ func _layout_cards() -> void:
 		if index == _dragging_card_index:
 			continue
 		if index == _selected_card_index:
-			_move_card_to_selection_slot(card, index, _get_player_entity_id(), false)
+			_move_card_to_selection_slot(card, index, _get_player_entity_id(), animate_selected)
 			continue
 
 		var centered_index := _get_card_centered_index(index, card_count)
