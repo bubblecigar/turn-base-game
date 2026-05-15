@@ -57,6 +57,7 @@ var _dragging_card_data: Dictionary = {}
 var _drag_offset := Vector2.ZERO
 var _active_cards: Array[Dictionary] = []
 var _pending_confirmed_card_actions: Dictionary = {}
+var _pending_card_return_count := 0
 var _cards: Array[Dictionary] = [
 	{
 		"title": "Bump",
@@ -412,9 +413,79 @@ func _on_action_handler_turn_end(_event: Dictionary) -> void:
 	if _pending_confirmed_card_actions.is_empty():
 		return
 
+	_float_pending_cards_back_to_hand()
+
+
+func _float_pending_cards_back_to_hand() -> void:
+	var pending_entity_ids: Array[StringName] = []
 	for raw_entity_id: Variant in _pending_confirmed_card_actions.keys():
-		_clear_selected_card_for_entity(StringName(str(raw_entity_id)))
-	_pending_confirmed_card_actions.clear()
+		pending_entity_ids.append(StringName(str(raw_entity_id)))
+
+	var animated_count := 0
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
+	_pending_card_return_count = 0
+	for entity_id: StringName in pending_entity_ids:
+		var card_data: Dictionary = selected_cards.get(entity_id, {})
+		var card_index := _active_cards.find(card_data)
+		if card_index < 0 or card_index >= _card_nodes.size():
+			continue
+
+		var card := _card_nodes[card_index]
+		if card == null:
+			continue
+
+		animated_count += 1
+		_pending_card_return_count += 1
+		_float_card_back_to_hand(card, card_index, pending_entity_ids)
+
+	if animated_count == 0:
+		_clear_pending_cards_after_return(pending_entity_ids)
+
+
+func _float_card_back_to_hand(card: Control, index: int, pending_entity_ids: Array[StringName]) -> void:
+	if _card_tweens.has(card):
+		var active_tween: Tween = _card_tweens[card]
+		if active_tween:
+			active_tween.kill()
+
+	var card_count := _card_nodes.size()
+	var centered_index := _get_card_centered_index(index, card_count)
+	var target_position := _get_card_base_position(index, card_count)
+	var target_rotation := centered_index * 4.0
+	var target_z_index := index
+
+	_apply_fixed_card_size(card)
+	card.pivot_offset = CARD_SIZE / 2.0
+	card.z_index = 220 + index
+
+	var tween := create_tween()
+	_card_tweens[card] = tween
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
+	tween.tween_property(card, "rotation_degrees", target_rotation, CARD_HOVER_SECONDS)
+	tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
+	tween.finished.connect(_on_pending_card_return_tween_finished.bind(card, tween, target_z_index, pending_entity_ids))
+
+
+func _on_pending_card_return_tween_finished(card: Control, tween: Tween, target_z_index: int, pending_entity_ids: Array[StringName]) -> void:
+	if _card_tweens.get(card, null) == tween:
+		_card_tweens.erase(card)
+
+	if card != null:
+		card.z_index = target_z_index
+
+	_pending_card_return_count = maxi(_pending_card_return_count - 1, 0)
+	if _pending_card_return_count == 0:
+		_clear_pending_cards_after_return(pending_entity_ids)
+
+
+func _clear_pending_cards_after_return(pending_entity_ids: Array[StringName]) -> void:
+	for entity_id: StringName in pending_entity_ids:
+		_clear_selected_card_for_entity(entity_id)
+		_pending_confirmed_card_actions.erase(entity_id)
+
 	_update_selected_card_index()
 	_layout_cards()
 	_update_card_enabled_states()
