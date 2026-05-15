@@ -324,6 +324,11 @@ func _on_card_gui_input(event: InputEvent, card_data: Dictionary, index: int, ca
 	if _pending_confirmed_card_actions.has(_get_player_entity_id()):
 		return
 
+	if mouse_event.double_click:
+		_select_card(card_data)
+		accept_event()
+		return
+
 	_start_card_drag(card_data, index, card)
 
 
