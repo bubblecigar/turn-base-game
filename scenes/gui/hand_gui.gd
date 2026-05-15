@@ -58,56 +58,23 @@ var _drag_offset := Vector2.ZERO
 var _active_cards: Array[Dictionary] = []
 var _pending_confirmed_card_actions: Dictionary = {}
 var _pending_card_return_count := 0
-var _cards: Array[Dictionary] = [
-	{
-		"title": "Bump",
-		"body": "Deal damage",
-		"action_factory": "bump",
-		"args": { "damage_min": 1, "damage_max": 9 },
-	},
-	{
-		"title": "Strong Bump",
-		"body": "Heavy hit",
-		"action_factory": "strong_bump",
-		"args": { "resource": 3, "damage_min": 4, "damage_max": 9 },
-	},
-	{
-		"title": "Throw",
-		"body": "Ranged hit",
-		"action_factory": "throw_projectile",
-		"args": { "damage_min": 1, "damage_max": 9 },
-	},
-	{
-		"title": "Focus",
-		"body": "Gain focus",
-		"action_factory": "focus",
-		"args": { "value": 1 },
-	},
-	{
-		"title": "Heal",
-		"body": "Restore HP",
-		"action_factory": "heal",
-		"args": { "resource": 1, "value": 3 },
-	},
-	{
-		"title": "Thunder",
-		"body": "Hit target",
-		"action_factory": "summon_thunder",
-		"args": { "resource": 3, "value": 5 },
-	},
-	{
-		"title": "Move Left",
-		"body": "Step left",
-		"action_factory": "move_left",
-		"args": {},
-	},
-	{
-		"title": "Move Right",
-		"body": "Step right",
-		"action_factory": "move_right",
-		"args": {},
-	},
-]
+var _cards: Array[Dictionary] = _load_card_templates()
+
+
+static func _load_card_templates() -> Array[Dictionary]:
+	var file := FileAccess.open("res://scenes/gui/card_templates.json", FileAccess.READ)
+	if file == null:
+		push_error("Failed to open card_templates.json")
+		return []
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not parsed is Array:
+		push_error("card_templates.json must be a JSON array")
+		return []
+	var result: Array[Dictionary] = []
+	for item: Variant in parsed as Array:
+		if item is Dictionary:
+			result.append(item)
+	return result
 
 
 func _ready() -> void:

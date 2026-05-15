@@ -1,0 +1,50 @@
+[
+	{
+		"title": "Bump",
+		"body": "Deal damage",
+		"action_factory": "bump",
+		"args": { "damage_min": 1, "damage_max": 9 }
+	},
+	{
+		"title": "Strong Bump",
+		"body": "Heavy hit",
+		"action_factory": "strong_bump",
+		"args": { "resource": 3, "damage_min": 4, "damage_max": 9 }
+	},
+	{
+		"title": "Throw",
+		"body": "Ranged hit",
+		"action_factory": "throw_projectile",
+		"args": { "damage_min": 1, "damage_max": 9 }
+	},
+	{
+		"title": "Focus",
+		"body": "Gain focus",
+		"action_factory": "focus",
+		"args": { "value": 1 }
+	},
+	{
+		"title": "Heal",
+		"body": "Restore HP",
+		"action_factory": "heal",
+		"args": { "resource": 1, "value": 3 }
+	},
+	{
+		"title": "Thunder",
+		"body": "Hit target",
+		"action_factory": "summon_thunder",
+		"args": { "resource": 3, "value": 5 }
+	},
+	{
+		"title": "Move Left",
+		"body": "Step left",
+		"action_factory": "move_left",
+		"args": {}
+	},
+	{
+		"title": "Move Right",
+		"body": "Step right",
+		"action_factory": "move_right",
+		"args": {}
+	}
+]
