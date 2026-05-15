@@ -67,13 +67,16 @@ static func _load_card_templates() -> Array[Dictionary]:
 		push_error("Failed to open card_templates.json")
 		return []
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	if not parsed is Array:
-		push_error("card_templates.json must be a JSON array")
+	if not parsed is Dictionary:
+		push_error("card_templates.json must be a JSON object")
 		return []
 	var result: Array[Dictionary] = []
-	for item: Variant in parsed as Array:
+	for id: String in (parsed as Dictionary):
+		var item: Variant = (parsed as Dictionary)[id]
 		if item is Dictionary:
-			result.append(item)
+			var entry := (item as Dictionary).duplicate()
+			entry["id"] = id
+			result.append(entry)
 	return result
 
 
