@@ -19,11 +19,13 @@ const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
 const AttackHandlerScript := preload("res://scenes/data_flow/attack_handler.gd")
 const CastHandlerScript := preload("res://scenes/data_flow/cast_handler.gd")
+const CardPoolServiceScript := preload("res://scenes/gui/card_pool_service.gd")
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
 var _attack_handler: RefCounted
 var _cast_handler: RefCounted
+var _card_pool_service: RefCounted
 
 @onready var state_store: Node = $"../StateStore"
 
@@ -37,6 +39,7 @@ func _ready() -> void:
 	_cast_handler = CastHandlerScript.new(state_store)
 	_cast_handler.cast_performed.connect(_on_cast_performed)
 	_cast_handler.cast_resolved.connect(_on_cast_resolved)
+	_card_pool_service = CardPoolServiceScript.new(state_store)
 
 
 func consume(event: Dictionary) -> void:
@@ -106,7 +109,8 @@ func _spawn_entity(payload: Dictionary) -> void:
 	var position: Dictionary = payload.get("position", {})
 	var i := int(position.get("i", 0))
 	var j := int(position.get("j", 0))
-	state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
+	var entity_id: StringName = state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
+	_card_pool_service.ensure_card_pool_for_entity(entity_id)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 

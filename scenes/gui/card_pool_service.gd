@@ -33,6 +33,14 @@ func set_cards(cards: Array[Dictionary]) -> void:
 	_cards = cards.duplicate(true)
 
 
+func ensure_card_pool_for_entity(entity_id: StringName) -> void:
+	if _state_store == null or entity_id == &"":
+		return
+	if _state_store.has_entity_card_pool(entity_id):
+		return
+	_state_store.set_entity_card_pool(entity_id, _create_random_card_pool())
+
+
 func ensure_card_pools_for_entities(entities: Dictionary) -> void:
 	if _state_store == null:
 		return

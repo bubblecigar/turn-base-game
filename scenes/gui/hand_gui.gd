@@ -57,14 +57,12 @@ func _ready() -> void:
 
 	if action_handler != null:
 		action_handler.turn_end.connect(_on_action_handler_turn_end)
-	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {})
 	_refresh_cards_for_current_entity()
 
 
 func set_cards(cards: Array[Dictionary]) -> void:
 	if _card_pool_service != null:
 		_card_pool_service.set_cards(cards)
-	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {})
 	_refresh_cards_for_current_entity()
 
 
@@ -78,7 +76,6 @@ func _rebuild_card_hand() -> void:
 
 
 func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
-	_ensure_card_pools_for_entities(_entities)
 	_sync_selection_slots()
 	_refresh_cards_for_current_entity()
 	_update_card_enabled_states()
@@ -291,13 +288,6 @@ func _clear_selected_card_for_entity(entity_id: StringName) -> void:
 	var next_selected_cards := selected_cards.duplicate(true)
 	next_selected_cards.erase(entity_id)
 	state_store.set_value(&"selected_cards", next_selected_cards)
-
-
-func _ensure_card_pools_for_entities(entities: Dictionary) -> void:
-	if _card_pool_service == null:
-		return
-
-	_card_pool_service.ensure_card_pools_for_entities(entities)
 
 
 func _refresh_cards_for_current_entity() -> void:
