@@ -12,13 +12,15 @@
 					"body": { "width": 28, "height": 36 },
 					"arms": { "width": 10, "height": 28 },
 					"legs": { "width": 12, "height": 32 }
-				}
+				},
+				"cards": ["bump", "move_left", "move_right"]
 			},
 			{
 				"type": "slime",
 				"max_hp": 12,
 				"position": { "i": 3, "j": 0 },
-				"spec": { "radius": 20 }
+				"spec": { "radius": 20 },
+				"cards": ["bump", "move_left", "move_right"]
 			}
 		]
 	}

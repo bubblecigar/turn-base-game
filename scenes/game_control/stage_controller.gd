@@ -57,12 +57,15 @@ func _init_from_template(t: Dictionary) -> void:
 	for entity in entities:
 		if entity is Dictionary and entity.has("type") and entity.has("spec"):
 			var position: Dictionary = entity.get("position", {})
+			var spawn_payload: Dictionary = {
+				"type": entity["type"],
+				"spec": entity["spec"],
+				"max_hp": int(entity.get("max_hp", entity.get("hp", 1))),
+				"position": position,
+			}
+			if entity.has("cards") and entity["cards"] is Array:
+				spawn_payload["cards"] = entity["cards"]
 			action_queue.enQueue([{
 				"eventName": "spawn_entity",
-				"payload": {
-					"type": entity["type"],
-					"spec": entity["spec"],
-					"max_hp": int(entity.get("max_hp", entity.get("hp", 1))),
-					"position": position,
-				},
+				"payload": spawn_payload,
 			}])

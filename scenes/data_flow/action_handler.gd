@@ -110,7 +110,10 @@ func _spawn_entity(payload: Dictionary) -> void:
 	var i := int(position.get("i", 0))
 	var j := int(position.get("j", 0))
 	var entity_id: StringName = state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
-	_card_pool_service.ensure_card_pool_for_entity(entity_id)
+	if payload.has("cards") and payload["cards"] is Array:
+		state_store.set_entity_card_pool(entity_id, _card_pool_service.get_cards_by_ids(payload["cards"]))
+	else:
+		push_warning("spawn_entity: missing 'cards' in payload for entity '%s'. Card pool not initialized." % entity_type)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 

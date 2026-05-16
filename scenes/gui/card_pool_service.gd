@@ -53,6 +53,18 @@ func ensure_card_pools_for_entities(entities: Dictionary) -> void:
 		_state_store.set_entity_card_pool(entity_id, _create_random_card_pool())
 
 
+func get_cards_by_ids(ids: Array) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for id: Variant in ids:
+		var id_str := str(id)
+		for card: Dictionary in _cards:
+			if card.get("id", "") == id_str:
+				result.append(card.duplicate(true))
+				break
+			
+	return result
+
+
 func get_current_entity_cards(entity_id: StringName) -> Array[Dictionary]:
 	if _state_store == null:
 		return _cards.duplicate(true)
