@@ -4,8 +4,8 @@ const CardActionFactory := preload("res://scenes/gui/CardActionFactory.gd")
 const SelectionSlotsView := preload("res://scenes/gui/SelectionSlotsView.gd")
 const CardHandView := preload("res://scenes/gui/card_hand_view.gd")
 const CardDragController := preload("res://scenes/gui/card_drag_controller.gd")
+const CardPoolService := preload("res://scenes/gui/card_pool_service.gd")
 const CARD_SIZE := Vector2(116.0, 158.0)
-const ENTITY_CARD_POOL_SIZE := 5
 
 @export var action_queue_path: NodePath
 @export var action_handler_path: NodePath
@@ -27,33 +27,15 @@ var _selected_card_index: int = -1
 var _active_cards: Array[Dictionary] = []
 var _pending_confirmed_card_actions: Dictionary = {}
 var _pending_card_return_count := 0
-var _cards: Array[Dictionary] = _load_card_templates()
 var _card_action_factory: RefCounted
 var _card_drag_controller: RefCounted
-
-
-static func _load_card_templates() -> Array[Dictionary]:
-	var file := FileAccess.open("res://scenes/gui/card_templates.json", FileAccess.READ)
-	if file == null:
-		push_error("Failed to open card_templates.json")
-		return []
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	if not parsed is Dictionary:
-		push_error("card_templates.json must be a JSON object")
-		return []
-	var result: Array[Dictionary] = []
-	for id: String in (parsed as Dictionary):
-		var item: Variant = (parsed as Dictionary)[id]
-		if item is Dictionary:
-			var entry := (item as Dictionary).duplicate()
-			entry["id"] = id
-			result.append(entry)
-	return result
+var _card_pool_service: RefCounted
 
 
 func _ready() -> void:
 	randomize()
 	_card_action_factory = CardActionFactory.new(state_store)
+	_card_pool_service = CardPoolService.new(state_store)
 	if card_stack != null:
 		_card_drag_controller = CardDragController.new(card_stack)
 		card_stack.setup(card_face_template, Callable(self, "_get_selection_slot_card_position"), Callable(self, "_get_player_entity_id"))
@@ -75,13 +57,14 @@ func _ready() -> void:
 
 	if action_handler != null:
 		action_handler.turn_end.connect(_on_action_handler_turn_end)
-	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
+	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {})
 	_refresh_cards_for_current_entity()
 
 
 func set_cards(cards: Array[Dictionary]) -> void:
-	_cards = cards.duplicate(true)
-	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {}, {})
+	if _card_pool_service != null:
+		_card_pool_service.set_cards(cards)
+	_ensure_card_pools_for_entities(state_store.get_value(&"entities", {}) if state_store != null else {})
 	_refresh_cards_for_current_entity()
 
 
@@ -95,7 +78,7 @@ func _rebuild_card_hand() -> void:
 
 
 func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
-	_ensure_card_pools_for_entities(_entities, _previous)
+	_ensure_card_pools_for_entities(_entities)
 	_sync_selection_slots()
 	_refresh_cards_for_current_entity()
 	_update_card_enabled_states()
@@ -310,29 +293,11 @@ func _clear_selected_card_for_entity(entity_id: StringName) -> void:
 	state_store.set_value(&"selected_cards", next_selected_cards)
 
 
-func _ensure_card_pools_for_entities(entities: Dictionary, _previous_entities: Variant) -> void:
-	if state_store == null:
+func _ensure_card_pools_for_entities(entities: Dictionary) -> void:
+	if _card_pool_service == null:
 		return
 
-	for raw_entity_id: Variant in entities:
-		var entity_id := StringName(str(raw_entity_id))
-		if entity_id == &"" or state_store.has_entity_card_pool(entity_id):
-			continue
-
-		state_store.set_entity_card_pool(entity_id, _create_random_card_pool())
-
-
-func _create_random_card_pool() -> Array[Dictionary]:
-	var card_pool: Array[Dictionary] = []
-	var available_cards := _cards.duplicate(true)
-	available_cards.shuffle()
-
-	var count := mini(ENTITY_CARD_POOL_SIZE, available_cards.size())
-	for index in count:
-		var card: Dictionary = available_cards[index]
-		card_pool.append(card.duplicate(true))
-
-	return card_pool
+	_card_pool_service.ensure_card_pools_for_entities(entities)
 
 
 func _refresh_cards_for_current_entity() -> void:
@@ -343,14 +308,11 @@ func _refresh_cards_for_current_entity() -> void:
 
 
 func _get_current_entity_cards() -> Array[Dictionary]:
-	if state_store == null:
-		return _cards.duplicate(true)
-
 	var entity_id := _get_player_entity_id()
-	if entity_id == &"":
+	if _card_pool_service == null:
 		return []
 
-	return state_store.get_entity_card_pool(entity_id)
+	return _card_pool_service.get_current_entity_cards(entity_id)
 
 
 func _update_selected_card_index() -> void:
