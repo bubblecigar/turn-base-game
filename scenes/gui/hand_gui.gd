@@ -1,18 +1,16 @@
 extends Control
 
 const CardActionFactory := preload("res://scenes/gui/CardActionFactory.gd")
+const SelectionSlotsView := preload("res://scenes/gui/SelectionSlotsView.gd")
 const CARD_SIZE := Vector2(116.0, 158.0)
 const CARD_OVERLAP_PIXELS := 34.0
 const CARD_RAISE_PIXELS := 14.0
 const CARD_HOVER_RAISE_PIXELS := 28.0
 const CARD_HOVER_SECONDS := 0.12
 const ENTITY_CARD_POOL_SIZE := 5
-const SELECTION_SLOT_SIZE := Vector2(150.0, 190.0)
-const SELECTION_SLOT_LABEL_NAME := "SlotLabel"
 const CARD_TITLE_LABEL_NAME := "TitleLabel"
 const CARD_COST_LABEL_NAME := "CostLabel"
 const CARD_BODY_LABEL_NAME := "BodyLabel"
-const CARD_BACK_ENTITY_LABEL_NAME := "EntityLabel"
 const CARD_COLORS := [
 	Color(0.20, 0.28, 0.34, 1.0),
 	Color(0.32, 0.24, 0.30, 1.0),
@@ -28,8 +26,7 @@ const CARD_COLORS := [
 
 @onready var card_stack: Control = $CardStackAnchor/CardStack
 @onready var confirm_button: Button = $ConfirmButton
-@onready var selection_slot_row: HBoxContainer = $SelectionSlots/DropZoneRow
-@onready var selection_slot_template: PanelContainer = $SelectionSlots/DropZoneRow/DropZoneTemplate
+@onready var selection_slots_view: SelectionSlotsView = $SelectionSlots
 @onready var card_templates_root: Control = $CardTemplates
 @onready var card_face_template: Panel = $CardTemplates/CardFaceTemplate
 @onready var card_back_template: Panel = $CardTemplates/CardBackTemplate
@@ -38,8 +35,6 @@ const CARD_COLORS := [
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
-var _selection_slots: Dictionary = {}
-var _slot_card_nodes: Dictionary = {}
 var _card_tweens: Dictionary = {}
 var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
@@ -76,8 +71,8 @@ static func _load_card_templates() -> Array[Dictionary]:
 func _ready() -> void:
 	randomize()
 	_card_action_factory = CardActionFactory.new(state_store)
-	if selection_slot_template != null:
-		selection_slot_template.visible = false
+	if selection_slots_view != null:
+		selection_slots_view.setup(state_store, card_back_template, self, CARD_SIZE)
 	if card_templates_root != null:
 		card_templates_root.visible = false
 	_sync_selection_slots()
@@ -546,45 +541,12 @@ func _input(event: InputEvent) -> void:
 
 
 func _sync_selection_slots() -> void:
-	if state_store == null:
+	if selection_slots_view == null:
 		return
 
-	var entities: Dictionary = state_store.get_value(&"entities", {})
-	for raw_entity_id: Variant in entities:
-		var entity_id := StringName(str(raw_entity_id))
-		if entity_id == &"" or _selection_slots.has(entity_id):
-			continue
-		_selection_slots[entity_id] = _create_selection_slot(entity_id)
-
-	var removed_entity_ids: Array[StringName] = []
-	for raw_entity_id: Variant in _selection_slots:
-		var entity_id := StringName(str(raw_entity_id))
-		if not entities.has(entity_id):
-			removed_entity_ids.append(entity_id)
-
-	for entity_id: StringName in removed_entity_ids:
-		var slot := _selection_slots[entity_id] as PanelContainer
-		_selection_slots.erase(entity_id)
-		if slot != null:
-			slot.queue_free()
-		_remove_slot_card_preview(entity_id)
-
-	_update_slot_card_preview_positions()
+	selection_slots_view.sync_slots()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
-
-
-func _create_selection_slot(entity_id: StringName) -> PanelContainer:
-	var slot := selection_slot_template.duplicate() as PanelContainer if selection_slot_template != null else PanelContainer.new()
-	slot.name = "DropZone_%s" % entity_id
-	slot.custom_minimum_size = SELECTION_SLOT_SIZE
-	slot.size = SELECTION_SLOT_SIZE
-	slot.visible = true
-	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	selection_slot_row.add_child(slot)
-	_update_selection_slot_label(slot, entity_id, false)
-
-	return slot
 
 
 func _layout_selection_slots() -> void:
@@ -715,155 +677,39 @@ func _get_card_stack_mouse_position() -> Vector2:
 
 
 func _get_selection_slot_card_position(entity_id: StringName) -> Vector2:
-	var slot := _selection_slots.get(entity_id, null) as PanelContainer
-	if slot == null:
+	if selection_slots_view == null:
 		return Vector2.ZERO
 
-	var slot_center := slot.get_global_rect().get_center()
-	var local_center := card_stack.get_global_transform_with_canvas().affine_inverse() * slot_center
-	return local_center - CARD_SIZE / 2.0
+	return selection_slots_view.get_card_position(entity_id, card_stack)
 
 
 func _get_hovered_selection_slot_entity_id() -> StringName:
 	var selected_entity_id := _get_player_entity_id()
-	if selected_entity_id == &"":
+	if selected_entity_id == &"" or selection_slots_view == null:
 		return &""
 
-	var mouse_position := get_global_mouse_position()
-	for raw_entity_id: Variant in _selection_slots:
-		var entity_id := StringName(str(raw_entity_id))
-		if entity_id != selected_entity_id:
-			continue
-
-		var slot := _selection_slots[raw_entity_id] as PanelContainer
-		if slot != null and slot.get_global_rect().has_point(mouse_position):
-			return entity_id
-
-	return &""
+	return selection_slots_view.get_hovered_entity_id(selected_entity_id, get_global_mouse_position())
 
 
 func _update_selection_slot_state() -> void:
-	if _selection_slots.is_empty():
+	if selection_slots_view == null:
 		return
 
-	var hovered_entity_id := _get_hovered_selection_slot_entity_id() if _dragging_card != null else &""
 	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
-	for raw_entity_id: Variant in _selection_slots:
-		var entity_id := StringName(str(raw_entity_id))
-		var slot := _selection_slots[raw_entity_id] as PanelContainer
-		if slot == null:
-			continue
-
-		slot.modulate = Color.WHITE
-		if hovered_entity_id == entity_id:
-			slot.modulate = Color(0.72, 1.0, 0.72, 1.0)
-		elif _dragging_card != null and entity_id != _get_player_entity_id():
-			slot.modulate = Color(0.50, 0.50, 0.50, 0.65)
-		elif selected_cards.has(entity_id):
-			slot.modulate = Color(1.0, 0.94, 0.54, 1.0)
-		_update_selection_slot_label(slot, entity_id, selected_cards.has(entity_id))
-
-
-func _get_selection_slot_entity_ids() -> Array[StringName]:
-	var entity_ids: Array[StringName] = []
-	for raw_entity_id: Variant in _selection_slots:
-		entity_ids.append(StringName(str(raw_entity_id)))
-	entity_ids.sort()
-	return entity_ids
-
-
-func _update_selection_slot_label(slot: PanelContainer, entity_id: StringName, has_selected_card: bool) -> void:
-	var label := slot.find_child(SELECTION_SLOT_LABEL_NAME, true, false) as Label
-	if label == null:
-		return
-
-	label.text = "%s\n%s" % [entity_id, "Ready" if has_selected_card else "Drop"]
+	selection_slots_view.update_state(_get_player_entity_id(), _dragging_card != null, selected_cards, get_global_mouse_position())
 
 
 func _update_slot_card_previews() -> void:
-	if state_store == null:
+	if state_store == null or selection_slots_view == null:
 		return
 
 	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
-	var current_entity_id := _get_player_entity_id()
-	for raw_entity_id: Variant in _selection_slots:
-		var entity_id := StringName(str(raw_entity_id))
-		if entity_id == current_entity_id:
-			_remove_slot_card_preview(entity_id)
-			continue
-
-		var card_data: Dictionary = selected_cards.get(entity_id, {})
-		if card_data.is_empty():
-			_remove_slot_card_preview(entity_id)
-			continue
-
-		_set_slot_card_preview(entity_id, card_data)
-
-	var removed_entity_ids: Array[StringName] = []
-	for raw_entity_id: Variant in _slot_card_nodes:
-		var entity_id := StringName(str(raw_entity_id))
-		if not _selection_slots.has(entity_id) or not selected_cards.has(entity_id):
-			removed_entity_ids.append(entity_id)
-
-	for entity_id: StringName in removed_entity_ids:
-		_remove_slot_card_preview(entity_id)
-
-	_update_slot_card_preview_positions()
-
-
-func _set_slot_card_preview(entity_id: StringName, card_data: Dictionary) -> void:
-	var preview := _slot_card_nodes.get(entity_id, null) as Control
-	if preview != null and preview.get_meta(&"card_data", {}) == card_data:
-		return
-
-	_remove_slot_card_preview(entity_id)
-	preview = _create_slot_card_preview(entity_id, card_data)
-	preview.set_meta(&"card_data", card_data.duplicate(true))
-	add_child(preview)
-	_slot_card_nodes[entity_id] = preview
-
-
-func _remove_slot_card_preview(entity_id: StringName) -> void:
-	var preview := _slot_card_nodes.get(entity_id, null) as Control
-	_slot_card_nodes.erase(entity_id)
-	if preview != null:
-		preview.queue_free()
-
-
-func _create_slot_card_preview(entity_id: StringName, _card_data: Dictionary) -> Panel:
-	var card := card_back_template.duplicate() as Panel if card_back_template != null else Panel.new()
-	card.name = "CardBack_%s" % entity_id
-	_apply_fixed_card_size(card)
-	card.visible = true
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.z_index = 140
-	_set_label_text(card, CARD_BACK_ENTITY_LABEL_NAME, str(entity_id))
-
-	return card
+	selection_slots_view.update_slot_card_previews(selected_cards, _get_player_entity_id())
 
 
 func _update_slot_card_preview_positions() -> void:
-	for raw_entity_id: Variant in _slot_card_nodes:
-		var entity_id := StringName(str(raw_entity_id))
-		var preview := _slot_card_nodes[raw_entity_id] as Control
-		if preview == null:
-			continue
-
-		_apply_fixed_card_size(preview)
-		preview.position = _get_selection_slot_card_preview_position(entity_id)
-		preview.rotation_degrees = 0.0
-		preview.scale = Vector2.ONE
-		preview.z_index = 140
-
-
-func _get_selection_slot_card_preview_position(entity_id: StringName) -> Vector2:
-	var slot := _selection_slots.get(entity_id, null) as PanelContainer
-	if slot == null:
-		return Vector2.ZERO
-
-	var slot_center := slot.get_global_rect().get_center()
-	var local_center := get_global_transform_with_canvas().affine_inverse() * slot_center
-	return local_center - CARD_SIZE / 2.0
+	if selection_slots_view != null:
+		selection_slots_view.update_slot_card_preview_positions()
 
 
 
