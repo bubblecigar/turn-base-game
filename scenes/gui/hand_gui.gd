@@ -3,6 +3,7 @@ extends Control
 const CardActionFactory := preload("res://scenes/gui/CardActionFactory.gd")
 const SelectionSlotsView := preload("res://scenes/gui/SelectionSlotsView.gd")
 const CardHandView := preload("res://scenes/gui/card_hand_view.gd")
+const CardDragController := preload("res://scenes/gui/card_drag_controller.gd")
 const CARD_SIZE := Vector2(116.0, 158.0)
 const ENTITY_CARD_POOL_SIZE := 5
 
@@ -23,15 +24,12 @@ const ENTITY_CARD_POOL_SIZE := 5
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
 var _selected_card_index: int = -1
-var _dragging_card_index: int = -1
-var _dragging_card: Control
-var _dragging_card_data: Dictionary = {}
-var _drag_offset := Vector2.ZERO
 var _active_cards: Array[Dictionary] = []
 var _pending_confirmed_card_actions: Dictionary = {}
 var _pending_card_return_count := 0
 var _cards: Array[Dictionary] = _load_card_templates()
 var _card_action_factory: RefCounted
+var _card_drag_controller: RefCounted
 
 
 static func _load_card_templates() -> Array[Dictionary]:
@@ -57,6 +55,7 @@ func _ready() -> void:
 	randomize()
 	_card_action_factory = CardActionFactory.new(state_store)
 	if card_stack != null:
+		_card_drag_controller = CardDragController.new(card_stack)
 		card_stack.setup(card_face_template, Callable(self, "_get_selection_slot_card_position"), Callable(self, "_get_player_entity_id"))
 		card_stack.card_gui_input.connect(_on_card_gui_input)
 	if selection_slots_view != null:
@@ -89,7 +88,7 @@ func set_cards(cards: Array[Dictionary]) -> void:
 func _rebuild_card_hand() -> void:
 	_clear_card_drag()
 	if card_stack != null:
-		card_stack._rebuild_cards(_active_cards, _selected_card_index, _dragging_card_index)
+		card_stack._rebuild_cards(_active_cards, _selected_card_index, _get_dragging_card_index())
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -374,11 +373,11 @@ func _update_selected_card_index() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if _dragging_card == null:
+	if _card_drag_controller == null or not _card_drag_controller.is_dragging():
 		return
 
 	if event is InputEventMouseMotion:
-		_update_dragged_card_position()
+		_card_drag_controller.update_dragged_card_position()
 		_update_selection_slot_state()
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -400,30 +399,21 @@ func _layout_selection_slots() -> void:
 
 
 func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
-	if card == null:
+	if _card_drag_controller == null or card == null:
 		return
 
-	_dragging_card_index = index
-	_dragging_card = card
-	_dragging_card_data = card_data
-	_drag_offset = _get_card_stack_mouse_position() - card.position
-	if card_stack != null:
-		card_stack.prepare_card_for_drag(card, index)
-	_update_dragged_card_position()
+	_card_drag_controller.start_drag(card_data, index, card)
 	_update_selection_slot_state()
 
 
-func _update_dragged_card_position() -> void:
-	if _dragging_card == null:
+func _finish_card_drag(target_entity_id: StringName) -> void:
+	if _card_drag_controller == null:
 		return
 
-	_dragging_card.position = _get_card_stack_mouse_position() - _drag_offset
-
-
-func _finish_card_drag(target_entity_id: StringName) -> void:
-	var card := _dragging_card
-	var card_index := _dragging_card_index
-	var card_data := _dragging_card_data.duplicate(true)
+	var drag_snapshot: Dictionary = _card_drag_controller.get_drag_snapshot()
+	var card := drag_snapshot.get("card", null) as Control
+	var card_index := int(drag_snapshot.get("index", -1))
+	var card_data: Dictionary = drag_snapshot.get("data", {})
 	_clear_card_drag()
 
 	if target_entity_id != &"":
@@ -441,16 +431,15 @@ func _finish_card_drag(target_entity_id: StringName) -> void:
 
 
 func _clear_card_drag() -> void:
-	_dragging_card_index = -1
-	_dragging_card = null
-	_dragging_card_data = {}
-	_drag_offset = Vector2.ZERO
-	if card_stack != null:
-		card_stack.set_dragging_card_index(-1)
+	if _card_drag_controller != null:
+		_card_drag_controller.clear_drag()
 
 
-func _get_card_stack_mouse_position() -> Vector2:
-	return card_stack.get_mouse_position_in_hand() if card_stack != null else Vector2.ZERO
+func _get_dragging_card_index() -> int:
+	if _card_drag_controller == null:
+		return -1
+
+	return _card_drag_controller.get_dragging_card_index()
 
 
 func _get_selection_slot_card_position(entity_id: StringName) -> Vector2:
@@ -473,7 +462,7 @@ func _update_selection_slot_state() -> void:
 		return
 
 	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
-	selection_slots_view.update_state(_get_player_entity_id(), _dragging_card != null, selected_cards, get_global_mouse_position())
+	selection_slots_view.update_state(_get_player_entity_id(), _card_drag_controller != null and _card_drag_controller.is_dragging(), selected_cards, get_global_mouse_position())
 
 
 func _update_slot_card_previews() -> void:
@@ -549,4 +538,4 @@ func _get_first_board_entity_id() -> StringName:
 
 func _layout_card_hand(animate_selected: bool = false) -> void:
 	if card_stack != null:
-		card_stack._layout_cards(animate_selected, _selected_card_index, _dragging_card_index)
+		card_stack._layout_cards(animate_selected, _selected_card_index, _get_dragging_card_index())
