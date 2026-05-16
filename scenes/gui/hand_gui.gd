@@ -2,29 +2,16 @@ extends Control
 
 const CardActionFactory := preload("res://scenes/gui/CardActionFactory.gd")
 const SelectionSlotsView := preload("res://scenes/gui/SelectionSlotsView.gd")
+const CardHandView := preload("res://scenes/gui/card_hand_view.gd")
 const CARD_SIZE := Vector2(116.0, 158.0)
-const CARD_OVERLAP_PIXELS := 34.0
-const CARD_RAISE_PIXELS := 14.0
-const CARD_HOVER_RAISE_PIXELS := 28.0
-const CARD_HOVER_SECONDS := 0.12
 const ENTITY_CARD_POOL_SIZE := 5
-const CARD_TITLE_LABEL_NAME := "TitleLabel"
-const CARD_COST_LABEL_NAME := "CostLabel"
-const CARD_BODY_LABEL_NAME := "BodyLabel"
-const CARD_COLORS := [
-	Color(0.20, 0.28, 0.34, 1.0),
-	Color(0.32, 0.24, 0.30, 1.0),
-	Color(0.22, 0.34, 0.26, 1.0),
-	Color(0.36, 0.30, 0.20, 1.0),
-	Color(0.26, 0.26, 0.38, 1.0),
-]
 
 @export var action_queue_path: NodePath
 @export var action_handler_path: NodePath
 @export var state_store_path: NodePath
 @export var game_loop_path: NodePath
 
-@onready var card_stack: Control = $CardStackAnchor/CardStack
+@onready var card_stack: CardHandView = $CardStackAnchor/CardStack
 @onready var confirm_button: Button = $ConfirmButton
 @onready var selection_slots_view: SelectionSlotsView = $SelectionSlots
 @onready var card_templates_root: Control = $CardTemplates
@@ -35,8 +22,6 @@ const CARD_COLORS := [
 @onready var state_store: Node = get_node_or_null(state_store_path)
 @onready var game_loop: Node = get_node_or_null(game_loop_path)
 
-var _card_tweens: Dictionary = {}
-var _card_nodes: Array[Control] = []
 var _selected_card_index: int = -1
 var _dragging_card_index: int = -1
 var _dragging_card: Control
@@ -71,13 +56,16 @@ static func _load_card_templates() -> Array[Dictionary]:
 func _ready() -> void:
 	randomize()
 	_card_action_factory = CardActionFactory.new(state_store)
+	if card_stack != null:
+		card_stack.setup(card_face_template, Callable(self, "_get_selection_slot_card_position"), Callable(self, "_get_player_entity_id"))
+		card_stack.card_gui_input.connect(_on_card_gui_input)
 	if selection_slots_view != null:
 		selection_slots_view.setup(state_store, card_back_template, self, CARD_SIZE)
 	if card_templates_root != null:
 		card_templates_root.visible = false
 	_sync_selection_slots()
 	resized.connect(_update_slot_card_preview_positions)
-	resized.connect(_layout_cards)
+	resized.connect(_layout_card_hand)
 	if state_store != null:
 		state_store.entities_updated.connect(_on_entities_updated)
 		state_store.entity_selection_changed.connect(_on_entity_selection_changed)
@@ -98,109 +86,13 @@ func set_cards(cards: Array[Dictionary]) -> void:
 	_refresh_cards_for_current_entity()
 
 
-func _rebuild_cards() -> void:
-	_card_nodes.clear()
+func _rebuild_card_hand() -> void:
 	_clear_card_drag()
-	for tween: Tween in _card_tweens.values():
-		if tween:
-			tween.kill()
-	_card_tweens.clear()
-
-	for child: Node in card_stack.get_children():
-		card_stack.remove_child(child)
-		child.queue_free()
-
-	for index in _active_cards.size():
-		var card := _create_card(_active_cards[index], index)
-		card_stack.add_child(card)
-		_card_nodes.append(card)
-
-	_layout_cards()
+	if card_stack != null:
+		card_stack._rebuild_cards(_active_cards, _selected_card_index, _dragging_card_index)
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
-
-
-func _create_card(card_data: Dictionary, index: int) -> Panel:
-	var card := card_face_template.duplicate() as Panel if card_face_template != null else Panel.new()
-	card.name = "Card_%d" % index
-	_apply_fixed_card_size(card)
-	card.visible = true
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	card.z_index = index
-	card.gui_input.connect(_on_card_gui_input.bind(card_data, index, card))
-	card.mouse_entered.connect(_on_card_mouse_entered.bind(card, index))
-	card.mouse_exited.connect(_on_card_mouse_exited.bind(card, index))
-
-	var style := card.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-	if style != null:
-		style.bg_color = CARD_COLORS[index % CARD_COLORS.size()]
-		card.add_theme_stylebox_override("panel", style)
-
-	_set_label_text(card, CARD_TITLE_LABEL_NAME, str(card_data.get("title", "Card")))
-	_set_label_text(card, CARD_COST_LABEL_NAME, _get_card_cost_text(card_data))
-	_set_label_text(card, CARD_BODY_LABEL_NAME, str(card_data.get("body", "")))
-
-	return card
-
-
-func _get_card_cost_text(card_data: Dictionary) -> String:
-	var args: Dictionary = card_data.get("args", card_data.get("action", {}).get("payload", {}).get("args", {}))
-	var resource := int(args.get("resource", 0))
-	return str(resource) if resource > 0 else ""
-
-
-func _on_card_mouse_entered(card: Control, index: int) -> void:
-	_tween_card_hover(card, index, true)
-
-
-func _on_card_mouse_exited(card: Control, index: int) -> void:
-	_tween_card_hover(card, index, false)
-
-
-func _tween_card_hover(card: Control, index: int, is_hovered: bool) -> void:
-	if card == null:
-		return
-	if index == _dragging_card_index or index == _selected_card_index:
-		return
-
-	if _card_tweens.has(card):
-		var active_tween: Tween = _card_tweens[card]
-		if active_tween:
-			active_tween.kill()
-
-	var base_position := _get_card_base_position(index, card_stack.get_child_count())
-	var centered_index := _get_card_centered_index(index, card_stack.get_child_count())
-	var target_position := base_position
-	var target_rotation := centered_index * 4.0
-	var target_scale := Vector2.ONE
-	var target_z_index := index
-
-	if is_hovered:
-		target_position.y -= CARD_HOVER_RAISE_PIXELS
-		target_rotation = 0.0
-		target_z_index = 100 + index
-
-	_apply_fixed_card_size(card)
-	card.pivot_offset = CARD_SIZE / 2.0
-	card.z_index = target_z_index
-	var tween := create_tween()
-	_card_tweens[card] = tween
-	tween.set_parallel(true)
-	tween.set_trans(Tween.TRANS_QUAD)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
-	tween.tween_property(card, "rotation_degrees", target_rotation, CARD_HOVER_SECONDS)
-	tween.tween_property(card, "scale", target_scale, CARD_HOVER_SECONDS)
-	tween.finished.connect(_on_card_hover_tween_finished.bind(card, tween, target_z_index))
-
-
-func _on_card_hover_tween_finished(card: Control, tween: Tween, target_z_index: int) -> void:
-	if _card_tweens.get(card, null) == tween:
-		_card_tweens.erase(card)
-
-	if card != null:
-		card.z_index = target_z_index
 
 
 func _on_entities_updated(_entities: Dictionary, _previous: Variant) -> void:
@@ -218,7 +110,7 @@ func _on_entity_selection_changed(_entity_id: StringName, _previous: StringName)
 func _on_selected_card_changed(entity_id: StringName, _card_data: Dictionary) -> void:
 	if entity_id == _get_player_entity_id():
 		_update_selected_card_index()
-		_layout_cards(true)
+		_layout_card_hand(true)
 		_update_selection_slot_state()
 		_update_slot_card_previews()
 	_update_card_enabled_states()
@@ -247,27 +139,11 @@ func _get_player_entity_id() -> StringName:
 
 
 func _update_card_enabled_states() -> void:
-	var focus := _get_player_focus()
 	if confirm_button != null:
 		var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
 		confirm_button.disabled = not _has_unconfirmed_selected_card(selected_cards)
-	for i in _card_nodes.size():
-		var card := _card_nodes[i]
-		if card == null:
-			continue
-		var args: Dictionary = _active_cards[i].get("args", {})
-		var cost := int(args.get("resource", 0))
-		var is_selected := i == _selected_card_index
-		var is_affordable := focus >= cost
-		var is_pending := _pending_confirmed_card_actions.has(_get_player_entity_id()) and is_selected
-		if is_pending:
-			card.modulate = Color(0.70, 0.70, 0.70, 0.85)
-		elif is_selected:
-			card.modulate = Color(1.0, 0.95, 0.55, 1.0)
-		elif is_affordable:
-			card.modulate = Color.WHITE
-		else:
-			card.modulate = Color(0.45, 0.45, 0.45, 0.65)
+	if card_stack != null:
+		card_stack.update_card_enabled_states(_get_player_focus(), _pending_confirmed_card_actions, _get_player_entity_id())
 
 
 func _on_card_gui_input(event: InputEvent, card_data: Dictionary, index: int, card: Control) -> void:
@@ -313,7 +189,7 @@ func _select_card_for_entity(entity_id: StringName, card_data: Dictionary) -> vo
 	if state_store != null:
 		state_store.select_card(entity_id, card_data)
 
-	_layout_cards(true)
+	_layout_card_hand(true)
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -353,7 +229,7 @@ func _on_confirm_pressed() -> void:
 			for batch: Array in batches:
 				action_queue.enQueue(batch)
 
-	_layout_cards()
+	_layout_card_hand()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -386,52 +262,22 @@ func _float_pending_cards_back_to_hand() -> void:
 	for entity_id: StringName in pending_entity_ids:
 		var card_data: Dictionary = selected_cards.get(entity_id, {})
 		var card_index := _active_cards.find(card_data)
-		if card_index < 0 or card_index >= _card_nodes.size():
+		if card_stack == null or card_index < 0 or card_index >= card_stack.get_card_count():
 			continue
 
-		var card := _card_nodes[card_index]
+		var card := card_stack.get_card(card_index)
 		if card == null:
 			continue
 
 		animated_count += 1
 		_pending_card_return_count += 1
-		_float_card_back_to_hand(card, card_index, pending_entity_ids)
+		card_stack._float_card_back_to_hand(card, card_index, _on_pending_card_return_tween_finished.bind(pending_entity_ids))
 
 	if animated_count == 0:
 		_clear_pending_cards_after_return(pending_entity_ids)
 
 
-func _float_card_back_to_hand(card: Control, index: int, pending_entity_ids: Array[StringName]) -> void:
-	if _card_tweens.has(card):
-		var active_tween: Tween = _card_tweens[card]
-		if active_tween:
-			active_tween.kill()
-
-	var card_count := _card_nodes.size()
-	var centered_index := _get_card_centered_index(index, card_count)
-	var target_position := _get_card_base_position(index, card_count)
-	var target_rotation := centered_index * 4.0
-	var target_z_index := index
-
-	_apply_fixed_card_size(card)
-	card.pivot_offset = CARD_SIZE / 2.0
-	card.z_index = 220 + index
-
-	var tween := create_tween()
-	_card_tweens[card] = tween
-	tween.set_parallel(true)
-	tween.set_trans(Tween.TRANS_QUAD)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
-	tween.tween_property(card, "rotation_degrees", target_rotation, CARD_HOVER_SECONDS)
-	tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
-	tween.finished.connect(_on_pending_card_return_tween_finished.bind(card, tween, target_z_index, pending_entity_ids))
-
-
-func _on_pending_card_return_tween_finished(card: Control, tween: Tween, target_z_index: int, pending_entity_ids: Array[StringName]) -> void:
-	if _card_tweens.get(card, null) == tween:
-		_card_tweens.erase(card)
-
+func _on_pending_card_return_tween_finished(card: Control, target_z_index: int, pending_entity_ids: Array[StringName]) -> void:
 	if card != null:
 		card.z_index = target_z_index
 
@@ -446,7 +292,7 @@ func _clear_pending_cards_after_return(pending_entity_ids: Array[StringName]) ->
 		_pending_confirmed_card_actions.erase(entity_id)
 
 	_update_selected_card_index()
-	_layout_cards()
+	_layout_card_hand()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -494,7 +340,7 @@ func _refresh_cards_for_current_entity() -> void:
 	_clear_card_drag()
 	_active_cards = _get_current_entity_cards()
 	_update_selected_card_index()
-	_rebuild_cards()
+	_rebuild_card_hand()
 
 
 func _get_current_entity_cards() -> Array[Dictionary]:
@@ -557,19 +403,12 @@ func _start_card_drag(card_data: Dictionary, index: int, card: Control) -> void:
 	if card == null:
 		return
 
-	if _card_tweens.has(card):
-		var active_tween: Tween = _card_tweens[card]
-		if active_tween:
-			active_tween.kill()
-
 	_dragging_card_index = index
 	_dragging_card = card
 	_dragging_card_data = card_data
 	_drag_offset = _get_card_stack_mouse_position() - card.position
-	_apply_fixed_card_size(card)
-	card.rotation_degrees = 0.0
-	card.scale = Vector2.ONE
-	card.z_index = 300 + index
+	if card_stack != null:
+		card_stack.prepare_card_for_drag(card, index)
 	_update_dragged_card_position()
 	_update_selection_slot_state()
 
@@ -591,9 +430,11 @@ func _finish_card_drag(target_entity_id: StringName) -> void:
 		_select_card_for_entity(target_entity_id, card_data)
 	elif card != null and card_index >= 0:
 		if card_index == _selected_card_index:
-			_move_card_to_selection_slot(card, card_index, _get_player_entity_id(), true)
+			if card_stack != null:
+				card_stack._move_card_to_selection_slot(card, card_index, _get_player_entity_id(), true)
 		else:
-			_move_card_to_layout_position(card, card_index, true)
+			if card_stack != null:
+				card_stack._move_card_to_layout_position(card, card_index, true)
 
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -604,76 +445,12 @@ func _clear_card_drag() -> void:
 	_dragging_card = null
 	_dragging_card_data = {}
 	_drag_offset = Vector2.ZERO
-
-
-func _move_card_to_layout_position(card: Control, index: int, animated: bool) -> void:
-	if card == null:
-		return
-
-	if _card_tweens.has(card):
-		var active_tween: Tween = _card_tweens[card]
-		if active_tween:
-			active_tween.kill()
-
-	var card_count := _card_nodes.size()
-	var centered_index := _get_card_centered_index(index, card_count)
-	var target_position := _get_card_base_position(index, card_count)
-	var target_rotation := centered_index * 4.0
-	var target_z_index := index
-
-	_apply_fixed_card_size(card)
-	card.pivot_offset = CARD_SIZE / 2.0
-	if animated:
-		card.z_index = target_z_index
-		var tween := create_tween()
-		_card_tweens[card] = tween
-		tween.set_parallel(true)
-		tween.set_trans(Tween.TRANS_QUAD)
-		tween.set_ease(Tween.EASE_OUT)
-		tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
-		tween.tween_property(card, "rotation_degrees", target_rotation, CARD_HOVER_SECONDS)
-		tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
-		tween.finished.connect(_on_card_hover_tween_finished.bind(card, tween, target_z_index))
-	else:
-		card.position = target_position
-		card.rotation_degrees = target_rotation
-		card.scale = Vector2.ONE
-		card.z_index = target_z_index
-
-
-func _move_card_to_selection_slot(card: Control, index: int, entity_id: StringName, animated: bool) -> void:
-	if card == null:
-		return
-
-	if _card_tweens.has(card):
-		var active_tween: Tween = _card_tweens[card]
-		if active_tween:
-			active_tween.kill()
-
-	var target_position := _get_selection_slot_card_position(entity_id)
-	var target_z_index := 150 + index
-	_apply_fixed_card_size(card)
-	card.pivot_offset = CARD_SIZE / 2.0
-	if animated:
-		card.z_index = target_z_index
-		var tween := create_tween()
-		_card_tweens[card] = tween
-		tween.set_parallel(true)
-		tween.set_trans(Tween.TRANS_QUAD)
-		tween.set_ease(Tween.EASE_OUT)
-		tween.tween_property(card, "position", target_position, CARD_HOVER_SECONDS)
-		tween.tween_property(card, "rotation_degrees", 0.0, CARD_HOVER_SECONDS)
-		tween.tween_property(card, "scale", Vector2.ONE, CARD_HOVER_SECONDS)
-		tween.finished.connect(_on_card_hover_tween_finished.bind(card, tween, target_z_index))
-	else:
-		card.position = target_position
-		card.rotation_degrees = 0.0
-		card.scale = Vector2.ONE
-		card.z_index = target_z_index
+	if card_stack != null:
+		card_stack.set_dragging_card_index(-1)
 
 
 func _get_card_stack_mouse_position() -> Vector2:
-	return card_stack.get_global_transform_with_canvas().affine_inverse() * get_global_mouse_position()
+	return card_stack.get_mouse_position_in_hand() if card_stack != null else Vector2.ZERO
 
 
 func _get_selection_slot_card_position(entity_id: StringName) -> Vector2:
@@ -770,57 +547,6 @@ func _get_first_board_entity_id() -> StringName:
 	return &""
 
 
-func _layout_cards(animate_selected: bool = false) -> void:
-	if card_stack == null:
-		return
-
-	var card_count := card_stack.get_child_count()
-	if card_count == 0:
-		return
-
-	card_stack.size = Vector2.ZERO
-
-	for index in card_count:
-		var card := card_stack.get_child(index) as Control
-		if index == _dragging_card_index:
-			continue
-		if index == _selected_card_index:
-			_move_card_to_selection_slot(card, index, _get_player_entity_id(), animate_selected)
-			continue
-
-		var centered_index := _get_card_centered_index(index, card_count)
-		_apply_fixed_card_size(card)
-		card.pivot_offset = CARD_SIZE / 2.0
-		card.position = _get_card_base_position(index, card_count)
-		card.rotation_degrees = centered_index * 4.0
-
-
-func _apply_fixed_card_size(card: Control) -> void:
-	if card == null:
-		return
-
-	card.custom_minimum_size = CARD_SIZE
-	card.size = CARD_SIZE
-	card.scale = Vector2.ONE
-
-
-func _set_label_text(root: Node, label_name: String, text: String) -> void:
-	var label := root.find_child(label_name, true, false) as Label
-	if label == null:
-		return
-
-	label.text = text
-
-
-func _get_card_base_position(index: int, card_count: int) -> Vector2:
-	var step := CARD_SIZE.x - CARD_OVERLAP_PIXELS
-	var stack_width := CARD_SIZE.x + step * float(card_count - 1)
-	var centered_index := _get_card_centered_index(index, card_count)
-	return Vector2(
-		-stack_width / 2.0 + step * index,
-		-CARD_SIZE.y / 2.0 + absf(centered_index) * CARD_RAISE_PIXELS * 0.35
-	)
-
-
-func _get_card_centered_index(index: int, card_count: int) -> float:
-	return float(index) - float(card_count - 1) / 2.0
+func _layout_card_hand(animate_selected: bool = false) -> void:
+	if card_stack != null:
+		card_stack._layout_cards(animate_selected, _selected_card_index, _dragging_card_index)
