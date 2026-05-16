@@ -85,7 +85,7 @@ func update_card_enabled_states(focus: int, pending_entity_ids: Dictionary, play
 			card.modulate = Color(0.45, 0.45, 0.45, 0.65)
 
 
-func _rebuild_cards(active_cards: Array[Dictionary], selected_card_index: int, dragging_card_index: int) -> void:
+func rebuild_cards(active_cards: Array[Dictionary], selected_card_index: int, dragging_card_index: int) -> void:
 	_card_nodes.clear()
 	_active_cards = active_cards.duplicate(true)
 	_selected_card_index = selected_card_index
@@ -104,7 +104,7 @@ func _rebuild_cards(active_cards: Array[Dictionary], selected_card_index: int, d
 		add_child(card)
 		_card_nodes.append(card)
 
-	_layout_cards()
+	layout_cards()
 
 
 func _create_card(card_data: Dictionary, index: int) -> Panel:
@@ -130,7 +130,7 @@ func _create_card(card_data: Dictionary, index: int) -> Panel:
 	return card
 
 
-func _layout_cards(animate_selected: bool = false, selected_card_index: int = -9999, dragging_card_index: int = -9999) -> void:
+func layout_cards(animate_selected: bool = false, selected_card_index: int = -9999, dragging_card_index: int = -9999) -> void:
 	if selected_card_index != -9999:
 		_selected_card_index = selected_card_index
 	if dragging_card_index != -9999:
@@ -147,7 +147,7 @@ func _layout_cards(animate_selected: bool = false, selected_card_index: int = -9
 		if index == _dragging_card_index:
 			continue
 		if index == _selected_card_index:
-			_move_card_to_selection_slot(card, index, _get_player_entity_id(), animate_selected)
+			move_card_to_selection_slot(card, index, _get_player_entity_id(), animate_selected)
 			continue
 
 		var centered_index := _get_card_centered_index(index, card_count)
@@ -157,7 +157,7 @@ func _layout_cards(animate_selected: bool = false, selected_card_index: int = -9
 		card.rotation_degrees = centered_index * 4.0
 
 
-func _move_card_to_layout_position(card: Control, index: int, animated: bool) -> void:
+func move_card_to_layout_position(card: Control, index: int, animated: bool) -> void:
 	if card == null:
 		return
 
@@ -179,7 +179,7 @@ func _move_card_to_layout_position(card: Control, index: int, animated: bool) ->
 		card.z_index = target_z_index
 
 
-func _move_card_to_selection_slot(card: Control, index: int, entity_id: StringName, animated: bool) -> void:
+func move_card_to_selection_slot(card: Control, index: int, entity_id: StringName, animated: bool) -> void:
 	if card == null:
 		return
 
@@ -253,7 +253,7 @@ func _set_label_text(root: Node, label_name: String, text: String) -> void:
 	label.text = text
 
 
-func _float_card_back_to_hand(card: Control, index: int, finished_callback: Callable) -> void:
+func float_card_back_to_hand(card: Control, index: int, finished_callback: Callable) -> void:
 	if card == null:
 		return
 

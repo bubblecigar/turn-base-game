@@ -71,7 +71,7 @@ func set_cards(cards: Array[Dictionary]) -> void:
 func _rebuild_card_hand() -> void:
 	_clear_card_drag()
 	if card_stack != null:
-		card_stack._rebuild_cards(_active_cards, _selected_card_index, _get_dragging_card_index())
+		card_stack.rebuild_cards(_active_cards, _selected_card_index, _get_dragging_card_index())
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -253,7 +253,7 @@ func _float_pending_cards_back_to_hand() -> void:
 
 		animated_count += 1
 		_pending_card_return_count += 1
-		card_stack._float_card_back_to_hand(card, card_index, _on_pending_card_return_tween_finished.bind(pending_entity_ids))
+		card_stack.float_card_back_to_hand(card, card_index, _on_pending_card_return_tween_finished.bind(pending_entity_ids))
 
 	if animated_count == 0:
 		_clear_pending_cards_after_return(pending_entity_ids)
@@ -383,10 +383,10 @@ func _finish_card_drag(target_entity_id: StringName) -> void:
 	elif card != null and card_index >= 0:
 		if card_index == _selected_card_index:
 			if card_stack != null:
-				card_stack._move_card_to_selection_slot(card, card_index, _get_player_entity_id(), true)
+				card_stack.move_card_to_selection_slot(card, card_index, _get_player_entity_id(), true)
 		else:
 			if card_stack != null:
-				card_stack._move_card_to_layout_position(card, card_index, true)
+				card_stack.move_card_to_layout_position(card, card_index, true)
 
 	_update_selection_slot_state()
 	_update_slot_card_previews()
@@ -440,30 +440,6 @@ func _update_slot_card_preview_positions() -> void:
 		selection_slots_view.update_slot_card_preview_positions()
 
 
-
-func _enqueue_card_action(card_data: Dictionary) -> void:
-	var entity_id := _get_player_entity_id()
-	if entity_id == &"":
-		push_warning("Cannot enqueue card action before an entity is on the board.")
-		return
-	_enqueue_card_action_for(card_data, entity_id)
-
-
-func _enqueue_card_action_for(card_data: Dictionary, entity_id: StringName) -> void:
-	if action_queue == null:
-		push_warning("Cannot enqueue card action without an ActionQueue.")
-		return
-
-	var action := _create_card_action(card_data, entity_id)
-	if action.is_empty():
-		push_warning("Cannot enqueue card without action data: %s." % card_data)
-		return
-
-	var batches := _create_ordered_action_batches_from_stack([action])
-	for batch: Array in batches:
-		action_queue.enQueue(batch)
-
-
 func _create_ordered_action_batches_from_stack(action_stack: Array[Dictionary]) -> Array[Array]:
 	if game_loop != null:
 		return game_loop.create_ordered_action_batches(action_stack)
@@ -500,4 +476,4 @@ func _get_first_board_entity_id() -> StringName:
 
 func _layout_card_hand(animate_selected: bool = false) -> void:
 	if card_stack != null:
-		card_stack._layout_cards(animate_selected, _selected_card_index, _get_dragging_card_index())
+		card_stack.layout_cards(animate_selected, _selected_card_index, _get_dragging_card_index())
