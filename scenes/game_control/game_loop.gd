@@ -96,7 +96,6 @@ func _maybe_start_next_turn() -> void:
 		return
 
 	_turn_in_progress = true
-	_turn_index += 1
 	_emit_status("turn %d: queued %d actions" % [_turn_index, action_stack.size()])
 	print("game loop turn %d actions: %s" % [_turn_index, action_stack])
 	for action_batch: Array[Dictionary] in action_batches:
@@ -274,6 +273,8 @@ func _create_random_cast_action(entity_id: StringName, alive_entity_ids: Array[S
 
 
 func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Array]:
+	_turn_index += 1
+	var turn_index := _turn_index
 	var actions_by_category := {
 		ACTION_CATEGORY_CAST: [],
 		ACTION_CATEGORY_MOVE: [],
@@ -289,6 +290,7 @@ func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Arr
 		actions_by_category[category].append(action)
 
 	var action_batches: Array[Array] = []
+	action_batches.append([_create_turn_start_action(turn_index)])
 
 	var attack_batch: Array = actions_by_category[ACTION_CATEGORY_ATTACK]
 	var prepare_attack_batch := _create_prepare_attack_batch(attack_batch)
@@ -307,7 +309,26 @@ func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Arr
 	if not cast_success_batch.is_empty():
 		action_batches.append(cast_success_batch)
 
+	action_batches.append([_create_turn_end_action(turn_index)])
 	return action_batches
+
+
+func _create_turn_start_action(turn_index: int) -> Dictionary:
+	return {
+		"eventName": "turn_start",
+		"payload": {
+			"turn_index": turn_index,
+		},
+	}
+
+
+func _create_turn_end_action(turn_index: int) -> Dictionary:
+	return {
+		"eventName": "turn_end",
+		"payload": {
+			"turn_index": turn_index,
+		},
+	}
 
 
 func _create_prepare_attack_batch(attack_actions: Array) -> Array[Dictionary]:

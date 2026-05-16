@@ -5,6 +5,9 @@ signal attack_performed(attacker_id: StringName, args: Dictionary)
 signal attack_prepared(attacker_id: StringName, args: Dictionary)
 signal cast_performed(caster_id: StringName, args: Dictionary)
 signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
+signal event_performed(event: Dictionary)
+signal turn_start(event: Dictionary)
+signal turn_end(event: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -49,6 +52,7 @@ func consume(event: Dictionary) -> void:
 
 	print('action consumed: ', _current_event)
 	_handle_consumed_event(_current_event)
+	event_performed.emit(_current_event)
 	_current_event = {}
 	_is_consuming = false
 	processing_status_changed.emit(false, {})
@@ -74,6 +78,10 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_attack_handler.prepare_attack(event['payload'])
 		'perform_attack':
 			_attack_handler.perform_attack(event['payload'])
+		'turn_start':
+			turn_start.emit(event)
+		'turn_end':
+			turn_end.emit(event)
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:

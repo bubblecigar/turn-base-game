@@ -54,6 +54,7 @@ mouse_filter = 2
 theme = ExtResource("2_5lbe4")
 script = ExtResource("1_hand")
 action_queue_path = NodePath("../ActionQueue")
+action_handler_path = NodePath("../ActionHandler")
 state_store_path = NodePath("../StateStore")
 game_loop_path = NodePath("../GameLoop")
 

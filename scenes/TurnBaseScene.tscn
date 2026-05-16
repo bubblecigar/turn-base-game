@@ -48,5 +48,6 @@ script = ExtResource("9_game_loop")
 
 [node name="HandGui" parent="CanvasLayer" unique_id=693154040 instance=ExtResource("10_hand")]
 action_queue_path = NodePath("../../ActionQueue")
+action_handler_path = NodePath("../../ActionHandler")
 state_store_path = NodePath("../../StateStore")
 game_loop_path = NodePath("../../GameLoop")
