@@ -68,6 +68,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_init_board(event['payload'])
 		'spawn_entity':
 			_spawn_entity(event['payload'])
+		'update_entity_card_pool':
+			_update_entity_card_pool(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
 		'perform_cast':
@@ -181,6 +183,50 @@ func _is_head_spec(spec: Variant) -> bool:
 
 func _is_part_spec(spec: Variant) -> bool:
 	return spec is Dictionary and spec.has("width") and spec.has("height")
+
+
+func _update_entity_card_pool(payload: Dictionary) -> void:
+	if not _is_entity_card_pool_write_payload(payload):
+		push_warning('Invalid update_entity_card_pool payload. Expected { id: String, cards: Array[Dictionary] }.')
+		return
+
+	var entity_id := StringName(str(payload["id"]))
+	state_store.set_entity_card_pool(entity_id, _get_card_pool_cards(payload["cards"]))
+	print("updated entity card pool: %s" % entity_id)
+
+
+func _is_entity_card_pool_id_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("id")
+		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
+		and StringName(str(payload["id"])) != &""
+	)
+
+
+func _is_entity_card_pool_write_payload(payload: Dictionary) -> bool:
+	return (
+		_is_entity_card_pool_id_payload(payload)
+		and payload.has("cards")
+		and payload["cards"] is Array
+		and _is_card_pool_cards(payload["cards"])
+	)
+
+
+func _is_card_pool_cards(raw_cards: Array) -> bool:
+	for raw_card: Variant in raw_cards:
+		if not raw_card is Dictionary:
+			return false
+
+	return true
+
+
+func _get_card_pool_cards(raw_cards: Array) -> Array[Dictionary]:
+	var cards: Array[Dictionary] = []
+	for raw_card: Variant in raw_cards:
+		if raw_card is Dictionary:
+			cards.append(raw_card.duplicate(true))
+
+	return cards
 
 
 func _move_entity(payload: Dictionary) -> void:

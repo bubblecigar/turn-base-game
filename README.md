@@ -52,6 +52,7 @@ again.
 
 - `spawn_board`
 - `spawn_entity`
+- `update_entity_card_pool`
 - `move_entity`
 - `perform_cast`
 - `resolve_cast`
@@ -68,6 +69,9 @@ appropriate `StateStore` function or emit a transient action signal.
 {
 	&"board": {},
 	&"entities": {},
+	&"selected_entity_id": &"",
+	&"selected_cards": {},
+	&"entity_card_pools": {},
 }
 ```
 
