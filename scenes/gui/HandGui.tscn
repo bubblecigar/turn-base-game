@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://kxmemaoxaa83" path="res://scenes/gui/hand_gui.gd" id="1_hand"]
 [ext_resource type="Theme" uid="uid://dibalgjjuawli" path="res://scenes/gui/themes.tres" id="2_5lbe4"]
+[ext_resource type="Script" path="res://scenes/gui/SelectionSlotsView.gd" id="3_slots"]
+[ext_resource type="Script" path="res://scenes/gui/card_hand_view.gd" id="4_hand_view"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drop_zone"]
 bg_color = Color(0.12, 0.14, 0.16, 0.38)
@@ -68,6 +70,7 @@ offset_right = -1.0
 offset_bottom = 171.0
 grow_horizontal = 2
 mouse_filter = 2
+script = ExtResource("3_slots")
 
 [node name="DropZoneRow" type="HBoxContainer" parent="SelectionSlots" unique_id=376443293]
 layout_mode = 1
@@ -210,6 +213,7 @@ mouse_filter = 2
 layout_mode = 1
 anchors_preset = 0
 mouse_filter = 2
+script = ExtResource("4_hand_view")
 
 [node name="ConfirmButton" type="Button" parent="." unique_id=487215205]
 layout_mode = 1
