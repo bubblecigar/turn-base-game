@@ -120,7 +120,7 @@ func _get_player_entity_id() -> StringName:
 func _update_card_enabled_states() -> void:
 	if confirm_button != null:
 		var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
-		confirm_button.disabled = not _has_unconfirmed_selected_card(selected_cards)
+		confirm_button.disabled = not _has_unconfirmed_selected_card(selected_cards) and not _has_unconfirmed_entity_with_cards()
 	if card_stack != null:
 		card_stack.update_card_enabled_states(_get_player_focus(), _pending_confirmed_card_actions, _get_player_entity_id())
 
@@ -178,7 +178,7 @@ func _on_confirm_pressed() -> void:
 	if state_store == null:
 		return
 
-	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
+	var selected_cards := _fill_missing_selected_cards()
 	if selected_cards.is_empty():
 		return
 
@@ -221,6 +221,64 @@ func _has_unconfirmed_selected_card(selected_cards: Dictionary) -> bool:
 			return true
 
 	return false
+
+
+func _has_unconfirmed_entity_with_cards() -> bool:
+	if state_store == null or _card_pool_service == null:
+		return false
+
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	for raw_entity_id: Variant in entities:
+		var entity_id := StringName(str(raw_entity_id))
+		if entity_id == &"" or _pending_confirmed_card_actions.has(entity_id):
+			continue
+
+		if not _card_pool_service.get_current_entity_cards(entity_id).is_empty():
+			return true
+
+	return false
+
+
+func _fill_missing_selected_cards() -> Dictionary:
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
+	var next_selected_cards := selected_cards.duplicate(true)
+	var entities: Dictionary = state_store.get_value(&"entities", {}) if state_store != null else {}
+
+	for raw_entity_id: Variant in entities:
+		var entity_id := StringName(str(raw_entity_id))
+		if entity_id == &"" or _pending_confirmed_card_actions.has(entity_id):
+			continue
+		if _has_selected_card(next_selected_cards, entity_id):
+			continue
+
+		var random_card := _get_random_card_from_entity_pool(entity_id)
+		if random_card.is_empty():
+			continue
+
+		next_selected_cards[entity_id] = random_card
+
+	if state_store != null and next_selected_cards != selected_cards:
+		state_store.set_value(&"selected_cards", next_selected_cards)
+		_update_selected_card_index()
+
+	return next_selected_cards
+
+
+func _has_selected_card(selected_cards: Dictionary, entity_id: StringName) -> bool:
+	var card_data: Dictionary = selected_cards.get(entity_id, {})
+	return not card_data.is_empty()
+
+
+func _get_random_card_from_entity_pool(entity_id: StringName) -> Dictionary:
+	if _card_pool_service == null:
+		return {}
+
+	var cards: Array[Dictionary] = _card_pool_service.get_current_entity_cards(entity_id)
+	if cards.is_empty():
+		return {}
+
+	var card: Dictionary = cards[randi_range(0, cards.size() - 1)]
+	return card.duplicate(true)
 
 
 func _on_action_handler_turn_end(_event: Dictionary) -> void:
