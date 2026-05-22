@@ -30,6 +30,7 @@ var _cast_handler: RefCounted
 var _card_pool_service: RefCounted
 
 @onready var state_store: Node = $"../BattleStateStore"
+@onready var global_state_store: Node = $"../GlobalStateStore"
 
 
 # Called when the node enters the scene tree for the first time.
@@ -125,10 +126,30 @@ func _spawn_entity(payload: Dictionary) -> void:
 
 func _end_battle(payload: Dictionary) -> void:
 	print("battle ended: %s" % str(payload.get("result", "unknown result")))
+	_save_selected_entity_to_global_state()
 	end_battle.emit({
 		"eventName": "end_battle",
 		"payload": payload,
 	})
+
+
+func _save_selected_entity_to_global_state() -> void:
+	if state_store == null or global_state_store == null:
+		return
+
+	var selected_entity_id: StringName = state_store.get_selected_entity_id()
+	if selected_entity_id == &"":
+		print("global state store: no selected entity to save")
+		return
+
+	var entities: Dictionary = state_store.get_value(&"entities", {})
+	var selected_entity: Dictionary = entities.get(selected_entity_id, {})
+	if selected_entity.is_empty():
+		print("global state store: selected entity missing: %s" % selected_entity_id)
+		return
+
+	global_state_store.save_selected_entity(selected_entity_id, selected_entity)
+	print("global state store: ", global_state_store.get_state())
 
 
 func _init_board(payload: Dictionary) -> void:
