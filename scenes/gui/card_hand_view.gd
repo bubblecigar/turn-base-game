@@ -6,6 +6,7 @@ const CARD_SIZE := Vector2(116.0, 158.0)
 const CARD_OVERLAP_PIXELS := 34.0
 const CARD_RAISE_PIXELS := 14.0
 const CARD_HOVER_RAISE_PIXELS := 28.0
+const CARD_ANIMATION_SECONDS := 0.12
 const CARD_TITLE_LABEL_NAME := "TitleLabel"
 const CARD_COST_LABEL_NAME := "CostLabel"
 const CARD_BODY_LABEL_NAME := "BodyLabel"
@@ -20,6 +21,8 @@ const CARD_COLORS := [
 var _card_face_template: Panel
 var _selection_slot_position_provider: Callable
 var _player_entity_id_provider: Callable
+var _card_tweens: Dictionary = {}
+var _next_card_tween_id := 0
 var _card_nodes: Array[Control] = []
 var _active_cards: Array[Dictionary] = []
 var _selected_card_index := -1
@@ -55,6 +58,7 @@ func prepare_card_for_drag(card: Control, index: int) -> void:
 	if card == null:
 		return
 
+	_stop_card_animation(card)
 	_dragging_card_index = index
 	_apply_fixed_card_size(card)
 	card.rotation_degrees = 0.0
@@ -87,6 +91,7 @@ func rebuild_cards(active_cards: Array[Dictionary], selected_card_index: int, dr
 	_active_cards = active_cards.duplicate(true)
 	_selected_card_index = selected_card_index
 	_dragging_card_index = dragging_card_index
+	_stop_all_card_animations()
 
 	for child: Node in get_children():
 		remove_child(child)
@@ -143,11 +148,7 @@ func layout_cards(animate_selected: bool = false, selected_card_index: int = -99
 			move_card_to_selection_slot(card, index, _get_player_entity_id(), animate_selected)
 			continue
 
-		var centered_index := _get_card_centered_index(index, card_count)
-		_apply_fixed_card_size(card)
-		card.pivot_offset = CARD_SIZE / 2.0
-		card.position = _get_card_base_position(index, card_count)
-		card.rotation_degrees = centered_index * 4.0
+		move_card_to_layout_position(card, index, false)
 
 
 func move_card_to_layout_position(card: Control, index: int, animated: bool) -> void:
@@ -162,10 +163,7 @@ func move_card_to_layout_position(card: Control, index: int, animated: bool) -> 
 
 	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
-	card.position = target_position
-	card.rotation_degrees = target_rotation
-	card.scale = Vector2.ONE
-	card.z_index = target_z_index
+	_apply_card_pose(card, target_position, target_rotation, Vector2.ONE, target_z_index, animated)
 
 
 func move_card_to_selection_slot(card: Control, index: int, entity_id: StringName, animated: bool) -> void:
@@ -176,10 +174,7 @@ func move_card_to_selection_slot(card: Control, index: int, entity_id: StringNam
 	var target_z_index := 150 + index
 	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
-	card.position = target_position
-	card.rotation_degrees = 0.0
-	card.scale = Vector2.ONE
-	card.z_index = target_z_index
+	_apply_card_pose(card, target_position, 0.0, Vector2.ONE, target_z_index, animated)
 
 
 func _set_card_hover_state(card: Control, index: int, is_hovered: bool) -> void:
@@ -202,10 +197,7 @@ func _set_card_hover_state(card: Control, index: int, is_hovered: bool) -> void:
 
 	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
-	card.z_index = target_z_index
-	card.position = target_position
-	card.rotation_degrees = target_rotation
-	card.scale = target_scale
+	_apply_card_pose(card, target_position, target_rotation, target_scale, target_z_index, true)
 
 
 func _get_card_base_position(index: int, card_count: int) -> Vector2:
@@ -251,12 +243,7 @@ func float_card_back_to_hand(card: Control, index: int, finished_callback: Calla
 
 	_apply_fixed_card_size(card)
 	card.pivot_offset = CARD_SIZE / 2.0
-	card.position = target_position
-	card.rotation_degrees = target_rotation
-	card.scale = Vector2.ONE
-	card.z_index = target_z_index
-	if finished_callback.is_valid():
-		finished_callback.call(card, target_z_index)
+	_apply_card_pose(card, target_position, target_rotation, Vector2.ONE, target_z_index, true, finished_callback)
 
 
 func _on_card_gui_input(event: InputEvent, card_data: Dictionary, index: int, card: Control) -> void:
@@ -289,3 +276,70 @@ func _get_player_entity_id() -> StringName:
 		return &""
 
 	return _player_entity_id_provider.call()
+
+
+func _apply_card_pose(
+	card: Control,
+	target_position: Vector2,
+	target_rotation: float,
+	target_scale: Vector2,
+	target_z_index: int,
+	animated: bool,
+	finished_callback: Callable = Callable()
+) -> void:
+	if card == null:
+		return
+
+	_stop_card_animation(card)
+	card.z_index = target_z_index
+	if not animated:
+		card.position = target_position
+		card.rotation_degrees = target_rotation
+		card.scale = target_scale
+		if finished_callback.is_valid():
+			finished_callback.call(card, target_z_index)
+		return
+
+	_next_card_tween_id += 1
+	var tween_id := _next_card_tween_id
+	var tween := create_tween()
+	_card_tweens[card] = {
+		"tween": tween,
+		"id": tween_id,
+	}
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(card, "position", target_position, CARD_ANIMATION_SECONDS)
+	tween.tween_property(card, "rotation_degrees", target_rotation, CARD_ANIMATION_SECONDS)
+	tween.tween_property(card, "scale", target_scale, CARD_ANIMATION_SECONDS)
+	tween.finished.connect(_on_card_animation_finished.bind(card, tween, tween_id, target_z_index, finished_callback))
+
+
+func _on_card_animation_finished(card: Control, tween: Tween, tween_id: int, target_z_index: int, finished_callback: Callable) -> void:
+	var current: Dictionary = _card_tweens.get(card, {})
+	if current.get("tween", null) != tween or int(current.get("id", -1)) != tween_id:
+		return
+
+	_card_tweens.erase(card)
+	if card != null:
+		card.z_index = target_z_index
+	if finished_callback.is_valid():
+		finished_callback.call(card, target_z_index)
+
+
+func _stop_all_card_animations() -> void:
+	for raw_state: Variant in _card_tweens.values():
+		var state: Dictionary = raw_state
+		var tween := state.get("tween", null) as Tween
+		if tween != null:
+			tween.kill()
+	_card_tweens.clear()
+
+
+func _stop_card_animation(card: Control) -> void:
+	var state: Dictionary = _card_tweens.get(card, {})
+	var tween := state.get("tween", null) as Tween
+	if tween != null:
+		tween.kill()
+	_card_tweens.erase(card)

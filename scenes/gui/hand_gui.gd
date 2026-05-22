@@ -296,8 +296,12 @@ func _float_pending_cards_back_to_hand() -> void:
 
 	var animated_count := 0
 	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
+	var visible_entity_id := _get_player_entity_id()
 	_pending_card_return_count = 0
 	for entity_id: StringName in pending_entity_ids:
+		if entity_id != visible_entity_id:
+			continue
+
 		var card_data: Dictionary = selected_cards.get(entity_id, {})
 		var card_index := _active_cards.find(card_data)
 		if card_stack == null or card_index < 0 or card_index >= card_stack.get_card_count():
