@@ -17,6 +17,15 @@ signal entity_card_pools_changed(entity_card_pools: Dictionary, previous_entity_
 
 @export var initial_state: Dictionary = {}
 
+func _get_default_state() -> Dictionary:
+	return {
+		&"board": {},
+		&"entities": {},
+		&"selected_entity_id": &"",
+		&"selected_cards": {},
+		&"entity_card_pools": {},
+	}
+
 var _state: Dictionary = _get_default_state()
 var _character_index := 0
 
@@ -331,16 +340,6 @@ func reset(next_initial_state: Dictionary = initial_state) -> void:
 		_state[StringName(str(key))] = next_initial_state[key]
 
 	state_changed.emit(get_state())
-
-
-func _get_default_state() -> Dictionary:
-	return {
-		&"board": {},
-		&"entities": {},
-		&"selected_entity_id": &"",
-		&"selected_cards": {},
-		&"entity_card_pools": {},
-	}
 
 
 func _create_board(cols: int, rows: int) -> Dictionary:
