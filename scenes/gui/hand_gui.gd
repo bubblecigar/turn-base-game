@@ -225,6 +225,7 @@ func _has_unconfirmed_selected_card(selected_cards: Dictionary) -> bool:
 
 func _on_action_handler_turn_end(_event: Dictionary) -> void:
 	if _pending_confirmed_card_actions.is_empty():
+		_clear_selected_cards_after_turn()
 		return
 
 	_float_pending_cards_back_to_hand()
@@ -267,27 +268,23 @@ func _on_pending_card_return_tween_finished(card: Control, target_z_index: int, 
 
 func _clear_pending_cards_after_return(pending_entity_ids: Array[StringName]) -> void:
 	for entity_id: StringName in pending_entity_ids:
-		_clear_selected_card_for_entity(entity_id)
 		_pending_confirmed_card_actions.erase(entity_id)
 
+	_clear_selected_cards_after_turn()
+
+
+func _clear_selected_cards_after_turn() -> void:
+	if state_store == null:
+		return
+
+	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
+	if not selected_cards.is_empty():
+		state_store.set_value(&"selected_cards", {})
 	_update_selected_card_index()
 	_layout_card_hand()
 	_update_card_enabled_states()
 	_update_selection_slot_state()
 	_update_slot_card_previews()
-
-
-func _clear_selected_card_for_entity(entity_id: StringName) -> void:
-	if state_store == null:
-		return
-
-	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {})
-	if not selected_cards.has(entity_id):
-		return
-
-	var next_selected_cards := selected_cards.duplicate(true)
-	next_selected_cards.erase(entity_id)
-	state_store.set_value(&"selected_cards", next_selected_cards)
 
 
 func _refresh_cards_for_current_entity() -> void:
