@@ -103,7 +103,7 @@ func get_entity_card_pool(entity_id: StringName) -> Array[Dictionary]:
 	return cards
 
 
-func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> void:
+func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int = 0, j: int = 0) -> StringName:
 	var previous_character: Variant = {}
 	if _character_index > 0:
 		previous_character = _get_entity(StringName("character_%d" % _character_index))
@@ -122,6 +122,7 @@ func init_entity(entity_type: StringName, spec: Dictionary, max_hp: int, i: int 
 	_place_entity_on_board(next_entity, i, j)
 	select_entity(next_entity[&"id"])
 	character_initialized.emit(next_entity, previous_character)
+	return next_entity[&"id"]
 
 
 func init_board(cols: int, rows: int) -> void:

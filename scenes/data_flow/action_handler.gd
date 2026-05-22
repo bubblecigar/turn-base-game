@@ -19,11 +19,13 @@ const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
 const AttackHandlerScript := preload("res://scenes/data_flow/attack_handler.gd")
 const CastHandlerScript := preload("res://scenes/data_flow/cast_handler.gd")
+const CardPoolServiceScript := preload("res://scenes/gui/card_pool_service.gd")
 
 var _current_event: Dictionary = {}
 var _is_consuming := false
 var _attack_handler: RefCounted
 var _cast_handler: RefCounted
+var _card_pool_service: RefCounted
 
 @onready var state_store: Node = $"../StateStore"
 
@@ -37,6 +39,7 @@ func _ready() -> void:
 	_cast_handler = CastHandlerScript.new(state_store)
 	_cast_handler.cast_performed.connect(_on_cast_performed)
 	_cast_handler.cast_resolved.connect(_on_cast_resolved)
+	_card_pool_service = CardPoolServiceScript.new(state_store)
 
 
 func consume(event: Dictionary) -> void:
@@ -68,6 +71,8 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			_init_board(event['payload'])
 		'spawn_entity':
 			_spawn_entity(event['payload'])
+		'update_entity_card_pool':
+			_update_entity_card_pool(event['payload'])
 		'move_entity':
 			_move_entity(event['payload'])
 		'perform_cast':
@@ -104,7 +109,11 @@ func _spawn_entity(payload: Dictionary) -> void:
 	var position: Dictionary = payload.get("position", {})
 	var i := int(position.get("i", 0))
 	var j := int(position.get("j", 0))
-	state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
+	var entity_id: StringName = state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
+	if payload.has("cards") and payload["cards"] is Array:
+		state_store.set_entity_card_pool(entity_id, _card_pool_service.get_cards_by_ids(payload["cards"]))
+	else:
+		push_warning("spawn_entity: missing 'cards' in payload for entity '%s'. Card pool not initialized." % entity_type)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 
@@ -181,6 +190,50 @@ func _is_head_spec(spec: Variant) -> bool:
 
 func _is_part_spec(spec: Variant) -> bool:
 	return spec is Dictionary and spec.has("width") and spec.has("height")
+
+
+func _update_entity_card_pool(payload: Dictionary) -> void:
+	if not _is_entity_card_pool_write_payload(payload):
+		push_warning('Invalid update_entity_card_pool payload. Expected { id: String, cards: Array[Dictionary] }.')
+		return
+
+	var entity_id := StringName(str(payload["id"]))
+	state_store.set_entity_card_pool(entity_id, _get_card_pool_cards(payload["cards"]))
+	print("updated entity card pool: %s" % entity_id)
+
+
+func _is_entity_card_pool_id_payload(payload: Dictionary) -> bool:
+	return (
+		payload.has("id")
+		and (typeof(payload["id"]) == TYPE_STRING or typeof(payload["id"]) == TYPE_STRING_NAME)
+		and StringName(str(payload["id"])) != &""
+	)
+
+
+func _is_entity_card_pool_write_payload(payload: Dictionary) -> bool:
+	return (
+		_is_entity_card_pool_id_payload(payload)
+		and payload.has("cards")
+		and payload["cards"] is Array
+		and _is_card_pool_cards(payload["cards"])
+	)
+
+
+func _is_card_pool_cards(raw_cards: Array) -> bool:
+	for raw_card: Variant in raw_cards:
+		if not raw_card is Dictionary:
+			return false
+
+	return true
+
+
+func _get_card_pool_cards(raw_cards: Array) -> Array[Dictionary]:
+	var cards: Array[Dictionary] = []
+	for raw_card: Variant in raw_cards:
+		if raw_card is Dictionary:
+			cards.append(raw_card.duplicate(true))
+
+	return cards
 
 
 func _move_entity(payload: Dictionary) -> void:
