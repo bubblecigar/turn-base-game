@@ -19,6 +19,7 @@ const MIN_HEAD_RADIUS := 6
 const MAX_HEAD_RADIUS := 14
 const MIN_BOARD_SIZE := 1
 const MAX_BOARD_SIZE := 99
+const BATTLE_REWARD_CARD_COUNT := 3
 const AttackHandlerScript := preload("res://scenes/data_flow/attack_handler.gd")
 const CastHandlerScript := preload("res://scenes/data_flow/cast_handler.gd")
 const CardPoolServiceScript := preload("res://scenes/gui/card_pool_service.gd")
@@ -159,50 +160,70 @@ func _get_global_selected_entity_card_pool(selected_entity: Dictionary) -> Array
 
 func _end_battle(payload: Dictionary) -> void:
 	print("battle ended: %s" % str(payload.get("result", "unknown result")))
-	_save_selected_entity_to_global_state(payload)
+	var reward_cards := _save_selected_entity_to_global_state(payload)
+	var event_payload := payload.duplicate(true)
+	if not reward_cards.is_empty():
+		event_payload["reward_cards"] = reward_cards
 	end_battle.emit({
 		"eventName": "end_battle",
-		"payload": payload,
+		"payload": event_payload,
 	})
 
 
-func _save_selected_entity_to_global_state(payload: Dictionary) -> void:
-	if state_store == null or global_state_store == null:
+func select_battle_reward_card(card_data: Dictionary) -> void:
+	if global_state_store == null or card_data.is_empty():
 		return
+
+	var selected_entity: Dictionary = global_state_store.get_selected_entity()
+	if selected_entity.is_empty():
+		print("global state store: no selected entity for reward card")
+		return
+
+	var entity_id := StringName(str(selected_entity.get(&"id", &"")))
+	var entity_data: Dictionary = selected_entity.get(&"data", {})
+	var card_pool: Array[Dictionary] = _get_global_selected_entity_card_pool(selected_entity)
+	card_pool.append(card_data.duplicate(true))
+	global_state_store.save_selected_entity(entity_id, entity_data, card_pool)
+	print("global state store: added selected reward card: ", card_data)
+	print("global state store: ", global_state_store.get_state())
+
+
+func _save_selected_entity_to_global_state(payload: Dictionary) -> Array[Dictionary]:
+	if state_store == null or global_state_store == null:
+		return []
 
 	var selected_entity_id: StringName = state_store.get_selected_entity_id()
 	if selected_entity_id == &"":
 		print("global state store: no selected entity to save")
-		return
+		return []
 
 	var entities: Dictionary = state_store.get_value(&"entities", {})
 	var selected_entity: Dictionary = entities.get(selected_entity_id, {})
 	if selected_entity.is_empty():
 		print("global state store: selected entity missing: %s" % selected_entity_id)
-		return
+		return []
 
 	var defeated_entity_ids: Array = payload.get("defeated_entity_ids", [])
 	if _entity_id_array_has(defeated_entity_ids, selected_entity_id):
 		global_state_store.clear_selected_entity()
 		print("global state store: selected entity defeated; cleared selected entity")
 		print("global state store: ", global_state_store.get_state())
-		return
+		return []
 
 	var winner_entity_ids: Array = payload.get("winner_entity_ids", [])
 	if not _entity_id_array_has(winner_entity_ids, selected_entity_id):
 		print("global state store: selected entity is not a winner; skipped selected entity save")
-		return
+		return []
 
 	var card_pool: Array[Dictionary] = state_store.get_entity_card_pool(selected_entity_id)
-	var reward_card: Dictionary = {}
-	if _card_pool_service != null:
-		reward_card = _card_pool_service.get_random_card()
-	if not reward_card.is_empty():
-		card_pool.append(reward_card)
-		print("global state store: added winner card: ", reward_card)
-
 	global_state_store.save_selected_entity(selected_entity_id, selected_entity, card_pool)
 	print("global state store: ", global_state_store.get_state())
+	if _card_pool_service == null:
+		return []
+
+	var reward_cards: Array[Dictionary] = _card_pool_service.get_random_cards(BATTLE_REWARD_CARD_COUNT)
+	print("battle reward cards: ", reward_cards)
+	return reward_cards
 
 
 func _entity_id_array_has(entity_ids: Array, entity_id: StringName) -> bool:

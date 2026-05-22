@@ -48,7 +48,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(380, 220)
+custom_minimum_size = Vector2(520, 300)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -83,6 +83,17 @@ theme_override_font_sizes/font_size = 14
 text = "Details"
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="RewardLabel" type="Label" parent="Center/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Choose a card"
+horizontal_alignment = 1
+
+[node name="RewardCards" type="HBoxContainer" parent="Center/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
 
 [node name="NextBattleButton" type="Button" parent="Center/Panel/Margin/Content"]
 custom_minimum_size = Vector2(160, 36)
