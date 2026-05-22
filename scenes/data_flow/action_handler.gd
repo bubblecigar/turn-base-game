@@ -113,7 +113,9 @@ func _spawn_entity(payload: Dictionary) -> void:
 		push_warning('Invalid character entity spec.')
 		return
 
-	var entity_overrides := _get_global_selected_entity_overrides(entity_type)
+	var global_selected_entity := _get_global_selected_entity_for_type(entity_type)
+	var entity_overrides: Dictionary = global_selected_entity.get(&"data", {})
+	var saved_card_pool: Array[Dictionary] = _get_global_selected_entity_card_pool(global_selected_entity)
 	var max_hp := int(entity_overrides.get(&"max_hp", payload.get("max_hp", payload.get("hp", _get_default_entity_max_hp(entity_type)))))
 	var position: Dictionary = payload.get("position", {})
 	var i := int(position.get("i", 0))
@@ -122,14 +124,16 @@ func _spawn_entity(payload: Dictionary) -> void:
 	if not entity_overrides.is_empty():
 		_global_selected_entity_loaded = true
 		print("loaded global selected entity into battle state: ", entity_overrides)
-	if payload.has("cards") and payload["cards"] is Array:
+	if not saved_card_pool.is_empty():
+		state_store.set_entity_card_pool(entity_id, saved_card_pool)
+	elif payload.has("cards") and payload["cards"] is Array:
 		state_store.set_entity_card_pool(entity_id, _card_pool_service.get_cards_by_ids(payload["cards"]))
 	else:
 		push_warning("spawn_entity: missing 'cards' in payload for entity '%s'. Card pool not initialized." % entity_type)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
 
 
-func _get_global_selected_entity_overrides(entity_type: StringName) -> Dictionary:
+func _get_global_selected_entity_for_type(entity_type: StringName) -> Dictionary:
 	if _global_selected_entity_loaded or global_state_store == null:
 		return {}
 
@@ -140,19 +144,29 @@ func _get_global_selected_entity_overrides(entity_type: StringName) -> Dictionar
 	if StringName(str(data.get(&"type", &""))) != entity_type:
 		return {}
 
-	return data.duplicate(true)
+	return selected_entity
+
+
+func _get_global_selected_entity_card_pool(selected_entity: Dictionary) -> Array[Dictionary]:
+	var card_pool: Array[Dictionary] = []
+	var raw_card_pool: Array = selected_entity.get(&"card_pool", [])
+	for raw_card: Variant in raw_card_pool:
+		if raw_card is Dictionary:
+			card_pool.append(raw_card.duplicate(true))
+
+	return card_pool
 
 
 func _end_battle(payload: Dictionary) -> void:
 	print("battle ended: %s" % str(payload.get("result", "unknown result")))
-	_save_selected_entity_to_global_state()
+	_save_selected_entity_to_global_state(payload)
 	end_battle.emit({
 		"eventName": "end_battle",
 		"payload": payload,
 	})
 
 
-func _save_selected_entity_to_global_state() -> void:
+func _save_selected_entity_to_global_state(payload: Dictionary) -> void:
 	if state_store == null or global_state_store == null:
 		return
 
@@ -167,8 +181,36 @@ func _save_selected_entity_to_global_state() -> void:
 		print("global state store: selected entity missing: %s" % selected_entity_id)
 		return
 
-	global_state_store.save_selected_entity(selected_entity_id, selected_entity)
+	var defeated_entity_ids: Array = payload.get("defeated_entity_ids", [])
+	if _entity_id_array_has(defeated_entity_ids, selected_entity_id):
+		global_state_store.clear_selected_entity()
+		print("global state store: selected entity defeated; cleared selected entity")
+		print("global state store: ", global_state_store.get_state())
+		return
+
+	var winner_entity_ids: Array = payload.get("winner_entity_ids", [])
+	if not _entity_id_array_has(winner_entity_ids, selected_entity_id):
+		print("global state store: selected entity is not a winner; skipped selected entity save")
+		return
+
+	var card_pool: Array[Dictionary] = state_store.get_entity_card_pool(selected_entity_id)
+	var reward_card: Dictionary = {}
+	if _card_pool_service != null:
+		reward_card = _card_pool_service.get_random_card()
+	if not reward_card.is_empty():
+		card_pool.append(reward_card)
+		print("global state store: added winner card: ", reward_card)
+
+	global_state_store.save_selected_entity(selected_entity_id, selected_entity, card_pool)
 	print("global state store: ", global_state_store.get_state())
+
+
+func _entity_id_array_has(entity_ids: Array, entity_id: StringName) -> bool:
+	for raw_entity_id: Variant in entity_ids:
+		if StringName(str(raw_entity_id)) == entity_id:
+			return true
+
+	return false
 
 
 func _init_board(payload: Dictionary) -> void:
