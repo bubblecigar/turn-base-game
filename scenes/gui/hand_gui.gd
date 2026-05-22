@@ -309,13 +309,13 @@ func _float_pending_cards_back_to_hand() -> void:
 
 		animated_count += 1
 		_pending_card_return_count += 1
-		card_stack.float_card_back_to_hand(card, card_index, _on_pending_card_return_tween_finished.bind(pending_entity_ids))
+		card_stack.float_card_back_to_hand(card, card_index, _on_pending_card_return_finished.bind(pending_entity_ids))
 
 	if animated_count == 0:
 		_clear_pending_cards_after_return(pending_entity_ids)
 
 
-func _on_pending_card_return_tween_finished(card: Control, target_z_index: int, pending_entity_ids: Array[StringName]) -> void:
+func _on_pending_card_return_finished(card: Control, target_z_index: int, pending_entity_ids: Array[StringName]) -> void:
 	if card != null:
 		card.z_index = target_z_index
 
