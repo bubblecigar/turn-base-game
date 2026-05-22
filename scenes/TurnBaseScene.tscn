@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://wmf4ohiixv60" path="res://scenes/game_control/stage_controller.gd" id="8_stctl"]
 [ext_resource type="Script" uid="uid://51d0kuvpg3ll" path="res://scenes/game_control/game_loop.gd" id="9_game_loop"]
 [ext_resource type="PackedScene" uid="uid://c0p0u578w30f" path="res://scenes/gui/HandGui.tscn" id="10_hand"]
+[ext_resource type="PackedScene" path="res://scenes/gui/BattleEndScene.tscn" id="11_battle_end"]
 
 [node name="TurnBaseScene" type="Node2D" unique_id=521488771]
 script = ExtResource("1_u40qt")
@@ -51,3 +52,6 @@ action_queue_path = NodePath("../../ActionQueue")
 action_handler_path = NodePath("../../ActionHandler")
 state_store_path = NodePath("../../StateStore")
 game_loop_path = NodePath("../../GameLoop")
+
+[node name="BattleEndScene" parent="CanvasLayer" instance=ExtResource("11_battle_end")]
+action_handler_path = NodePath("../../ActionHandler")

@@ -9,6 +9,7 @@ signal event_performed(event: Dictionary)
 signal turn_start(event: Dictionary)
 signal turn_end(event: Dictionary)
 signal check_for_winner(event: Dictionary)
+signal end_battle(event: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -124,6 +125,10 @@ func _spawn_entity(payload: Dictionary) -> void:
 
 func _end_battle(payload: Dictionary) -> void:
 	print("battle ended: %s" % str(payload.get("result", "unknown result")))
+	end_battle.emit({
+		"eventName": "end_battle",
+		"payload": payload,
+	})
 
 
 func _init_board(payload: Dictionary) -> void:
