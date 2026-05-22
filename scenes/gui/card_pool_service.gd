@@ -74,6 +74,24 @@ func get_current_entity_cards(entity_id: StringName) -> Array[Dictionary]:
 	return _state_store.get_entity_card_pool(entity_id)
 
 
+func get_random_card() -> Dictionary:
+	if _cards.is_empty():
+		return {}
+
+	return _cards[randi_range(0, _cards.size() - 1)].duplicate(true)
+
+
+func get_random_cards(count: int) -> Array[Dictionary]:
+	var cards: Array[Dictionary] = []
+	var available_cards := _cards.duplicate(true)
+	available_cards.shuffle()
+
+	for index in mini(count, available_cards.size()):
+		cards.append((available_cards[index] as Dictionary).duplicate(true))
+
+	return cards
+
+
 func _create_random_card_pool() -> Array[Dictionary]:
 	var card_pool: Array[Dictionary] = []
 	var available_cards := _cards.duplicate(true)

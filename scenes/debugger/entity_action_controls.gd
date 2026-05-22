@@ -31,7 +31,7 @@ const ACTION_CATEGORY_ORDER := [
 ]
 
 @onready var action_queue: Node = $"../../ActionQueue"
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 @onready var entity_select: OptionButton = $EntitySelect
 @onready var move_left_button: Button = $MoveLeftButton
 @onready var move_right_button: Button = $MoveRightButton

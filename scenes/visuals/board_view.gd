@@ -3,7 +3,7 @@ extends Node2D
 var _board: Dictionary = {}
 var _cell_nodes: Array[Node] = []
 
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 @onready var cell_anchor: Node2D = $CellAnchor
 @onready var cell_template: Control = $CellAnchor/CellTemplate
 

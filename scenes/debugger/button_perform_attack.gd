@@ -3,7 +3,7 @@ extends Button
 const ATTACK_TYPE_BUMP := "bump"
 
 @onready var action_queue: Node = $"../../ActionQueue"
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 
 
 func _ready() -> void:

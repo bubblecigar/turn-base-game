@@ -1,7 +1,7 @@
 extends Button
 
 @onready var action_queue: Node = $"../../ActionQueue"
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

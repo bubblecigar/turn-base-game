@@ -39,7 +39,7 @@ const MOVE_VECTORS := [
 
 @onready var action_queue: Node = $"../ActionQueue"
 @onready var action_handler: Node = $"../ActionHandler"
-@onready var state_store: Node = $"../StateStore"
+@onready var state_store: Node = $"../BattleStateStore"
 
 var _board_initialized := false
 var _turn_in_progress := false
