@@ -4,9 +4,11 @@ class_name GlobalStateStore
 
 signal state_changed(state: Dictionary)
 
-var _state: Dictionary = {
+static var _persistent_state: Dictionary = {
 	&"selected_entity": {},
 }
+
+var _state: Dictionary = _persistent_state.duplicate(true)
 
 
 func get_state() -> Dictionary:
@@ -18,6 +20,7 @@ func save_selected_entity(entity_id: StringName, entity_data: Dictionary) -> voi
 		&"id": entity_id,
 		&"data": entity_data.duplicate(true),
 	}
+	_persistent_state = _state.duplicate(true)
 	state_changed.emit(get_state())
 
 

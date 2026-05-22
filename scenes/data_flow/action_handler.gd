@@ -28,6 +28,7 @@ var _is_consuming := false
 var _attack_handler: RefCounted
 var _cast_handler: RefCounted
 var _card_pool_service: RefCounted
+var _global_selected_entity_loaded := false
 
 @onready var state_store: Node = $"../BattleStateStore"
 @onready var global_state_store: Node = $"../GlobalStateStore"
@@ -112,16 +113,34 @@ func _spawn_entity(payload: Dictionary) -> void:
 		push_warning('Invalid character entity spec.')
 		return
 
-	var max_hp := int(payload.get("max_hp", payload.get("hp", _get_default_entity_max_hp(entity_type))))
+	var entity_overrides := _get_global_selected_entity_overrides(entity_type)
+	var max_hp := int(entity_overrides.get(&"max_hp", payload.get("max_hp", payload.get("hp", _get_default_entity_max_hp(entity_type)))))
 	var position: Dictionary = payload.get("position", {})
 	var i := int(position.get("i", 0))
 	var j := int(position.get("j", 0))
-	var entity_id: StringName = state_store.init_entity(entity_type, entity_spec, max_hp, i, j)
+	var entity_id: StringName = state_store.init_entity(entity_type, entity_spec, max_hp, i, j, entity_overrides)
+	if not entity_overrides.is_empty():
+		_global_selected_entity_loaded = true
+		print("loaded global selected entity into battle state: ", entity_overrides)
 	if payload.has("cards") and payload["cards"] is Array:
 		state_store.set_entity_card_pool(entity_id, _card_pool_service.get_cards_by_ids(payload["cards"]))
 	else:
 		push_warning("spawn_entity: missing 'cards' in payload for entity '%s'. Card pool not initialized." % entity_type)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
+
+
+func _get_global_selected_entity_overrides(entity_type: StringName) -> Dictionary:
+	if _global_selected_entity_loaded or global_state_store == null:
+		return {}
+
+	var selected_entity: Dictionary = global_state_store.get_selected_entity()
+	var data: Dictionary = selected_entity.get(&"data", {})
+	if data.is_empty():
+		return {}
+	if StringName(str(data.get(&"type", &""))) != entity_type:
+		return {}
+
+	return data.duplicate(true)
 
 
 func _end_battle(payload: Dictionary) -> void:
