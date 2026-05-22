@@ -3,7 +3,7 @@ extends Node2D
 const CHARACTER_SCENE := preload("res://scenes/visuals/CharacterScene.tscn")
 const SLIME_SCENE := preload("res://scenes/visuals/SlimeScene.tscn")
 
-const STATE_STORE_PATH := NodePath("../../../StateStore")
+const STATE_STORE_PATH := NodePath("../../../BattleStateStore")
 const ACTION_HANDLER_PATH := NodePath("../../../ActionHandler")
 const ANIMATION_TRACKER_PATH := NodePath("../../../AnimationTracker")
 const BOARD_VIEW_PATH := NodePath("../../BoardView")
@@ -14,7 +14,7 @@ const THUNDER_STRIKE_SECONDS := 0.32
 const THUNDER_STRIKE_COLOR := Color(0.95, 0.98, 1.0, 1.0)
 const THUNDER_FLASH_COLOR := Color(0.45, 0.75, 1.0, 0.35)
 
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 @onready var action_handler: Node = $"../../ActionHandler"
 @onready var animation_tracker: Node = $"../../AnimationTracker"
 @onready var board_view: Node = $"../BoardView"

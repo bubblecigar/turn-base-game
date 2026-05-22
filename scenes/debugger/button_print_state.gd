@@ -1,6 +1,6 @@
 extends Button
 
-@onready var state_store: Node = $"../../StateStore"
+@onready var state_store: Node = $"../../BattleStateStore"
 
 
 func _ready() -> void:
@@ -8,4 +8,4 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
-	print("state store: ", state_store.get_state())
+	print("battle state store: ", state_store.get_state())

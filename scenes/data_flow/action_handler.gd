@@ -29,7 +29,7 @@ var _attack_handler: RefCounted
 var _cast_handler: RefCounted
 var _card_pool_service: RefCounted
 
-@onready var state_store: Node = $"../StateStore"
+@onready var state_store: Node = $"../BattleStateStore"
 
 
 # Called when the node enters the scene tree for the first time.

@@ -1,6 +1,6 @@
 extends Node
 
-class_name StateStore
+class_name BattleStateStore
 
 signal state_changed(state: Dictionary)
 signal value_changed(key: StringName, value: Variant, previous_value: Variant)
@@ -31,7 +31,7 @@ var _character_index := 0
 
 
 func _ready() -> void:
-	print('state store ready')
+	print('battle state store ready')
 	reset()
 
 
