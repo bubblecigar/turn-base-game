@@ -8,6 +8,7 @@ signal cast_resolved(caster_id: StringName, args: Dictionary, result: bool)
 signal event_performed(event: Dictionary)
 signal turn_start(event: Dictionary)
 signal turn_end(event: Dictionary)
+signal check_for_winner(event: Dictionary)
 
 const MIN_CONSUME_SECONDS := 0.5
 const MAX_CONSUME_SECONDS := 3.0
@@ -87,6 +88,10 @@ func _handle_consumed_event(event: Dictionary) -> void:
 			turn_start.emit(event)
 		'turn_end':
 			turn_end.emit(event)
+		'check_for_winner':
+			check_for_winner.emit(event)
+		'end_battle':
+			_end_battle(event['payload'])
 		'debugger_button_pressed':
 			_consume_debugger_button_pressed(event['payload'])
 		_:
@@ -115,6 +120,10 @@ func _spawn_entity(payload: Dictionary) -> void:
 	else:
 		push_warning("spawn_entity: missing 'cards' in payload for entity '%s'. Card pool not initialized." % entity_type)
 	print('spawned entity: ', entity_type, ' at (', i, ',', j, ')')
+
+
+func _end_battle(payload: Dictionary) -> void:
+	print("battle ended: %s" % str(payload.get("result", "unknown result")))
 
 
 func _init_board(payload: Dictionary) -> void:

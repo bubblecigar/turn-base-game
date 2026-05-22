@@ -38,6 +38,7 @@ const MOVE_VECTORS := [
 ]
 
 @onready var action_queue: Node = $"../ActionQueue"
+@onready var action_handler: Node = $"../ActionHandler"
 @onready var state_store: Node = $"../StateStore"
 
 var _board_initialized := false
@@ -51,6 +52,7 @@ func _ready() -> void:
 	randomize()
 	_board_initialized = not state_store.get_value(&"board", {}).is_empty()
 	state_store.board_init.connect(_on_board_init)
+	action_handler.check_for_winner.connect(_on_check_for_winner)
 	action_queue.queue_drained.connect(_on_queue_drained)
 	_emit_status("waiting to start")
 
@@ -77,17 +79,16 @@ func _on_queue_drained() -> void:
 		return
 
 	_turn_in_progress = false
-	if _check_for_winner():
-		return
-
 	call_deferred("_maybe_start_next_turn")
+
+
+func _on_check_for_winner(_event: Dictionary) -> void:
+	_turn_in_progress = false
+	_check_for_winner()
 
 
 func _maybe_start_next_turn() -> void:
 	if _game_over or _turn_in_progress or not _board_initialized or not action_queue.is_idle():
-		return
-
-	if _check_for_winner():
 		return
 
 	var action_stack := _create_turn_actions()
@@ -310,6 +311,7 @@ func create_ordered_action_batches(action_stack: Array[Dictionary]) -> Array[Arr
 		action_batches.append(cast_success_batch)
 
 	action_batches.append([_create_turn_end_action(turn_index)])
+	action_batches.append([_create_check_for_winner_action(turn_index)])
 	return action_batches
 
 
@@ -325,6 +327,15 @@ func _create_turn_start_action(turn_index: int) -> Dictionary:
 func _create_turn_end_action(turn_index: int) -> Dictionary:
 	return {
 		"eventName": "turn_end",
+		"payload": {
+			"turn_index": turn_index,
+		},
+	}
+
+
+func _create_check_for_winner_action(turn_index: int) -> Dictionary:
+	return {
+		"eventName": "check_for_winner",
 		"payload": {
 			"turn_index": turn_index,
 		},
@@ -399,14 +410,23 @@ func _check_for_winner() -> bool:
 		return false
 
 	_game_over = true
-	if living_entity_ids.is_empty():
-		print("game over: no winner")
-		_emit_status("game over: no winner")
-	else:
-		print("game over winner: %s" % living_entity_ids)
-		_emit_status("game over winner: %s" % living_entity_ids)
+	var end_battle_action := _create_end_battle_action(living_entity_ids, dead_entity_ids)
+	action_queue.enQueue([end_battle_action])
+	_emit_status(str(end_battle_action["payload"].get("result", "game over")))
 
 	return true
+
+
+func _create_end_battle_action(winner_entity_ids: Array[StringName], defeated_entity_ids: Array[StringName]) -> Dictionary:
+	var result := "game over: no winner" if winner_entity_ids.is_empty() else "game over winner: %s" % winner_entity_ids
+	return {
+		"eventName": "end_battle",
+		"payload": {
+			"result": result,
+			"winner_entity_ids": winner_entity_ids.duplicate(),
+			"defeated_entity_ids": defeated_entity_ids.duplicate(),
+		},
+	}
 
 
 func _emit_status(status: String) -> void:
