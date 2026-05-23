@@ -21,6 +21,13 @@
 				"position": { "i": 3, "j": 0 },
 				"spec": { "radius": 20 },
 				"cards": ["bump", "move_left", "move_right"]
+			},
+			{
+				"type": "slime",
+				"max_hp": 1,
+				"position": { "i": 2, "j": 0 },
+				"spec": { "radius": 20 },
+				"cards": ["bump", "move_left", "move_right"]
 			}
 		]
 	}

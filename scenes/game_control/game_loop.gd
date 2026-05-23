@@ -401,16 +401,28 @@ func _check_for_winner() -> bool:
 
 	var living_entity_ids := _get_alive_entity_ids()
 	var dead_entity_ids: Array[StringName] = []
+	var living_character_ids: Array[StringName] = []
+	var living_enemy_ids: Array[StringName] = []
 	for entity_id: Variant in entities:
 		var entity_string_name := StringName(str(entity_id))
-		if not living_entity_ids.has(entity_string_name):
+		if living_entity_ids.has(entity_string_name):
+			var entity: Dictionary = entities[entity_id]
+			if _is_character_entity(entity):
+				living_character_ids.append(entity_string_name)
+			else:
+				living_enemy_ids.append(entity_string_name)
+		else:
 			dead_entity_ids.append(entity_string_name)
 
 	if dead_entity_ids.is_empty():
 		return false
 
+	if not living_character_ids.is_empty() and not living_enemy_ids.is_empty():
+		return false
+
 	_game_over = true
-	var end_battle_action := _create_end_battle_action(living_entity_ids, dead_entity_ids)
+	var winner_entity_ids := living_character_ids if living_enemy_ids.is_empty() else living_enemy_ids
+	var end_battle_action := _create_end_battle_action(winner_entity_ids, dead_entity_ids)
 	action_queue.enQueue([end_battle_action])
 	_emit_status(str(end_battle_action["payload"].get("result", "game over")))
 
@@ -444,6 +456,10 @@ func _get_alive_entity_ids() -> Array[StringName]:
 			alive_entity_ids.append(StringName(str(entity_id)))
 
 	return alive_entity_ids
+
+
+func _is_character_entity(entity: Dictionary) -> bool:
+	return StringName(str(entity.get(&"type", &""))) == &"character"
 
 
 func _get_casting_entity_ids() -> Array[StringName]:
