@@ -86,6 +86,55 @@ func get_selected_card(entity_id: StringName) -> Dictionary:
 	return selected_cards.get(entity_id, {})
 
 
+func get_live_entities() -> Dictionary:
+	var entities: Dictionary = _state.get(&"entities", {})
+	var live_entities: Dictionary = {}
+	for raw_entity_id: Variant in entities:
+		var entity_id := StringName(str(raw_entity_id))
+		var entity: Dictionary = entities[raw_entity_id]
+		if is_entity_alive(entity_id):
+			live_entities[entity_id] = entity.duplicate(true)
+
+	return live_entities
+
+
+func get_live_entity_ids() -> Array[StringName]:
+	var live_entity_ids: Array[StringName] = []
+	for raw_entity_id: Variant in get_live_entities():
+		live_entity_ids.append(StringName(str(raw_entity_id)))
+
+	return live_entity_ids
+
+
+func get_live_entity(entity_id: StringName) -> Dictionary:
+	if not is_entity_alive(entity_id):
+		return {}
+
+	return _get_entity(entity_id).duplicate(true)
+
+
+func is_entity_alive(entity_id: StringName) -> bool:
+	var entity := _get_entity(entity_id)
+	return not entity.is_empty() and int(entity.get(&"current_hp", 0)) > 0
+
+
+func are_entities_allied(first_entity_id: StringName, second_entity_id: StringName) -> bool:
+	var first_team := get_entity_team(first_entity_id)
+	var second_team := get_entity_team(second_entity_id)
+	return first_team != &"" and first_team == second_team
+
+
+func get_entity_team(entity_id: StringName) -> StringName:
+	var entity := _get_entity(entity_id)
+	var entity_type := StringName(str(entity.get(&"type", &"")))
+	if entity_type == &"character":
+		return &"character"
+	if entity_type != &"":
+		return &"enemy"
+
+	return &""
+
+
 func set_entity_card_pool(entity_id: StringName, cards: Array[Dictionary]) -> void:
 	if entity_id == &"":
 		return

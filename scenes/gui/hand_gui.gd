@@ -227,8 +227,8 @@ func _has_unconfirmed_entity_with_cards() -> bool:
 	if state_store == null or _card_pool_service == null:
 		return false
 
-	var entities: Dictionary = state_store.get_value(&"entities", {})
-	for raw_entity_id: Variant in entities:
+	var live_entities: Dictionary = state_store.get_live_entities()
+	for raw_entity_id: Variant in live_entities:
 		var entity_id := StringName(str(raw_entity_id))
 		if entity_id == &"" or _pending_confirmed_card_actions.has(entity_id):
 			continue
@@ -242,9 +242,9 @@ func _has_unconfirmed_entity_with_cards() -> bool:
 func _fill_missing_selected_cards() -> Dictionary:
 	var selected_cards: Dictionary = state_store.get_value(&"selected_cards", {}) if state_store != null else {}
 	var next_selected_cards := selected_cards.duplicate(true)
-	var entities: Dictionary = state_store.get_value(&"entities", {}) if state_store != null else {}
+	var live_entities: Dictionary = state_store.get_live_entities() if state_store != null else {}
 
-	for raw_entity_id: Variant in entities:
+	for raw_entity_id: Variant in live_entities:
 		var entity_id := StringName(str(raw_entity_id))
 		if entity_id == &"" or _pending_confirmed_card_actions.has(entity_id):
 			continue

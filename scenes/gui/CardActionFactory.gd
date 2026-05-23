@@ -174,7 +174,7 @@ func _get_first_other_board_cell(entity_id: StringName) -> Vector2i:
 		var col_cells: Array = cells[i]
 		for j in col_cells.size():
 			var cell: Dictionary = col_cells[j]
-			if _cell_has_other_entity(cell, entity_id):
+			if _cell_has_other_live_entity(cell, entity_id):
 				return Vector2i(int(cell.get(&"i", i)), int(cell.get(&"j", j)))
 
 	return Vector2i(-1, -1)
@@ -188,14 +188,23 @@ func _cell_has_entity(cell: Dictionary, entity_id: StringName) -> bool:
 	return StringName(str(cell.get(&"entity_id", &""))) == entity_id
 
 
-func _cell_has_other_entity(cell: Dictionary, entity_id: StringName) -> bool:
+func _cell_has_other_live_entity(cell: Dictionary, entity_id: StringName) -> bool:
 	for cell_entity_id: Variant in cell.get(&"entity_ids", []):
 		var cell_entity_string_name := StringName(str(cell_entity_id))
-		if cell_entity_string_name != &"" and cell_entity_string_name != entity_id:
+		if _is_other_live_entity(cell_entity_string_name, entity_id):
 			return true
 
 	var legacy_entity_id := StringName(str(cell.get(&"entity_id", &"")))
-	return legacy_entity_id != &"" and legacy_entity_id != entity_id
+	return _is_other_live_entity(legacy_entity_id, entity_id)
+
+
+func _is_other_live_entity(candidate_id: StringName, entity_id: StringName) -> bool:
+	return (
+		candidate_id != &""
+		and candidate_id != entity_id
+		and _state_store.is_entity_alive(candidate_id)
+		and not _state_store.are_entities_allied(entity_id, candidate_id)
+	)
 
 
 func _signi(value: int) -> int:
