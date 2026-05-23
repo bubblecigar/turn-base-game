@@ -106,7 +106,7 @@ func _maybe_start_next_turn() -> void:
 func _create_turn_actions() -> Array[Dictionary]:
 	var actions: Array[Dictionary] = []
 	var entities: Dictionary = state_store.get_value(&"entities", {})
-	var alive_entity_ids := _get_alive_entity_ids()
+	var alive_entity_ids: Array[StringName] = state_store.get_live_entity_ids()
 
 	for entity_id: StringName in alive_entity_ids:
 		var entity: Dictionary = entities.get(entity_id, {})
@@ -399,7 +399,7 @@ func _check_for_winner() -> bool:
 	if entities.is_empty():
 		return false
 
-	var living_entity_ids := _get_alive_entity_ids()
+	var living_entity_ids: Array[StringName] = state_store.get_live_entity_ids()
 	var dead_entity_ids: Array[StringName] = []
 	var living_character_ids: Array[StringName] = []
 	var living_enemy_ids: Array[StringName] = []
@@ -444,18 +444,6 @@ func _create_end_battle_action(winner_entity_ids: Array[StringName], defeated_en
 func _emit_status(status: String) -> void:
 	status_changed.emit(status)
 	print("game loop status: %s" % status)
-
-
-func _get_alive_entity_ids() -> Array[StringName]:
-	var entities: Dictionary = state_store.get_value(&"entities", {})
-	var alive_entity_ids: Array[StringName] = []
-
-	for entity_id: Variant in entities:
-		var entity: Dictionary = entities[entity_id]
-		if int(entity.get(&"current_hp", 0)) > 0:
-			alive_entity_ids.append(StringName(str(entity_id)))
-
-	return alive_entity_ids
 
 
 func _is_character_entity(entity: Dictionary) -> bool:
