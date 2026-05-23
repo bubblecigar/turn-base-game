@@ -180,6 +180,8 @@ func _get_random_attack_options(entity_id: StringName, alive_entity_ids: Array[S
 	for target_entity_id: StringName in alive_entity_ids:
 		if target_entity_id == entity_id:
 			continue
+		if state_store.are_entities_allied(entity_id, target_entity_id):
+			continue
 
 		var target_cell := _get_entity_board_index(target_entity_id)
 		if target_cell == Vector2i(-1, -1):

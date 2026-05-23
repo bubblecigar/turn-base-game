@@ -79,6 +79,8 @@ func _apply_attack_collision(attacker_id: StringName, target_entity_ids: Array[S
 	for target_entity_id: StringName in target_entity_ids:
 		if target_entity_id == attacker_id:
 			continue
+		if state_store.are_entities_allied(attacker_id, target_entity_id):
+			continue
 
 		if not _entity_views.has(target_entity_id):
 			continue

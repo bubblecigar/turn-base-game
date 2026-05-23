@@ -199,7 +199,12 @@ func _cell_has_other_live_entity(cell: Dictionary, entity_id: StringName) -> boo
 
 
 func _is_other_live_entity(candidate_id: StringName, entity_id: StringName) -> bool:
-	return candidate_id != &"" and candidate_id != entity_id and _state_store.is_entity_alive(candidate_id)
+	return (
+		candidate_id != &""
+		and candidate_id != entity_id
+		and _state_store.is_entity_alive(candidate_id)
+		and not _state_store.are_entities_allied(entity_id, candidate_id)
+	)
 
 
 func _signi(value: int) -> int:
